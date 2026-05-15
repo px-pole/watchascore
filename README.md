@@ -1,6 +1,8 @@
-# watchascore
+# WatchaScore
 
-> **Live Demo:** [WatchaScore](https://watchascore.netlify.app/)
+> **Live Demo:** [click here](https://watchascore.netlify.app/)
+
+![WatchaScore Preview](assets/preview.png)
 
 **WatchaScore** is a professional-grade, lightweight football scoreboard overlay designed for streamers and amateur broadcasters. Built with vanilla JavaScript and modern CSS, it provides a high-performance "TV-style" broadcast look that can be easily integrated into OBS or other streaming software as a browser source.
 

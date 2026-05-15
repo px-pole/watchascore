@@ -1,5 +1,2 @@
-.DS_Store
-thumbs.db
-*.log
-.vscode/
-.idea/
+# Ignore VS Code local history folder
+.history/

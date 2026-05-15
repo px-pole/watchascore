@@ -55,6 +55,10 @@
     --status-btn-active-bg: rgba(var(--primary-rgb), 0.18);
     --secondary-btn-hover-bg: rgba(255,255,255,0.13);
 
+    /* Badge Visibility */
+    --badge-glow: drop-shadow(0 0 1px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.3));
+    --badge-bg-opacity: 45%;
+
     /* Body background gradient (dynamic components) */
     --bg-gradient-radial-1-alpha: 0.18;
     --bg-gradient-radial-2-rgb: 0, 48, 135; /* Specific dark blue for the second radial gradient */
@@ -120,7 +124,7 @@
 
   /* ─── HEADER ─── */
   header {
-    display: flex; align-items: center; gap: 14px;
+    display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 1px solid var(--border-color);
@@ -132,6 +136,12 @@
     color: var(--text-on-primary);
   }
   header h1 span { color: var(--primary-color); } 
+
+  .header-side-left, .header-side-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
 
   /* ─── SCOREBOARD ─── */
   .scoreboard-wrap {
@@ -181,18 +191,23 @@
 
   .badge-wrap {
     width: 100px; height: 100px; /* Increased size per request */
+    width: 100px; aspect-ratio: 1 / 1;
     border-radius: 14px;
-    background: var(--bg-badge);
-    border: 1px solid var(--border-badge);
+    background: color-mix(in srgb, var(--bg-panel), transparent var(--badge-bg-opacity));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid color-mix(in srgb, var(--border-color), transparent 30%);
     display: flex; align-items: center; justify-content: center;
-    padding: 10px;
+    padding: 4px;
     position: relative;
-    transition: background-color 0.5s ease, border-color 0.5s ease;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(var(--primary-rgb), 0.05);
+    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
   }
   .badge-wrap img {
     width: 100%; height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+    filter: var(--badge-glow);
   }
 
   .team-name {
@@ -387,17 +402,17 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: color-mix(in srgb, var(--bg-search-popup), transparent 15%);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid color-mix(in srgb, var(--border-search-popup), transparent 30%);
+    background: color-mix(in srgb, var(--bg-panel), transparent 10%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid color-mix(in srgb, var(--border-color), transparent 30%);
     border-radius: 8px;
     max-height: 350px;
     overflow-y: auto;
     z-index: 3000;
     display: none;
     margin-top: 5px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(var(--primary-rgb), 0.1);
+    box-shadow: 0 15px 50px rgba(0,0,0,0.6), 0 0 0 1px rgba(var(--primary-rgb), 0.1);
     transition: background-color 0.5s ease, border-color 0.5s ease, backdrop-filter 0.5s ease;
   }
   .search-results-popup.active { 
@@ -436,22 +451,30 @@
   .search-results-item:hover img { transform: scale(1.2); }
   .search-results-none { padding: 20px; color: var(--text-muted); text-align: center; font-size: 14px; font-style: italic; }
   .mini-badge {
-    width: 32px; height: 32px; flex-shrink: 0;
+    width: 40px; aspect-ratio: 1 / 1; flex-shrink: 0;
     border-radius: 6px;
-    background: var(--bg-badge);
-    border: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--bg-panel), transparent var(--badge-bg-opacity));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid color-mix(in srgb, var(--border-color), transparent 40%);
     display: flex; align-items: center; justify-content: center;
-    padding: 3px;
+    padding: 2px;
     position: relative;
-    transition: background-color 0.5s ease, border-color 0.5s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: background-color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
   }
-  .mini-badge img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 1px rgba(255,255,255,0.4)); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  .mini-badge img { 
+    width: 100%; height: 100%; 
+    object-fit: contain; 
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease; 
+  }
+  
   .mini-badge:hover img { transform: scale(1.15); }
 
   select, input[type="text"], input[type="number"] {
     background: color-mix(in srgb, var(--bg-input), transparent 15%);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid color-mix(in srgb, var(--border-color), transparent 40%);
     border-radius: 8px;
     color: var(--text-primary);
@@ -462,8 +485,10 @@
     outline: none;
     transition: border-color 0.2s, background-color 0.5s ease, color 0.5s ease, transform 0.3s ease, box-shadow 0.3s ease;
   }
-  select:focus, input:focus {
+  
+  select:focus-visible, input:focus-visible, button:focus-visible {
     border-color: var(--primary-color);
+    outline: 2px solid var(--primary-color);
     box-shadow: 0 0 0 2px var(--focus-shadow), inset 0 0 10px rgba(var(--primary-rgb), 0.12);
     transform: translateY(-1px);
   }
@@ -574,6 +599,8 @@
   .badge-wrap.loading::after, .mini-badge.loading::after {
     content: '';
     position: absolute;
+      inset: 0;
+      margin: auto;
     width: 24px;
     height: 24px;
     border: 3px solid rgba(255, 255, 255, 0.1);
@@ -686,6 +713,8 @@
     --bg-gradient-radial-2-alpha: 0.5;
     --clock-bg: #f1f5f9;
     --clock-border: #64748b;
+    --badge-glow: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    --badge-bg-opacity: 10%;
     /* Light: Technical blueprint grid */
     --bg-texture: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px) 0 0 / 30px 30px;
   }
@@ -914,7 +943,7 @@
     }
     .theme-select { margin-left: 0; width: 100% !important; margin-top: 10px; }
     .score-num { font-size: 60px; }
-    .badge-wrap { width: 68px; height: 68px; }
+    .badge-wrap { width: 95px; height: 95px; }
     .team-name { font-size: 16px; }
     .score-center { min-width: 110px; }
     .team-selector-row { flex-direction: column; }

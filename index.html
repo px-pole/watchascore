@@ -14,21 +14,31 @@
   <h1 class="sr-only">WatchaScore - Football Scoreboard</h1>
   <!-- HEADER -->
   <header>
-    <h1><span>WatchaScore</span></h1>
+    <div class="header-side-left">
+      <h1><span>WatchaScore</span></h1>
+    </div>
+
+    <div class="header-side-right">
+    <select id="mode-select" class="theme-select" onchange="changeMode(this.value)">
+      <option value="leagues">Club Leagues</option>
+      <option value="worldcup">World Cup 2026</option>
+    </select>
     <label for="theme-select" class="sr-only" style="display:none">Choose Theme</label>
     <button class="btn btn-secondary copy-link-btn" onclick="copyOBSLink(this)" title="Copy URL for OBS Browser Source">
       <i class="fa-solid fa-link"></i> Copy OBS Link
     </button>
     <select id="theme-select" class="theme-select" onchange="changeTheme(this.value)">
-    <option value="default">Sky Blue</option>
-    <option value="emerald">Emerald</option>
-    <option value="crimson">Crimson</option>
-    <option value="forest">Forest</option>
-    <option value="ocean">Ocean</option>
-    <option value="light">Light</option>
-    <option value="midnight">Midnight</option>
-    <option value="amethyst">Amethyst</option>
-  </select>
+      <option disabled>— Theme —</option>
+      <option value="default">Sky Blue</option>
+      <option value="emerald">Emerald</option>
+      <option value="crimson">Crimson</option>
+      <option value="forest">Forest</option>
+      <option value="ocean">Ocean</option>
+      <option value="light">Light</option>
+      <option value="midnight">Midnight</option>
+      <option value="amethyst">Amethyst</option>
+    </select>
+    </div>
   </header>
 
   <!-- SCOREBOARD -->
@@ -45,6 +55,7 @@
 
       <!-- CENTER -->
       <div class="score-center">
+        <div id="tournament-group-display" class="group-name-display"></div>
         <div class="score-display" aria-live="polite" aria-atomic="true">
           <div class="score-num" id="score-home" aria-label="Home score">0</div>
           <div class="score-divider">-</div>
@@ -219,7 +230,7 @@
       <div class="card-title">About This Project</div>
       <div class="footer-text">
         <p><strong>WatchaScore</strong> is a free, open-source football scoreboard overlay designed for streamers and amateur broadcasters. Customize team names, scores, match events, and the clock in real-time.</p>
-        <p>We're continuously working to improve WatchaScore. Your <a href="#" onclick="toggleContactForm(); return false;">feedback</a> and suggestions are highly valued!</p>
+        <p>I am continuously working to improve WatchaScore. Your <a href="#" onclick="toggleContactForm(); return false;">feedback</a> and suggestions are highly valued!</p>
         <p>If you find this tool useful, please consider supporting its development. Every contribution helps keep the project alive and growing.</p>
         <p>Find the project on <a href="https://github.com/your-username/watchascore" target="_blank">GitHub</a>.</p>
         <p>&copy; <span id="current-year"></span> WatchaScore. All rights reserved.</p>

@@ -16,7 +16,8 @@ const INITIAL_STATE = {
   events: [],
   theme: 'default',
   homeNameOverride: '',
-  awayNameOverride: ''
+  awayNameOverride: '',
+  mode: 'leagues'
 };
 
 let state = { ...INITIAL_STATE };
@@ -33,22 +34,28 @@ function cacheElements() {
   ui.scoreAway = document.getElementById('score-away');
   ui.ctrlHomeScore = document.getElementById('ctrl-home-score');
   ui.ctrlAwayScore = document.getElementById('ctrl-away-score');
-  ui.clockDisplay = document.getElementById('clock-display');
-  ui.clockStatusText = document.getElementById('clock-status-text');
-  ui.startBtn = document.getElementById('start-btn');
-  ui.homeEvents = document.getElementById('home-events');
-  ui.awayEvents = document.getElementById('away-events');
-  ui.homeTeamSelect = document.getElementById('home-team-select');
-  ui.awayTeamSelect = document.getElementById('away-team-select');
-  ui.homeName = document.getElementById('home-name');
-  ui.awayName = document.getElementById('away-name');
-  ui.eventIcon = document.getElementById('event-icon');
-  ui.eventText = document.getElementById('event-text');
-  ui.homeNameOverride = document.getElementById('home-name-override');
-  ui.awayNameOverride = document.getElementById('away-name-override');
-  ui.homeTeamSearch = document.getElementById('home-team-search');
-  ui.awayTeamSearch = document.getElementById('away-team-search');
-  ui.themeSelect = document.getElementById('theme-select');
+
+  const ids = [
+    'clock-display', 'clock-status-text', 'start-btn', 'home-events', 'away-events',
+    'home-team-select', 'away-team-select', 'home-name', 'away-name', 'event-icon',
+    'event-text', 'home-name-override', 'away-name-override', 'home-team-search',
+    'away-team-search', 'theme-select', 'mode-select', 'tournament-group-display',
+    'home-badge', 'home-badge-wrap', 'mini-home-badge', 'away-badge', 'away-badge-wrap', 'mini-away-badge'
+  ];
+
+  ids.forEach(id => {
+    const camelCase = id.replace(/-([a-z])/g, g => g[1].toUpperCase());
+    ui[camelCase] = document.getElementById(id);
+  });
+
+  // Special wraps
+  ui.miniHomeBadgeWrap = ui.miniHomeBadge?.parentElement;
+  ui.miniAwayBadgeWrap = ui.miniAwayBadge?.parentElement;
+
+  // Set Accessibility attributes
+  if (ui.scoreHome) ui.scoreHome.setAttribute('aria-live', 'polite');
+  if (ui.scoreAway) ui.scoreAway.setAttribute('aria-live', 'polite');
+  if (ui.clockDisplay) ui.clockDisplay.setAttribute('role', 'timer');
 }
 
 /**
@@ -75,15 +82,40 @@ function init() {
 }
 
 /**
- * Flattens the LEAGUES object into a single array of teams,
+ * Helper to get the active tournament data based on current mode.
+ */
+function getActiveSource() {
+  return TOURNAMENTS[state.mode];
+}
+
+/**
+ * Flattens the current data source into a single array of teams,
  * adding the league name to each team object for easier searching and grouping.
  */
 function prepareTeamData() {
-  for (const leagueName in LEAGUES) {
-    LEAGUES[leagueName].forEach(team => {
+  ALL_TEAMS = [];
+  const source = getActiveSource();
+  
+  for (const leagueName in source) {
+    source[leagueName].forEach(team => {
       ALL_TEAMS.push({ ...team, league: leagueName });
     });
   }
+}
+
+/**
+ * Switches between Club Leagues and World Cup data.
+ */
+function changeMode(mode) {
+  state.mode = mode;
+  prepareTeamData();
+  // Reset selected teams when mode changes to prevent league/group mismatch
+  state.homeTeam = null;
+  state.awayTeam = null;
+  populateTeamSelect('home-team-select');
+  populateTeamSelect('away-team-select');
+  saveState();
+  syncUI();
 }
 
 /**
@@ -97,8 +129,10 @@ function populateTeamSelect(selectId, filterText = '') {
   select.innerHTML = `<option value="">— Select ${side.charAt(0).toUpperCase() + side.slice(1)} Team —</option>`;
 
   const filter = filterText.toLowerCase();
-  for (const leagueName in LEAGUES) {
-    const teams = LEAGUES[leagueName].filter(t => t.name.toLowerCase().includes(filter));
+  const source = getActiveSource();
+
+  for (const leagueName in source) {
+    const teams = source[leagueName].filter(t => t.name.toLowerCase().includes(filter));
     if (teams.length > 0) {
       const group = document.createElement('optgroup');
       group.label = leagueName;
@@ -156,9 +190,10 @@ function filterTeams(side, text) {
       item.className = 'search-results-item';
       // Highlight matched text
       const startIndex = t.name.toLowerCase().indexOf(filter);
-      const endIndex = startIndex + filter.length;
-      const highlightedName = t.name.substring(0, startIndex) + `<span class="search-highlight">${t.name.substring(startIndex, endIndex)}</span>` + t.name.substring(endIndex);
-      item.innerHTML = `<img src="${t.badge || PLACEHOLDER}" loading="lazy" decoding="async"> <span>${highlightedName}</span>`;
+      const highlightedName = startIndex >= 0 
+        ? `${t.name.substring(0, startIndex)}<span class="search-highlight">${t.name.substring(startIndex, startIndex + filter.length)}</span>${t.name.substring(startIndex + filter.length)}`
+        : t.name;
+      item.innerHTML = `<img src="${t.badge || PLACEHOLDER}" loading="lazy" decoding="async" alt=""> <span>${highlightedName}</span>`;
       item.onclick = () => {
         setTeam(side, t.id);
         resultsDiv.classList.remove('active');
@@ -204,30 +239,47 @@ function saveState() {
  * This is the single source of truth for the UI.
  */
 function syncUI() {
-  ui.scoreHome.textContent = state.homeScore;
-  ui.scoreAway.textContent = state.awayScore;
-  ui.ctrlHomeScore.textContent = state.homeScore;
-  ui.ctrlAwayScore.textContent = state.awayScore;
+  ['home', 'away'].forEach(side => {
+    const score = state[side + 'Score'];
+    const team = state[side + 'Team'];
+    const override = state[side + 'NameOverride'];
+    const sideKey = side.charAt(0).toUpperCase() + side.slice(1);
 
-  // Sync Selection Inputs
-  ui.homeTeamSelect.value = state.homeTeam ? state.homeTeam.id : '';
-  ui.awayTeamSelect.value = state.awayTeam ? state.awayTeam.id : '';
-  ui.homeNameOverride.value = state.homeNameOverride || '';
-  ui.awayNameOverride.value = state.awayNameOverride || '';
+    if (ui['score' + sideKey]) ui['score' + sideKey].textContent = score;
+    if (ui['ctrl' + sideKey + 'Score']) ui['ctrl' + sideKey + 'Score'].textContent = score;
+    if (ui[side + 'TeamSelect']) ui[side + 'TeamSelect'].value = team ? team.id : '';
+    if (ui[side + 'NameOverride']) ui[side + 'NameOverride'].value = override || '';
+    if (ui[side + 'Name']) ui[side + 'Name'].textContent = override || (team ? team.name : sideKey);
+  });
+
   if (ui.themeSelect) ui.themeSelect.value = state.theme;
+  if (ui.modeSelect) ui.modeSelect.value = state.mode;
 
-  // Update Scoreboard Team Names
-  ui.homeName.textContent = state.homeNameOverride || (state.homeTeam ? state.homeTeam.name : 'Home');
-  ui.awayName.textContent = state.awayNameOverride || (state.awayTeam ? state.awayTeam.name : 'Away');
+  // Update Tournament Group Indicator
+  if (ui.tournamentGroupDisplay) {
+    let groupInfo = '';
+    if (state.mode === 'worldcup') {
+      const hGroup = state.homeTeam ? state.homeTeam.league : null;
+      const aGroup = state.awayTeam ? state.awayTeam.league : null;
+      
+      if (hGroup && aGroup) {
+        groupInfo = (hGroup === aGroup) ? hGroup : `${hGroup} / ${aGroup}`;
+      } else {
+        groupInfo = hGroup || aGroup || '';
+      }
+    }
+    ui.tournamentGroupDisplay.textContent = groupInfo.toUpperCase();
+  }
 
   ['home', 'away'].forEach(side => {
     const team = state[side + 'Team'];
     let badgeSrc = PLACEHOLDER;
-    
+
     if (team) {
-      const fullTeam = team.id ? getTeam(team.id) : null;
-      // Use custom base64 badge if exists, otherwise fallback to league list
-      badgeSrc = (team.badge && team.badge.startsWith('data:')) ? team.badge : (fullTeam ? fullTeam.badge : PLACEHOLDER);
+      // If it's a custom upload (base64), use it. 
+      // Otherwise, always look up the latest path from data files to ensure accuracy.
+      const freshTeamData = getTeam(team.id);
+      badgeSrc = (team.badge && team.badge.startsWith('data:')) ? team.badge : (freshTeamData ? freshTeamData.badge : PLACEHOLDER);
     }
     setBadge(side, badgeSrc);
   });
@@ -242,42 +294,42 @@ function syncUI() {
  * Updates team badge images with error handling and loading states.
  */
 function setBadge(side, src) {
+  const sideKey = side.charAt(0).toUpperCase() + side.slice(1);
   const badgeConfigs = [
-    { 
-      img: document.getElementById(side + '-badge'), 
-      wrap: document.getElementById(side + '-badge-wrap') 
-    },
-    { 
-      img: document.getElementById('mini-' + side + '-badge'), 
-      wrap: document.getElementById('mini-' + side + '-badge')?.parentElement 
-    }
+    { img: ui[side + 'Badge'], wrap: ui[side + 'BadgeWrap'] },
+    { img: ui['mini' + sideKey + 'Badge'], wrap: ui['mini' + sideKey + 'BadgeWrap'] }
   ];
 
   badgeConfigs.forEach(({ img, wrap }) => {
-    if (!img) return;
+    if (!img || img.dataset.currentSrc === src) return;
+    img.dataset.currentSrc = src;
 
-    // Offload image decoding to a background thread to keep the UI smooth
     img.decoding = 'async';
 
-    // Show loading state
-    if (wrap) wrap.classList.add('loading');
-    img.style.opacity = '0';
+    if (wrap) {
+      wrap.classList.add('loading');
+      wrap.setAttribute('aria-busy', 'true');
+    }
+    
+    // Prepare transition
+    img.style.opacity = '0'; img.style.transform = 'scale(0.92)';
+    img.setAttribute('aria-hidden', 'true'); 
 
     const finishLoading = () => {
-      if (wrap) wrap.classList.remove('loading');
-      img.style.opacity = '1';
+      if (wrap) {
+        wrap.classList.remove('loading');
+        wrap.removeAttribute('aria-busy');
+      }
+      requestAnimationFrame(() => {
+        img.style.opacity = '1'; img.style.transform = 'scale(1)';
+        img.removeAttribute('aria-hidden'); 
+      });
     };
 
     img.onload = finishLoading;
-    img.onerror = function() {
-      this.onerror = null;
-      this.src = PLACEHOLDER;
-      finishLoading();
-    };
+    img.onerror = () => { img.src = PLACEHOLDER; finishLoading(); };
 
     img.src = src || PLACEHOLDER;
-    
-    // Immediate check for cached images
     if (img.complete && img.naturalWidth !== 0) {
       finishLoading();
     }
@@ -326,8 +378,8 @@ function overrideName(side, val) {
 function changeScore(side, delta) {
   const key = side + 'Score';
   state[key] = Math.max(0, state[key] + delta);
-  const el = side === 'home' ? ui.scoreHome : ui.scoreAway;
-  const ctrlEl = side === 'home' ? ui.ctrlHomeScore : ui.ctrlAwayScore;
+  const el = ui['score' + side.charAt(0).toUpperCase() + side.slice(1)];
+  const ctrlEl = ui['ctrl' + side.charAt(0).toUpperCase() + side.slice(1) + 'Score'];
   el.textContent = state[key];
   ctrlEl.textContent = state[key];
   
@@ -343,9 +395,10 @@ function changeScore(side, delta) {
 function resetScores() {
   state.homeScore = 0; state.awayScore = 0;
   ['home','away'].forEach(s => {
-    const el = s === 'home' ? ui.scoreHome : ui.scoreAway;
-    const ctrlEl = s === 'home' ? ui.ctrlHomeScore : ui.ctrlAwayScore;
-    el.textContent = '0';
+    const sideKey = s.charAt(0).toUpperCase() + s.slice(1);
+    const el = ui['score' + sideKey];
+    const ctrlEl = ui['ctrl' + sideKey + 'Score'];
+    if (el) el.textContent = '0';
     ctrlEl.textContent = '0';
   });
   saveState();

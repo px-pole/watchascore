@@ -2,7 +2,7 @@
  * FALLBACKS & CONSTANTS
  * A default SVG to display when a team badge is missing or fails to load.
  */
-const PLACEHOLDER = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><circle cx='40' cy='40' r='36' fill='%23152a50' stroke='%231e3a6e' stroke-width='2'/><text x='40' y='46' text-anchor='middle' font-size='22' fill='%237a99c0' font-family='sans-serif'>?</text></svg>`;
+const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48Y2lyY2xlIGN4PSI0MCIgY3k9IjQwIiByPSIzNiIgZmlsbD0iIzE1MmE1MCIgc3Ryb2tlPSIjMWUzYTZlIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI0MCIgeT0iNDYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiM3YTk5YzAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj4/PC90ZXh0Pjwvc3ZnPg==`;
 
 /**
  * APP STATE
@@ -158,7 +158,7 @@ function filterTeams(side, text) {
   }
 
   // Clear previous results
-  resultsDiv.innerHTML = '';
+  const fragment = document.createDocumentFragment();
   resultsDiv.classList.add('active');
 
   let foundCount = 0;
@@ -183,7 +183,7 @@ function filterTeams(side, text) {
     const header = document.createElement('div');
     header.className = 'search-results-header';
     header.textContent = leagueName;
-    resultsDiv.appendChild(header);
+    fragment.appendChild(header);
 
     teams.sort((a, b) => a.name.localeCompare(b.name)).forEach(t => {
       const item = document.createElement('div');
@@ -199,14 +199,19 @@ function filterTeams(side, text) {
         resultsDiv.classList.remove('active');
         searchInput.value = t.name; // Set the input value to the selected team's name
       };
-      resultsDiv.appendChild(item);
+      fragment.appendChild(item);
       foundCount++;
     });
   }
 
   if (foundCount === 0) {
-    resultsDiv.innerHTML = '<div class="search-results-none">No teams matched your search</div>';
+    const none = document.createElement('div');
+    none.className = 'search-results-none';
+    none.textContent = 'No teams matched your search';
+    fragment.appendChild(none);
   }
+
+  resultsDiv.replaceChildren(fragment);
 }
 
 /**
@@ -231,7 +236,13 @@ function setTeam(side, id) {
  * Persists current state to the browser's local storage.
  */
 function saveState() {
-  localStorage.setItem('scoreboard_state', JSON.stringify(state));
+  try {
+    localStorage.setItem('scoreboard_state', JSON.stringify(state));
+  } catch (e) {
+    if (e.name === 'QuotaExceededError') {
+      console.warn('Scoreboard: Local storage quota exceeded, state not saved.');
+    }
+  }
 }
 
 /**
@@ -300,9 +311,26 @@ function setBadge(side, src) {
     { img: ui['mini' + sideKey + 'Badge'], wrap: ui['mini' + sideKey + 'BadgeWrap'] }
   ];
 
+  const targetSrc = src || PLACEHOLDER;
+
   badgeConfigs.forEach(({ img, wrap }) => {
-    if (!img || img.dataset.currentSrc === src) return;
-    img.dataset.currentSrc = src;
+    if (!img || img.dataset.currentSrc === targetSrc) return;
+    img.dataset.currentSrc = targetSrc;
+
+    // Immediate display for placeholders to prevent transition flicker and loading delay
+    if (targetSrc === PLACEHOLDER) {
+      img.src = PLACEHOLDER;
+      img.style.opacity = '1';
+      img.style.transform = 'scale(1)';
+      if (img.getAttribute('aria-hidden') === 'true') {
+        img.removeAttribute('aria-hidden');
+      }
+      if (wrap) {
+        wrap.classList.remove('loading');
+        wrap.removeAttribute('aria-busy');
+      }
+      return;
+    }
 
     img.decoding = 'async';
 
@@ -310,7 +338,7 @@ function setBadge(side, src) {
       wrap.classList.add('loading');
       wrap.setAttribute('aria-busy', 'true');
     }
-    
+
     // Prepare transition
     img.style.opacity = '0'; img.style.transform = 'scale(0.92)';
     img.setAttribute('aria-hidden', 'true'); 
@@ -327,9 +355,18 @@ function setBadge(side, src) {
     };
 
     img.onload = finishLoading;
-    img.onerror = () => { img.src = PLACEHOLDER; finishLoading(); };
+    img.onerror = () => {
+      img.src = PLACEHOLDER;
+      img.style.opacity = '1';
+      img.style.transform = 'scale(1)';
+      img.removeAttribute('aria-hidden');
+      if (wrap) {
+        wrap.classList.remove('loading');
+        wrap.removeAttribute('aria-busy');
+      }
+    };
 
-    img.src = src || PLACEHOLDER;
+    img.src = targetSrc;
     if (img.complete && img.naturalWidth !== 0) {
       finishLoading();
     }

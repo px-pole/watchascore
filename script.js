@@ -17,13 +17,33 @@ const INITIAL_STATE = {
   theme: 'default',
   homeNameOverride: '',
   awayNameOverride: '',
-  mode: 'leagues'
+  mode: 'leagues',
+  visibilityMode: 'glow'
 };
+
+/**
+ * CONSTANTS
+ */
+const EVENT_ICON_MAP = {
+  goal: { class: 'fa-futbol', color: '' },
+  yellow: { class: 'fa-square', color: 'var(--card-yellow)' },
+  red: { class: 'fa-square', color: 'var(--card-red)' }
+};
+
+/**
+ * THEME LIST for class management
+ */
+const THEMES = ['emerald', 'crimson', 'forest', 'ocean', 'light', 'midnight', 'amethyst'];
 
 let state = { ...INITIAL_STATE };
 let timerInterval = null; // Use a runtime variable instead of state for the interval ID
 let ALL_TEAMS = []; // Global array to store all teams for efficient searching
 const brightnessCache = new Map(); // Cache results of image analysis to avoid redundant canvas operations
+
+/**
+ * UTILS
+ */
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
 /**
  * DOM CACHE
@@ -40,7 +60,8 @@ function cacheElements() {
     'clock-display', 'clock-status-text', 'start-btn', 'home-events', 'away-events',
     'home-team-select', 'away-team-select', 'home-name', 'away-name', 'event-icon',
     'event-text', 'home-name-override', 'away-name-override', 'home-team-search',
-    'away-team-search', 'theme-select', 'mode-select', 'tournament-group-display',
+    'away-team-search', 'theme-select', 'mode-select', 'tournament-group-display', 'visibility-mode-select',
+    'add-event-home', 'add-event-away', 'fx-suggestion-icon',
     'home-badge', 'home-badge-wrap', 'mini-home-badge', 'away-badge', 'away-badge-wrap', 'mini-away-badge'
   ];
 
@@ -141,7 +162,7 @@ function populateTeamSelect(selectId, filterText = '') {
   const currentValue = state[side + 'Team'] ? state[side + 'Team'].id : '';
 
   const fragment = document.createDocumentFragment();
-  const label = side.charAt(0).toUpperCase() + side.slice(1);
+  const label = capitalize(side);
   fragment.appendChild(new Option(`— Select ${label} Team —`, ''));
 
   const filter = filterText.toLowerCase();
@@ -298,17 +319,30 @@ function syncUI() {
     const score = state[side + 'Score'];
     const team = state[side + 'Team'];
     const override = state[side + 'NameOverride'];
-    const sideKey = side.charAt(0).toUpperCase() + side.slice(1);
+    const sideKey = capitalize(side);
+    const name = override || team?.name || sideKey;
 
-    if (ui['score' + sideKey]) ui['score' + sideKey].textContent = score;
-    if (ui['ctrl' + sideKey + 'Score']) ui['ctrl' + sideKey + 'Score'].textContent = score;
-    if (ui[side + 'TeamSelect']) ui[side + 'TeamSelect'].value = team ? team.id : '';
-    if (ui[side + 'NameOverride']) ui[side + 'NameOverride'].value = override || '';
-    if (ui[side + 'Name']) ui[side + 'Name'].textContent = override || (team ? team.name : sideKey);
+    ui[`score${sideKey}`].textContent = score;
+    ui[`ctrl${sideKey}Score`].textContent = score;
+    ui[`${side}TeamSelect`].value = team?.id || '';
+    ui[`${side}NameOverride`].value = override ?? '';
+    syncTeamNameDisplay(side, name);
   });
 
   if (ui.themeSelect) ui.themeSelect.value = state.theme;
   if (ui.modeSelect) ui.modeSelect.value = state.mode;
+  
+  const visMode = state.visibilityMode || 'glow';
+  if (ui.visibilityModeSelect) ui.visibilityModeSelect.value = visMode;
+  
+  document.body.classList.remove('visibility-none', 'visibility-glow', 'visibility-contrast');
+  document.body.classList.add(`visibility-${visMode}`);
+
+  // Theme Management
+  document.body.classList.remove(...THEMES.map(t => `theme-${t}`));
+  if (state.theme && state.theme !== 'default') {
+    document.body.classList.add(`theme-${state.theme}`);
+  }
 
   // Update Tournament Group Indicator
   if (ui.tournamentGroupDisplay) {
@@ -329,12 +363,9 @@ function syncUI() {
   ['home', 'away'].forEach(side => {
     const team = state[side + 'Team'];
     let badgeSrc = PLACEHOLDER;
-
     if (team) {
-      // If it's a custom upload (base64), use it. 
-      // Otherwise, always look up the latest path from data files to ensure accuracy.
       const freshTeamData = getTeam(team.id);
-      badgeSrc = (team.badge && team.badge.startsWith('data:')) ? team.badge : (freshTeamData ? freshTeamData.badge : PLACEHOLDER);
+      badgeSrc = (team.badge?.startsWith('data:')) ? team.badge : (freshTeamData?.badge || PLACEHOLDER);
     }
     setBadge(side, badgeSrc);
   });
@@ -342,7 +373,7 @@ function syncUI() {
   renderClock();
   setStatus(state.status);
   renderEvents();
-  applyTheme(state.theme);
+  updateVisibilityHighlight();
 }
 
 /**
@@ -351,7 +382,7 @@ function syncUI() {
  */
 function analyzeBrightness(img) {
   const src = img.src;
-  if (!img || !img.complete || img.naturalWidth === 0 || src.includes('data:image/svg+xml')) {
+  if (!img?.complete || img.naturalWidth === 0 || src.includes('data:image/svg+xml')) {
     return;
   }
 
@@ -359,6 +390,7 @@ function analyzeBrightness(img) {
   if (brightnessCache.has(src)) {
     const cached = brightnessCache.get(src);
     img.classList.add(cached === 'dark' ? 'is-dark' : 'is-light');
+    img.classList.remove(cached === 'dark' ? 'is-light' : 'is-dark');
     return;
   }
 
@@ -370,24 +402,30 @@ function analyzeBrightness(img) {
   try {
     ctx.drawImage(img, 0, 0, 40, 40);
     const imageData = ctx.getImageData(0, 0, 40, 40).data;
-    let brightnessSum = 0;
-    let count = 0;
-
+    let brightnessSum = 0, saturationSum = 0, count = 0;
+    
     for (let i = 0; i < imageData.length; i += 4) {
       const r = imageData[i], g = imageData[i+1], b = imageData[i+2], a = imageData[i+3];
       // Only consider pixels with significant opacity
       if (a > 125) {
         brightnessSum += (0.299 * r + 0.587 * g + 0.114 * b);
+        saturationSum += (Math.max(r, g, b) - Math.min(r, g, b));
         count++;
       }
     }
 
     const brightness = count > 0 ? (brightnessSum / count) : 255;
-    const result = brightness < 140 ? 'dark' : 'light';
+    const avgSat = count > 0 ? (saturationSum / count) : 0;
+
+    // Refined logic for broadcast visibility:
+    // 1. If extremely dark (brightness < 80), it needs glow regardless of vibrancy (e.g., Metz, Roma).
+    // 2. If moderately dark (80-135) AND lacks saturation (avgSat < 80), it needs glow (e.g., dull grey/brown logos).
+    const result = (brightness < 80 || (brightness < 135 && avgSat < 80)) ? 'dark' : 'light';
     
     brightnessCache.set(src, result);
     img.classList.add(result === 'dark' ? 'is-dark' : 'is-light');
     img.classList.remove(result === 'dark' ? 'is-light' : 'is-dark');
+    updateVisibilityHighlight();
   } catch (e) {
     // Default to no specific class if CORS or other issues prevent analysis
     img.classList.remove('is-dark', 'is-light');
@@ -395,10 +433,61 @@ function analyzeBrightness(img) {
 }
 
 /**
+ * Highlights the Visibility FX dropdown if a selected badge would benefit from FX
+ * but "No FX" is currently selected.
+ */
+function updateVisibilityHighlight() {
+  if (!ui.visibilityModeSelect) return;
+  
+  const isNone = state.visibilityMode === 'none';
+  const isLightTheme = state.theme === 'light';
+  
+  const needsFx = (imgEl) => {
+    if (!imgEl) return false;
+    // If dark theme, suggest if badge is dark. If light theme, suggest if badge is light.
+    return isLightTheme ? imgEl.classList.contains('is-light') : imgEl.classList.contains('is-dark');
+  };
+
+  const highlight = isNone && (needsFx(ui.homeBadge) || needsFx(ui.awayBadge));
+  ui.visibilityModeSelect.classList.toggle('suggest-fx', highlight);
+
+  if (ui.fxSuggestionIcon) {
+    ui.fxSuggestionIcon.style.display = highlight ? 'block' : 'none';
+  }
+}
+
+/**
+ * Manually updates the visibility enhancement mode (None, Glow, or Contrast).
+ */
+function setVisibilityMode(mode) {
+  state.visibilityMode = mode;
+  saveState();
+  syncUI();
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
+}
+
+/**
+ * Updates all UI elements that display a team's name.
+ */
+function syncTeamNameDisplay(side, name) {
+  const sideKey = capitalize(side);
+  if (ui[`${side}Name`]) ui[`${side}Name`].textContent = name;
+  
+  const eventBtn = ui[`addEvent${sideKey}`];
+  if (eventBtn) {
+    eventBtn.setAttribute('data-tooltip', name);
+    const textSpan = eventBtn.querySelector('span');
+    if (textSpan) textSpan.textContent = name;
+  }
+}
+
+/**
  * Updates team badge images with error handling and loading states.
  */
 function setBadge(side, src) {
-  const sideKey = side.charAt(0).toUpperCase() + side.slice(1);
+  const sideKey = capitalize(side);
   const badgeConfigs = [
     { img: ui[side + 'Badge'], wrap: ui[side + 'BadgeWrap'] },
     { img: ui['mini' + sideKey + 'Badge'], wrap: ui['mini' + sideKey + 'BadgeWrap'] }
@@ -506,10 +595,10 @@ function handleLogoUpload(side, input) {
 function overrideName(side, val) {
   state[side + 'NameOverride'] = val;
   saveState();
-  // Sync only the names to avoid full UI re-render on every keystroke
-  const sideNameEl = side === 'home' ? ui.homeName : ui.awayName;
-  const teamObj = state[side + 'Team'];
-  sideNameEl.textContent = val || (teamObj ? teamObj.name : (side === 'home' ? 'Home' : 'Away'));
+  const sideKey = capitalize(side);
+  const name = val || state[side + 'Team']?.name || sideKey;
+  
+  syncTeamNameDisplay(side, name);
 }
 
 /**
@@ -518,8 +607,8 @@ function overrideName(side, val) {
 function changeScore(side, delta) {
   const key = side + 'Score';
   state[key] = Math.max(0, state[key] + delta);
-  const el = ui['score' + side.charAt(0).toUpperCase() + side.slice(1)];
-  const ctrlEl = ui['ctrl' + side.charAt(0).toUpperCase() + side.slice(1) + 'Score'];
+  const sideKey = capitalize(side);
+  const [el, ctrlEl] = [ui['score' + sideKey], ui['ctrl' + sideKey + 'Score']];
   el.textContent = state[key];
   ctrlEl.textContent = state[key];
   
@@ -535,7 +624,7 @@ function changeScore(side, delta) {
 function resetScores() {
   state.homeScore = 0; state.awayScore = 0;
   ['home','away'].forEach(s => {
-    const sideKey = s.charAt(0).toUpperCase() + s.slice(1);
+    const sideKey = capitalize(s);
     const el = ui['score' + sideKey];
     const ctrlEl = ui['ctrl' + sideKey + 'Score'];
     if (el) el.textContent = '0';
@@ -574,12 +663,15 @@ function setClock() {
  */
 function toggleClock() {
   if (state.running) {
-    clearInterval(timerInterval);
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
     state.running = false;
     ui.startBtn.textContent = '▶ Start';
     ui.startBtn.className = 'btn btn-green';
   } else {
-    // No need to clear here as it was handled when 'running' was true
+    if (timerInterval) clearInterval(timerInterval); 
     state.running = true;
     ui.startBtn.textContent = '⏸ Pause';
     ui.startBtn.className = 'btn btn-secondary';
@@ -601,7 +693,10 @@ function toggleClock() {
  * Stops the clock and resets time to zero.
  */
 function resetClock() {
-  clearInterval(timerInterval);
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
   state.running = false;
   state.clockSec = 0;
   renderClock();
@@ -613,13 +708,13 @@ function resetClock() {
 }
 
 /**
- * Changes the visual theme of the entire application.
+ * Manually updates the application theme.
  */
-function changeTheme(themeName) {
+function setTheme(themeName) {
   state.theme = themeName;
-  applyTheme(themeName);
   saveState();
-
+  syncUI();
+  
   // Remove focus to allow keyboard shortcuts to work immediately.
   if (document.activeElement && typeof document.activeElement.blur === 'function') {
     document.activeElement.blur();
@@ -627,27 +722,13 @@ function changeTheme(themeName) {
 }
 
 /**
- * Applies the specific CSS class to the body to trigger theme variable overrides.
- */
-function applyTheme(themeName) {
-  const body = document.body;
-  const newClass = themeName === 'default' ? '' : `theme-${themeName}`;
-  
-  if (newClass && body.classList.contains(newClass)) return;
-
-  body.classList.forEach(cls => {
-    if (cls.startsWith('theme-')) body.classList.remove(cls);
-  });
-
-  if (newClass) body.classList.add(newClass);
-}
-
-/**
  * Sets the match status (Live, FT, etc.) and highlights the active button.
  */
 function setStatus(s) {
   state.status = s;
-  ui.clockStatusText.textContent = s;
+  
+  const statusLabels = { 'HT': 'HALF-TIME', 'FULL-TIME': 'FULL-TIME' };
+  ui.clockStatusText.textContent = statusLabels[s] || s;
 
   const buttons = document.querySelectorAll('.status-btn');
   buttons.forEach(b => {
@@ -655,12 +736,6 @@ function setStatus(s) {
     b.classList.toggle('active', isActive);
     b.setAttribute('aria-pressed', isActive);
   });
-  
-  if (s === 'FULL-TIME') {
-    ui.clockStatusText.textContent = 'FULL-TIME';
-  } else if (s === 'HT') {
-    ui.clockStatusText.textContent = 'HALF-TIME';
-  }
   saveState();
 }
 
@@ -682,11 +757,7 @@ function addMatchEvent(side) {
   }
 
   state.events.push({ side, text, icon });
-  ui.eventText.value = '';
-  renderEvents();
-  saveState();
-
-  // Remove focus from the input to allow keyboard shortcuts to work immediately.
+  syncEventsUI();
   if (document.activeElement && typeof document.activeElement.blur === 'function') {
     document.activeElement.blur();
   }
@@ -697,8 +768,7 @@ function addMatchEvent(side) {
  */
 function removeEvent(index) {
   state.events.splice(index, 1);
-  renderEvents();
-  saveState();
+  syncEventsUI();
 }
 
 /**
@@ -706,10 +776,17 @@ function removeEvent(index) {
  */
 function removeLastEvent() {
   if (state.events.length > 0) {
-    state.events.pop();
-    renderEvents();
-    saveState();
+    removeEvent(state.events.length - 1);
   }
+}
+
+/**
+ * Combined helper for event state persistence and UI update
+ */
+function syncEventsUI() {
+  ui.eventText.value = '';
+  renderEvents();
+  saveState();
 }
 
 /**
@@ -718,15 +795,16 @@ function removeLastEvent() {
 function renderEvents() {
   ui.homeEvents.innerHTML = '';
   ui.awayEvents.innerHTML = '';
-  state.events.forEach((ev, idx) => {
-    const iconMap = {
-      goal: { class: 'fa-futbol', color: '' },
-      yellow: { class: 'fa-square', color: 'var(--card-yellow)' },
-      red: { class: 'fa-square', color: 'var(--card-red)' }
-    };
-    const iconData = iconMap[ev.icon] || iconMap.goal;
-    const iconHtml = `<i class="fa-solid ${iconData.class}" style="cursor:default; font-size:10px; ${iconData.color ? 'color:' + iconData.color : ''}" onclick="removeEvent(${idx})"></i>`;
+  
+  const ICON_MAP = {
+    goal: { class: 'fa-futbol', color: '' },
+    yellow: { class: 'fa-square', color: 'var(--card-yellow)' },
+    red: { class: 'fa-square', color: 'var(--card-red)' }
+  };
 
+  state.events.forEach((ev, idx) => {
+    const iconData = ICON_MAP[ev.icon] || ICON_MAP.goal;
+    const iconHtml = `<i class="fa-solid ${iconData.class}" style="cursor:default; font-size:10px; ${iconData.color ? 'color:' + iconData.color : ''}" onclick="removeEvent(${idx})"></i>`;
     const item = document.createElement('div');
     item.className = 'event-item';
     item.innerHTML = ev.side === 'home' 

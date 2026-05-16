@@ -19,15 +19,23 @@
     </div>
 
     <div class="header-side-right">
+    <div class="settings-control-wrapper">
+      <select id="visibility-mode-select" class="theme-select" onchange="setVisibilityMode(this.value)">
+        <option disabled>— Visibility FX —</option>
+        <option value="none">No FX</option>
+        <option value="glow">Glow FX</option>
+        <option value="contrast">High Contrast</option>
+      </select>
+      <i class="fa-solid fa-circle-exclamation fx-indicator" id="fx-suggestion-icon" title="Visibility FX suggested for current badges"></i>
+    </div>
     <select id="mode-select" class="theme-select" onchange="changeMode(this.value)">
       <option value="leagues">Club Leagues</option>
       <option value="worldcup">World Cup 2026</option>
     </select>
-    <label for="theme-select" class="sr-only" style="display:none">Choose Theme</label>
     <button class="btn btn-secondary copy-link-btn" onclick="copyOBSLink(this)" title="Copy URL for OBS Browser Source">
       <i class="fa-solid fa-link"></i> Copy OBS Link
     </button>
-    <select id="theme-select" class="theme-select" onchange="changeTheme(this.value)">
+    <select id="theme-select" class="theme-select" onchange="setTheme(this.value)">
       <option disabled>— Theme —</option>
       <option value="default">Sky Blue</option>
       <option value="emerald">Emerald</option>
@@ -161,8 +169,8 @@
         <label>Event (e.g. Scorer + Minute)</label>
         <input type="text" id="event-text" placeholder="e.g. Maradona 55">
         <div class="clock-btn-row" style="margin-top: 8px;">
-          <button class="btn btn-primary" onclick="addMatchEvent('home')">Add Home</button>
-          <button class="btn btn-primary" onclick="addMatchEvent('away')">Add Away</button>
+          <button class="btn btn-primary" id="add-event-home" onclick="addMatchEvent('home')"><span>Home</span></button>
+          <button class="btn btn-primary" id="add-event-away" onclick="addMatchEvent('away')"><span>Away</span></button>
         </div>
       </div> 
       <button class="btn btn-secondary btn-full" style="margin-top: 10px;" onclick="removeLastEvent()">

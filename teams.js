@@ -1,6 +1,6 @@
 const TOURNAMENTS = {
   leagues: {
-  "Premier League": [
+  "England - Premier League": [
     { "id": "arsenal", "name": "Arsenal", "badge": "assets/badges/England-PremierLeague/arsenal.svg" },
     { "id": "astonvilla", "name": "Aston Villa", "badge": "assets/badges/England-PremierLeague/astonvilla.svg" },
     { "id": "bournemouth", "name": "Bournemouth", "badge": "assets/badges/England-PremierLeague/bournemouth.svg" },
@@ -22,7 +22,7 @@ const TOURNAMENTS = {
     { "id": "westham", "name": "West Ham United", "badge": "assets/badges/England-PremierLeague/westham.svg" },
     { "id": "wolves", "name": "Wolverhampton", "badge": "assets/badges/England-PremierLeague/wolves.svg" }
   ],
-  "La Liga": [
+  "Spain - La Liga": [
     { "id": "alaves", "name": "Alavés", "badge": "assets/badges/Spain-LaLiga/alaves.svg" },
     { "id": "athletic", "name": "Athletic Club", "badge": "assets/badges/Spain-LaLiga/athletic.svg" },
     { "id": "atletico", "name": "Atlético Madrid", "badge": "assets/badges/Spain-LaLiga/atletico.svg" },
@@ -44,7 +44,7 @@ const TOURNAMENTS = {
     { "id": "valencia", "name": "Valencia CF", "badge": "assets/badges/Spain-LaLiga/valencia.svg" },
     { "id": "villarreal", "name": "Villarreal CF", "badge": "assets/badges/Spain-LaLiga/villarreal.svg" }
   ],
-  "Bundesliga": [
+  "Germany - Bundesliga": [
     { "id": "koln", "name": "1. FC Köln", "badge": "assets/badges/Germany-Bundesliga/koln.svg" },
     { "id": "leverkusen", "name": "Bayer Leverkusen", "badge": "assets/badges/Germany-Bundesliga/leverkusen.svg" },
     { "id": "bayern", "name": "Bayern Munich", "badge": "assets/badges/Germany-Bundesliga/bayern.svg" },
@@ -64,7 +64,7 @@ const TOURNAMENTS = {
     { "id": "wolfsburg", "name": "VfL Wolfsburg", "badge": "assets/badges/Germany-Bundesliga/wolfsburg.svg" },
     { "id": "bremen", "name": "Werder Bremen", "badge": "assets/badges/Germany-Bundesliga/bremen.svg" }
   ],
-  "Serie A": [
+  "Italy - Serie A": [
     { "id": "milan", "name": "AC Milan", "badge": "assets/badges/Italy-SerieA/milan.svg" },
     { "id": "roma", "name": "AS Roma", "badge": "assets/badges/Italy-SerieA/roma.svg" },
     { "id": "atalanta", "name": "Atalanta", "badge": "assets/badges/Italy-SerieA/atalanta.svg" },
@@ -86,7 +86,7 @@ const TOURNAMENTS = {
     { "id": "torino", "name": "Torino FC", "badge": "assets/badges/Italy-SerieA/torino.svg" },
     { "id": "udinese", "name": "Udinese", "badge": "assets/badges/Italy-SerieA/udinese.svg" }
   ],
-  "Ligue 1": [
+  "France - Ligue 1": [
     { "id": "auxerre", "name": "AJ Auxerre", "badge": "assets/badges/France-Ligue1/auxerre.svg" },
     { "id": "angers", "name": "Angers SCO", "badge": "assets/badges/France-Ligue1/angers.svg" },
     { "id": "monaco", "name": "AS Monaco", "badge": "assets/badges/France-Ligue1/monaco.svg" },
@@ -130,7 +130,7 @@ const TOURNAMENTS = {
     { "id": "usa", "name": "USA", "badge": "assets/badges/WorldCup2026/usa.svg" },
     { "id": "paraguay", "name": "Paraguay", "badge": "assets/badges/WorldCup2026/paraguay.svg" },
     { "id": "australia", "name": "Australia", "badge": "assets/badges/WorldCup2026/australia.svg" },
-    { "id": "turkey", "name": "Türkiye", "badge": "assets/badges/WorldCup2026/turkey.svg" }
+    { "id": "turkey", "name": "Turkiye", "badge": "assets/badges/WorldCup2026/turkey.svg" }
   ],
   "Group E": [
     { "id": "germany", "name": "Germany", "badge": "assets/badges/WorldCup2026/germany.svg" },

@@ -16,6 +16,10 @@
   <header>
     <div class="header-side-left">
       <h1><span>WatchaScore</span></h1>
+      <select id="mode-select" class="theme-select" onchange="changeMode(this.value)">
+        <option value="leagues">Club Leagues</option>
+        <option value="worldcup">World Cup 2026</option>
+      </select>
     </div>
 
     <div class="header-side-right">
@@ -28,13 +32,6 @@
       </select>
       <i class="fa-solid fa-circle-exclamation fx-indicator" id="fx-suggestion-icon" title="Visibility FX suggested for current badges"></i>
     </div>
-    <select id="mode-select" class="theme-select" onchange="changeMode(this.value)">
-      <option value="leagues">Club Leagues</option>
-      <option value="worldcup">World Cup 2026</option>
-    </select>
-    <button class="btn btn-secondary copy-link-btn" onclick="copyOBSLink(this)" title="Copy URL for OBS Browser Source">
-      <i class="fa-solid fa-link"></i> Copy OBS Link
-    </button>
     <select id="theme-select" class="theme-select" onchange="setTheme(this.value)">
       <option disabled>— Theme —</option>
       <option value="default">Sky Blue</option>
@@ -46,6 +43,9 @@
       <option value="midnight">Midnight</option>
       <option value="amethyst">Amethyst</option>
     </select>
+    <button class="btn btn-secondary copy-link-btn" onclick="copyOBSLink(this)" title="Copy URL for OBS Browser Source">
+      <i class="fa-solid fa-link"></i> Copy OBS Link
+    </button>
     </div>
   </header>
 

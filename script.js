@@ -23,6 +23,7 @@ const INITIAL_STATE = {
 let state = { ...INITIAL_STATE };
 let timerInterval = null; // Use a runtime variable instead of state for the interval ID
 let ALL_TEAMS = []; // Global array to store all teams for efficient searching
+const brightnessCache = new Map(); // Cache results of image analysis to avoid redundant canvas operations
 
 /**
  * DOM CACHE
@@ -95,12 +96,18 @@ function getActiveSource() {
 function prepareTeamData() {
   ALL_TEAMS = [];
   const source = getActiveSource();
-  
-  for (const leagueName in source) {
-    source[leagueName].forEach(team => {
-      ALL_TEAMS.push({ ...team, league: leagueName });
+
+  // Sort leagues and teams during preparation to avoid sorting during every search
+  Object.keys(source).sort().forEach(leagueName => {
+    const sortedTeams = [...source[leagueName]].sort((a, b) => a.name.localeCompare(b.name));
+    sortedTeams.forEach(team => {
+      ALL_TEAMS.push({
+        ...team,
+        league: leagueName,
+        nameLower: team.name.toLowerCase() // Pre-normalize for faster searching
+      });
     });
-  }
+  });
 }
 
 /**
@@ -116,6 +123,11 @@ function changeMode(mode) {
   populateTeamSelect('away-team-select');
   saveState();
   syncUI();
+
+  // Remove focus to allow keyboard shortcuts to work immediately.
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
 }
 
 /**
@@ -123,84 +135,98 @@ function changeMode(mode) {
  */
 function populateTeamSelect(selectId, filterText = '') {
   const select = document.getElementById(selectId);
+  if (!select) return;
+
   const side = selectId.startsWith('home') ? 'home' : 'away';
   const currentValue = state[side + 'Team'] ? state[side + 'Team'].id : '';
-  
-  select.innerHTML = `<option value="">— Select ${side.charAt(0).toUpperCase() + side.slice(1)} Team —</option>`;
+
+  const fragment = document.createDocumentFragment();
+  const label = side.charAt(0).toUpperCase() + side.slice(1);
+  fragment.appendChild(new Option(`— Select ${label} Team —`, ''));
 
   const filter = filterText.toLowerCase();
-  const source = getActiveSource();
+  let currentGroup = null;
+  let lastLeague = null;
 
-  for (const leagueName in source) {
-    const teams = source[leagueName].filter(t => t.name.toLowerCase().includes(filter));
-    if (teams.length > 0) {
-      const group = document.createElement('optgroup');
-      group.label = leagueName;
-      teams.sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
-        const opt = new Option(t.name, t.id);
-        if (t.id === currentValue) opt.selected = true;
-        group.appendChild(opt);
-      });
-      select.appendChild(group);
+  // Use ALL_TEAMS which is already pre-sorted by league and name during prepareTeamData()
+  ALL_TEAMS.forEach(t => {
+    if (filter && !t.nameLower.includes(filter)) return;
+
+    if (t.league !== lastLeague) {
+      lastLeague = t.league;
+      currentGroup = document.createElement('optgroup');
+      currentGroup.label = lastLeague;
+      fragment.appendChild(currentGroup);
     }
-  }
+
+    const opt = new Option(t.name, t.id);
+    if (t.id === currentValue) opt.selected = true;
+    currentGroup.appendChild(opt);
+  });
+
+  select.replaceChildren(fragment);
 }
 
 /**
- * Filters the team list for the searchable autocomplete inputs.
+ * Debounce utility to limit how often a function is called.
  */
-function filterTeams(side, text) {
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+/**
+ * Internal function to handle the actual search and rendering logic.
+ */
+const debouncedSearch = debounce((side, text) => {
   const resultsDiv = document.getElementById(side + '-team-results');
-  
-  if (!text.trim()) {
-    resultsDiv.classList.remove('active');
-    return;
+  const searchInput = document.getElementById(side + '-team-search');
+  const filter = text.toLowerCase();
+  const fragment = document.createDocumentFragment();
+
+  const filteredByLeague = new Map();
+  let foundCount = 0;
+
+  // ALL_TEAMS is already pre-sorted by league and name
+  for (const team of ALL_TEAMS) {
+    if (team.nameLower.includes(filter)) {
+      if (!filteredByLeague.has(team.league)) {
+        filteredByLeague.set(team.league, []);
+      }
+      filteredByLeague.get(team.league).push(team);
+      foundCount++;
+    }
   }
 
-  // Clear previous results
-  const fragment = document.createDocumentFragment();
-  resultsDiv.classList.add('active');
-
-  let foundCount = 0;
-  const filter = text.toLowerCase();
-  const searchInput = document.getElementById(side + '-team-search');
-
-  // Use a Map to group filtered teams by league
-  const filteredTeamsByLeague = new Map();
-
-  ALL_TEAMS.forEach(team => {
-    const teamNameLower = team.name.toLowerCase();
-    if (teamNameLower.includes(filter)) {
-      if (!filteredTeamsByLeague.has(team.league)) {
-        filteredTeamsByLeague.set(team.league, []);
-      }
-      filteredTeamsByLeague.get(team.league).push(team);
-    }
-  });
-
-  // Render results grouped by league
-  for (const [leagueName, teams] of filteredTeamsByLeague.entries()) {
+  for (const [leagueName, teams] of filteredByLeague.entries()) {
     const header = document.createElement('div');
     header.className = 'search-results-header';
     header.textContent = leagueName;
     fragment.appendChild(header);
 
-    teams.sort((a, b) => a.name.localeCompare(b.name)).forEach(t => {
+    teams.forEach(t => {
       const item = document.createElement('div');
       item.className = 'search-results-item';
-      // Highlight matched text
-      const startIndex = t.name.toLowerCase().indexOf(filter);
+      
+      const startIndex = t.nameLower.indexOf(filter);
       const highlightedName = startIndex >= 0 
         ? `${t.name.substring(0, startIndex)}<span class="search-highlight">${t.name.substring(startIndex, startIndex + filter.length)}</span>${t.name.substring(startIndex + filter.length)}`
         : t.name;
+
       item.innerHTML = `<img src="${t.badge || PLACEHOLDER}" loading="lazy" decoding="async" alt=""> <span>${highlightedName}</span>`;
       item.onclick = () => {
         setTeam(side, t.id);
         resultsDiv.classList.remove('active');
-        searchInput.value = t.name; // Set the input value to the selected team's name
+        searchInput.value = ''; // Clear the search input
       };
       fragment.appendChild(item);
-      foundCount++;
     });
   }
 
@@ -212,6 +238,18 @@ function filterTeams(side, text) {
   }
 
   resultsDiv.replaceChildren(fragment);
+  resultsDiv.classList.add('active');
+}, 200);
+
+/**
+ * Entry point for filtering teams.
+ */
+function filterTeams(side, text) {
+  if (!text.trim()) {
+    document.getElementById(side + '-team-results').classList.remove('active');
+    return;
+  }
+  debouncedSearch(side, text);
 }
 
 /**
@@ -230,6 +268,12 @@ function setTeam(side, id) {
   state[side + 'Team'] = t ? t : null;
   saveState();
   syncUI();
+
+  // Remove focus from the element (select dropdown or search input) 
+  // to allow keyboard shortcuts to work immediately.
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
 }
 
 /**
@@ -302,6 +346,55 @@ function syncUI() {
 }
 
 /**
+ * Detects if an image is predominantly dark or light to selectively apply a glow.
+ * Samples pixels using a canvas for accurate brightness detection.
+ */
+function analyzeBrightness(img) {
+  const src = img.src;
+  if (!img || !img.complete || img.naturalWidth === 0 || src.includes('data:image/svg+xml')) {
+    return;
+  }
+
+  // Check cache to avoid recalculating if the same image is used multiple times (e.g. main vs mini badge)
+  if (brightnessCache.has(src)) {
+    const cached = brightnessCache.get(src);
+    img.classList.add(cached === 'dark' ? 'is-dark' : 'is-light');
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  canvas.width = 40;
+  canvas.height = 40;
+
+  try {
+    ctx.drawImage(img, 0, 0, 40, 40);
+    const imageData = ctx.getImageData(0, 0, 40, 40).data;
+    let brightnessSum = 0;
+    let count = 0;
+
+    for (let i = 0; i < imageData.length; i += 4) {
+      const r = imageData[i], g = imageData[i+1], b = imageData[i+2], a = imageData[i+3];
+      // Only consider pixels with significant opacity
+      if (a > 125) {
+        brightnessSum += (0.299 * r + 0.587 * g + 0.114 * b);
+        count++;
+      }
+    }
+
+    const brightness = count > 0 ? (brightnessSum / count) : 255;
+    const result = brightness < 140 ? 'dark' : 'light';
+    
+    brightnessCache.set(src, result);
+    img.classList.add(result === 'dark' ? 'is-dark' : 'is-light');
+    img.classList.remove(result === 'dark' ? 'is-light' : 'is-dark');
+  } catch (e) {
+    // Default to no specific class if CORS or other issues prevent analysis
+    img.classList.remove('is-dark', 'is-light');
+  }
+}
+
+/**
  * Updates team badge images with error handling and loading states.
  */
 function setBadge(side, src) {
@@ -316,6 +409,14 @@ function setBadge(side, src) {
   badgeConfigs.forEach(({ img, wrap }) => {
     if (!img || img.dataset.currentSrc === targetSrc) return;
     img.dataset.currentSrc = targetSrc;
+    img.classList.remove('is-dark', 'is-light');
+
+    // Enable CORS for external URLs so analyzeBrightness can read pixel data
+    if (targetSrc.startsWith('http')) {
+      img.crossOrigin = 'anonymous';
+    } else {
+      img.removeAttribute('crossorigin');
+    }
 
     // Immediate display for placeholders to prevent transition flicker and loading delay
     if (targetSrc === PLACEHOLDER) {
@@ -351,12 +452,14 @@ function setBadge(side, src) {
       requestAnimationFrame(() => {
         img.style.opacity = '1'; img.style.transform = 'scale(1)';
         img.removeAttribute('aria-hidden'); 
+        analyzeBrightness(img);
       });
     };
 
     img.onload = finishLoading;
     img.onerror = () => {
       img.src = PLACEHOLDER;
+      img.classList.remove('is-dark', 'is-light');
       img.style.opacity = '1';
       img.style.transform = 'scale(1)';
       img.removeAttribute('aria-hidden');
@@ -516,6 +619,11 @@ function changeTheme(themeName) {
   state.theme = themeName;
   applyTheme(themeName);
   saveState();
+
+  // Remove focus to allow keyboard shortcuts to work immediately.
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
 }
 
 /**
@@ -577,6 +685,11 @@ function addMatchEvent(side) {
   ui.eventText.value = '';
   renderEvents();
   saveState();
+
+  // Remove focus from the input to allow keyboard shortcuts to work immediately.
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
 }
 
 /**

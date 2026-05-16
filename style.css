@@ -56,7 +56,7 @@
     --secondary-btn-hover-bg: rgba(255,255,255,0.13);
 
     /* Badge Visibility */
-    --badge-glow: drop-shadow(0 0 1px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.3));
+    --badge-glow: drop-shadow(0 0 2px rgba(var(--primary-rgb), 0.7)) drop-shadow(0 0 12px rgba(var(--primary-rgb), 0.4));
     --badge-bg-opacity: 45%;
 
     /* Body background gradient (dynamic components) */
@@ -207,6 +207,10 @@
     width: 100%; height: 100%;
     object-fit: contain;
     transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+  }
+
+  /* Only apply glow to dark badges to ensure visibility on dark themes */
+  .badge-wrap img.is-dark, .mini-badge img.is-dark {
     filter: var(--badge-glow);
   }
 
@@ -716,7 +720,7 @@
     --bg-gradient-radial-2-alpha: 0.5;
     --clock-bg: #f1f5f9;
     --clock-border: #64748b;
-    --badge-glow: drop-shadow(0 0 1px rgba(0, 0, 0, 0.2)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    --badge-glow: drop-shadow(0 0 2px rgba(var(--primary-rgb), 0.35)) drop-shadow(0 2px 8px rgba(var(--primary-rgb), 0.18));
     --badge-bg-opacity: 10%;
     /* Light: Technical blueprint grid */
     --bg-texture: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px) 0 0 / 30px 30px;

@@ -18,7 +18,7 @@ const INITIAL_STATE = {
   homeNameOverride: '',
   awayNameOverride: '',
   mode: 'leagues',
-  visibilityMode: 'glow'
+  visibilityMode: 'none'
 };
 
 /**
@@ -332,7 +332,7 @@ function syncUI() {
   if (ui.themeSelect) ui.themeSelect.value = state.theme;
   if (ui.modeSelect) ui.modeSelect.value = state.mode;
   
-  const visMode = state.visibilityMode || 'glow';
+  const visMode = state.visibilityMode || 'none';
   if (ui.visibilityModeSelect) ui.visibilityModeSelect.value = visMode;
   
   document.body.classList.remove('visibility-none', 'visibility-glow', 'visibility-contrast');

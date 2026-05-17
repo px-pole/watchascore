@@ -10,13 +10,21 @@
 </head>
 
 <body>
+  <!-- PRELOADER -->
+  <div id="preloader">
+    <div class="preloader-content">
+      <div class="loader-logo">Watcha<span>Score</span></div>
+      <div class="loader-spinner"></div>
+    </div>
+  </div>
+
 <div class="wrapper">
   <h1 class="sr-only">WatchaScore - Football Scoreboard</h1>
   <!-- HEADER -->
   <header>
     <div class="header-side-left">
       <h1><span>WatchaScore</span></h1>
-      <select id="mode-select" class="theme-select" onchange="changeMode(this.value)">
+      <select id="mode-select" class="theme-select">
         <option disabled>— Mode —</option>
         <option value="leagues">Club Leagues</option>
         <option value="worldcup">World Cup 2026</option>
@@ -24,29 +32,29 @@
     </div>
 
     <div class="header-side-right">
-    <div class="settings-control-wrapper">
-      <select id="visibility-mode-select" class="theme-select" onchange="setVisibilityMode(this.value)">
-        <option disabled>— Visibility FX —</option>
-        <option value="none" selected>No FX</option>
-        <option value="glow">Glow FX</option>
-        <option value="contrast">High Contrast</option>
+      <div class="settings-control-wrapper">
+        <select id="visibility-mode-select" class="theme-select">
+          <option disabled>— Visibility FX —</option>
+          <option value="none" selected>No FX</option>
+          <option value="glow">Glow FX</option>
+          <option value="contrast">High Contrast</option>
+        </select>
+        <i class="fa-solid fa-circle-exclamation fx-indicator" id="fx-suggestion-icon" title="Visibility FX suggested for current badges"></i>
+      </div>
+      <select id="theme-select" class="theme-select">
+        <option disabled>— Theme —</option>
+        <option value="default">Sky Blue</option>
+        <option value="emerald">Emerald</option>
+        <option value="crimson">Crimson</option>
+        <option value="forest">Forest</option>
+        <option value="ocean">Ocean</option>
+        <option value="light">Light</option>
+        <option value="midnight">Midnight</option>
+        <option value="amethyst">Amethyst</option>
       </select>
-      <i class="fa-solid fa-circle-exclamation fx-indicator" id="fx-suggestion-icon" title="Visibility FX suggested for current badges"></i>
-    </div>
-    <select id="theme-select" class="theme-select" onchange="setTheme(this.value)">
-      <option disabled>— Theme —</option>
-      <option value="default">Sky Blue</option>
-      <option value="emerald">Emerald</option>
-      <option value="crimson">Crimson</option>
-      <option value="forest">Forest</option>
-      <option value="ocean">Ocean</option>
-      <option value="light">Light</option>
-      <option value="midnight">Midnight</option>
-      <option value="amethyst">Amethyst</option>
-    </select>
-    <button class="btn btn-secondary copy-link-btn" onclick="copyOBSLink(this)" title="Copy URL for OBS Browser Source">
-      <i class="fa-solid fa-link"></i> Copy OBS Link
-    </button>
+      <button id="copy-obs-btn" class="btn btn-secondary copy-link-btn" title="Copy URL for OBS Browser Source">
+        <i class="fa-solid fa-link"></i> Copy OBS Link
+      </button>
     </div>
   </header>
 
@@ -94,6 +102,59 @@
       <div id="away-events" class="events-list away-events"></div>
     </div>
   </div>
+  <!-- TEAM SELECTION -->
+  <div class="team-selection-panel">
+    <div class="card-title">Team Selection</div>
+    <div class="team-selector-row">
+      <div class="selector-group">
+        <label>Home Team</label>
+        <div class="selector-inner">
+          <div class="mini-badge"><img id="mini-home-badge" src="" alt=""></div>
+          <div class="search-container">
+            <input type="text" class="search-input" id="home-team-search" placeholder="Search or browse..." autocomplete="off">
+            <button type="button" class="clear-search-btn" id="home-clear-search-btn" aria-label="Clear home team search"><i class="fa-solid fa-xmark"></i></button>
+            <div id="home-team-results" class="search-results-popup"></div>
+          </div>
+        </div>
+        <div class="name-input-row">
+          <input type="text" id="home-name-override" placeholder="Custom name override…">
+        </div>
+        <div class="name-input-row mt-2">
+          <label class="btn btn-secondary btn-full btn-small">
+            <span class="upload-button-main-text">
+              <i class="fa-solid fa-upload"></i> Upload Logo
+            </span>
+            <span class="upload-hint-inline">SVG, PNG, JPG. Max 2MB.</span>
+            <input type="file" id="home-logo-upload" accept="image/*" class="hidden">
+          </label>
+        </div>
+      </div>
+      <div class="v-divider" aria-hidden="true"></div>
+      <div class="selector-group">
+        <label>Away Team</label>
+        <div class="selector-inner">
+          <div class="mini-badge"><img id="mini-away-badge" src="" alt=""></div>
+          <div class="search-container">
+            <input type="text" class="search-input" id="away-team-search" placeholder="Search or browse..." autocomplete="off">
+            <button type="button" class="clear-search-btn" id="away-clear-search-btn" aria-label="Clear away team search"><i class="fa-solid fa-xmark"></i></button>
+            <div id="away-team-results" class="search-results-popup"></div>
+          </div>
+        </div>
+        <div class="name-input-row">
+          <input type="text" id="away-name-override" placeholder="Custom name override…">
+        </div>
+        <div class="name-input-row mt-2">
+          <label class="btn btn-secondary btn-full btn-small">
+            <span class="upload-button-main-text">
+              <i class="fa-solid fa-upload"></i> Upload Logo
+            </span>
+            <span class="upload-hint-inline">SVG, PNG, JPG. Max 2MB.</span>
+            <input type="file" id="away-logo-upload" accept="image/*" class="hidden">
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- CONTROLS -->
   <div class="controls-grid">
@@ -110,25 +171,34 @@
           <label>Seconds</label>
           <input type="number" id="clock-sec" min="0" max="59" value="0" placeholder="00">
         </div>
-        <button class="btn btn-secondary" onclick="setClock()">Set</button>
+        <button id="set-clock-btn" class="btn btn-secondary">Set</button>
       </div>
       <div class="clock-btn-row">
-        <button class="btn btn-green" id="start-btn" onclick="toggleClock()" aria-label="Start or pause match clock">▶ Start</button>
-        <button class="btn btn-danger" onclick="resetClock()" aria-label="Reset match clock">↺ Reset</button>
+        <button id="start-btn" class="btn btn-green" aria-label="Start or pause match clock">▶ Start</button>
+        <button id="reset-clock-btn" class="btn btn-danger" aria-label="Reset match clock">↺ Reset</button>
       </div>
-      <div class="footer-text" style="font-size: 10px; margin-top: 10px; opacity: 0.7;">
-        <i class="fa-solid fa-keyboard"></i> Shortcuts: [Space] Start/Pause | [H] Home Goal | [A] Away Goal | [Backspace] Undo Event
+      <div class="shortcuts-chip-container">
+        <div class="shortcuts-chip" aria-haspopup="true">
+          <i class="fa-solid fa-keyboard"></i> Keyboard Shortcuts
+          <div class="shortcuts-popup" role="tooltip">
+            <div class="shortcut-row"><span>[Space]</span> Start / Pause</div>
+            <div class="shortcut-row"><span>[H]</span> Home Goal</div>
+            <div class="shortcut-row"><span>[A]</span> Away Goal</div>
+            <div class="shortcut-row"><span>[Backspace]</span> Undo Event</div>
+            <div class="shortcut-row"><span>[Shift] + [X]</span> Reset All</div>
+          </div>
+        </div>
       </div>
       <hr class="divider" aria-hidden="true">
-      <div class="card-title" style="margin-bottom:10px;">Match Status</div>
+      <div class="card-title mb-2">Match Status</div>
       <div class="status-row">
-        <button class="status-btn" onclick="setStatus('')" aria-label="Clear match status">None</button>
-        <button class="status-btn" onclick="showStartTimeModal()" aria-label="Set status to Not Started">Not Started</button>
-        <button class="status-btn" onclick="setStatus('LIVE')" aria-label="Set status to Live">Live</button>
-        <button class="status-btn" onclick="setStatus('HT')" aria-label="Set status to Half Time">HT</button>
-        <button class="status-btn" onclick="setStatus('FULL-TIME')" aria-label="Set status to Full Time">FT</button>
-        <button class="status-btn" onclick="setStatus('ET')" aria-label="Set status to Extra Time">ET</button>
-        <button class="status-btn" onclick="setStatus('PEN')" aria-label="Set status to Penalties">Pen</button>
+        <button class="status-btn" data-status="" aria-label="Clear match status">None</button>
+        <button id="status-btn-not-started" class="status-btn" data-status="NOT STARTED" aria-label="Set status to Not Started">Not Started</button>
+        <button class="status-btn" data-status="LIVE" aria-label="Set status to Live">Live</button>
+        <button class="status-btn" data-status="HT" aria-label="Set status to Half Time">HT</button>
+        <button class="status-btn" data-status="FULL-TIME" aria-label="Set status to Full Time">FT</button>
+        <button class="status-btn" data-status="ET" aria-label="Set status to Extra Time">ET</button>
+        <button class="status-btn" data-status="PEN" aria-label="Set status to Penalties">Pen</button>
       </div>
     </div>
 
@@ -139,97 +209,50 @@
         <div class="score-ctrl-group">
           <label>Home Score</label>
           <div class="score-btns">
-            <button class="btn btn-minus" onclick="changeScore('home',-1)" aria-label="Decrease home score">−</button>
+            <button class="btn btn-minus" data-side="home" data-delta="-1" aria-label="Decrease home score">−</button>
             <span class="score-val" id="ctrl-home-score">0</span>
-            <button class="btn btn-plus" onclick="changeScore('home',1)" aria-label="Increase home score">+</button>
+            <button class="btn btn-plus" data-side="home" data-delta="1" aria-label="Increase home score">+</button>
           </div>
         </div>
         <div class="score-ctrl-group">
           <label>Away Score</label>
           <div class="score-btns">
-            <button class="btn btn-minus" onclick="changeScore('away',-1)" aria-label="Decrease away score">−</button>
+            <button class="btn btn-minus" data-side="away" data-delta="-1" aria-label="Decrease away score">−</button>
             <span class="score-val" id="ctrl-away-score">0</span>
-            <button class="btn btn-plus" onclick="changeScore('away',1)" aria-label="Increase away score">+</button>
+            <button class="btn btn-plus" data-side="away" data-delta="1" aria-label="Increase away score">+</button>
           </div>
         </div>
       </div>
       <hr class="divider" aria-hidden="true">
-      <button class="btn btn-danger btn-full" onclick="resetScores()">Reset Scores</button>
-      <button class="btn btn-danger btn-full" style="margin-top: 10px;" onclick="resetAll()">Reset All</button>
+      <button id="reset-scores-btn" class="btn btn-danger btn-full">Reset Scores</button>
+      <button id="reset-teams-btn" class="btn btn-danger btn-full mt-2">Reset Teams</button>
+      <button id="reset-all-btn" class="btn btn-danger btn-full mt-2">Reset All</button>
     </div>
 
     <!-- MATCH EVENTS -->
     <div class="card">
       <div class="card-title">Match Events</div>
-      <div class="selector-group" style="margin-top: 12px;">
+      <div class="selector-group mt-3">
         <label>Event Type</label>
-        <select id="event-icon">
+        <select id="event-icon" class="theme-select">
           <option value="goal">⚽ Goal</option>
           <option value="yellow">🟨 Yellow Card</option>
           <option value="red">🟥 Red Card</option>
         </select>
       </div>
-      <div class="selector-group" style="margin-top: 12px;">
+      <div class="selector-group mt-3">
         <label>Event (e.g. Scorer + Minute)</label>
         <input type="text" id="event-text" placeholder="e.g. Maradona 55">
-        <div class="clock-btn-row" style="margin-top: 8px;">
-          <button class="btn btn-primary" id="add-event-home" onclick="addMatchEvent('home')"><span>Home</span></button>
-          <button class="btn btn-primary" id="add-event-away" onclick="addMatchEvent('away')"><span>Away</span></button>
+        <div class="clock-btn-row mt-2">
+          <button class="btn btn-primary" id="add-event-home"><span>Home</span></button>
+          <button class="btn btn-primary" id="add-event-away"><span>Away</span></button>
         </div>
       </div> 
-      <button class="btn btn-secondary btn-full" style="margin-top: 10px;" onclick="removeLastEvent()">
+      <button id="remove-last-event-btn" class="btn btn-secondary btn-full mt-2">
         <i class="fa-solid fa-rotate-left"></i> Remove Last Event
       </button>
     </div>
 
-  </div>
-
-  <!-- TEAM SELECTION -->
-  <div class="team-selection-panel">
-    <div class="card-title">Team Selection</div>
-    <div class="team-selector-row">
-      <div class="selector-group">
-        <label>Home Team</label>
-        <div class="selector-inner">
-          <div class="mini-badge"><img id="mini-home-badge" src="" alt=""></div>
-          <div class="search-container">
-            <input type="text" class="search-input" id="home-team-search" placeholder="Search or browse..." oninput="filterTeams('home', this.value)" onclick="filterTeams('home', this.value)" autocomplete="off" aria-controls="home-team-results">
-            <button type="button" class="clear-search-btn" id="home-clear-search-btn" aria-label="Clear home team search"><i class="fa-solid fa-xmark"></i></button>
-            <div id="home-team-results" class="search-results-popup"></div>
-          </div>
-        </div>
-        <div class="name-input-row">
-          <input type="text" id="home-name-override" placeholder="Custom name override…" oninput="overrideName('home', this.value)">
-        </div>
-        <div class="name-input-row" style="margin-top: 8px;">
-          <label class="btn btn-secondary btn-full" style="font-size: 12px; padding: 6px;">
-            <i class="fa-solid fa-upload"></i> Upload Logo
-            <input type="file" accept="image/*" style="display:none" onchange="handleLogoUpload('home', this)">
-          </label>
-        </div>
-      </div>
-      <div class="v-divider" aria-hidden="true"></div>
-      <div class="selector-group">
-        <label>Away Team</label>
-        <div class="selector-inner">
-          <div class="mini-badge"><img id="mini-away-badge" src="" alt=""></div>
-          <div class="search-container">
-            <input type="text" class="search-input" id="away-team-search" placeholder="Search or browse..." oninput="filterTeams('away', this.value)" onclick="filterTeams('away', this.value)" autocomplete="off" aria-controls="away-team-results">
-            <button type="button" class="clear-search-btn" id="away-clear-search-btn" aria-label="Clear away team search"><i class="fa-solid fa-xmark"></i></button>
-            <div id="away-team-results" class="search-results-popup"></div>
-          </div>
-        </div>
-        <div class="name-input-row">
-          <input type="text" id="away-name-override" placeholder="Custom name override…" oninput="overrideName('away', this.value)">
-        </div>
-        <div class="name-input-row" style="margin-top: 8px;">
-          <label class="btn btn-secondary btn-full" style="font-size: 12px; padding: 6px;">
-            <i class="fa-solid fa-upload"></i> Upload Logo
-            <input type="file" accept="image/*" style="display:none" onchange="handleLogoUpload('away', this)">
-          </label>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- FOOTER -->
@@ -238,12 +261,11 @@
       <div class="card-title">About This Project</div>
       <div class="footer-text">
         <p><strong>WatchaScore</strong> is a free, open-source football scoreboard overlay designed for streamers and amateur broadcasters. Customize team names, scores, match events, and the clock in real-time.</p>
-        <p>I am continuously working to improve WatchaScore. Your <a href="#" onclick="toggleContactForm(); return false;">feedback</a> and suggestions are highly valued!</p>
+        <p>I am continuously working to improve WatchaScore. Your <a href="#" id="feedback-link">feedback</a> and suggestions are highly valued!</p>
         <p>If you find this tool useful, please consider supporting its development. Every contribution helps keep the project alive and growing.</p>
         <p>Find the project on <a href="https://github.com/px-pole/watchascore" target="_blank">GitHub</a>.</p>
       </div>
-
-      <button class="btn btn-secondary btn-full" style="margin-top: 16px;" onclick="toggleContactForm()">
+      <button id="toggle-contact-btn" class="btn btn-secondary btn-full mt-3">
         <i class="fa-solid fa-envelope"></i> Send Feedback
       </button>
 
@@ -258,19 +280,19 @@
         <a href="https://www.buymeacoffee.com/vds1" target="_blank" class="btn btn-secondary"><i class="fa-solid fa-mug-hot"></i> Buy Me a Coffee</a>
       </div>
     </div>
+    <div class="copyright">
+      &copy; <span id="current-year"></span> WatchaScore. All rights reserved.
+    </div>
   </footer>
-  <div style="text-align: center; margin-top: 15px; opacity: 0.5; font-size: 12px; color: var(--text-muted);">
-    &copy; <span id="current-year"></span> WatchaScore. All rights reserved.
-  </div>
 
   <!-- MODAL -->
   <div id="modal-overlay" class="modal-overlay">
     <div class="modal-card">
       <div class="card-title">Confirm Reset</div>
-      <p class="footer-text" style="margin-bottom: 24px; font-size: 15px; color: var(--text);">Are you sure you want to reset the entire scoreboard? This cannot be undone.</p>
+      <p class="footer-text mb-3 modal-body-text">Are you sure you want to reset the entire scoreboard? This cannot be undone.</p>
       <div class="clock-btn-row">
-        <button class="btn btn-danger" onclick="confirmResetAll()">Yes, Reset All</button>
-        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button id="confirm-reset-all-btn" class="btn btn-danger">Yes, Reset All</button>
+        <button id="close-reset-modal-btn" class="btn btn-secondary modal-close-btn">Cancel</button>
       </div>
     </div>
   </div>
@@ -279,11 +301,28 @@
   <div id="start-time-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="card-title">Set Start Time</div>
-      <p class="footer-text" style="margin-bottom: 16px;">Enter the scheduled kick-off time:</p>
-      <input type="time" id="start-time-input" class="search-input" style="margin-bottom: 20px; text-align: center; font-size: 18px; width: 140px; margin-left: auto; margin-right: auto; display: block;">
+      <p class="footer-text mb-3">Enter the scheduled kick-off time:</p>
+      <input type="time" id="start-time-input" class="search-input start-time-input">
       <div class="clock-btn-row">
-        <button class="btn btn-primary" onclick="confirmStartTime()">Confirm</button>
-        <button class="btn btn-secondary" onclick="closeStartTimeModal()">Cancel</button>
+        <button id="confirm-start-time-btn" class="btn btn-primary">Confirm</button>
+        <button id="close-start-time-modal-btn" class="btn btn-secondary modal-close-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGO PREVIEW MODAL -->
+  <div id="crop-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="card-title">Preview Logo</div>
+      <p class="footer-text mb-3">Ensure your logo looks correct before applying.</p>
+      <div class="crop-preview-area mb-3">
+        <div class="badge-wrap" style="width: 120px; height: 120px; margin: 0 auto;">
+           <img id="crop-preview-img" src="" alt="Logo Preview">
+        </div>
+      </div>
+      <div class="clock-btn-row">
+        <button id="confirm-crop-btn" class="btn btn-primary">Apply Logo</button>
+        <button id="close-crop-modal-btn" class="btn btn-secondary modal-close-btn">Cancel</button>
       </div>
     </div>
   </div>

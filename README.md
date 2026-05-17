@@ -28,7 +28,7 @@ For power users, WatchaScore supports global hotkeys to keep your hands on the a
 | `[H]` | Increment Home Team score |
 | `[A]` | Increment Away Team score |
 | `[Backspace]` | Undo/Remove the last match event |
-| `[Shift] + [R]` | Trigger "Reset All" confirmation |
+| `[Shift] + [X]` | Trigger "Reset All" confirmation |
 
 *Note: Shortcuts are disabled while typing in input fields.*
 

@@ -32,6 +32,11 @@ const EVENT_ICON_MAP = {
 };
 
 /**
+ * STATUS MAPPINGS for display labels
+ */
+const STATUS_LABELS = { 'HT': 'HALF-TIME', 'FULL-TIME': 'FULL-TIME', 'NOT STARTED': 'NOT STARTED' };
+
+/**
  * THEME LIST for class management
  */
 const THEMES = ['emerald', 'crimson', 'forest', 'ocean', 'light', 'midnight', 'amethyst'];
@@ -41,6 +46,8 @@ let timerInterval = null; // Use a runtime variable instead of state for the int
 let ALL_TEAMS = []; // Global array to store all teams for efficient searching
 let TEAM_MAP = new Map(); // Fast lookup by ID
 const brightnessCache = new Map(); // Cache results of image analysis to avoid redundant canvas operations
+let pendingLogoSide = null; // Track which side is currently being previewed
+let pendingLogoBase64 = null; // Store base64 data during preview
 
 // Reusable offscreen canvas for performance
 const analysisCanvas = document.createElement('canvas');
@@ -83,12 +90,19 @@ function cacheElements() {
   ui.ctrlAwayScore = document.getElementById('ctrl-away-score');
 
   const ids = [
-    'clock-display', 'clock-status-text', 'start-btn', 'home-events', 'away-events', 'home-clear-search-btn', 'away-clear-search-btn',
-    'home-name', 'away-name', 'event-icon',
-    'event-text', 'home-name-override', 'away-name-override', 'home-team-search',
-    'away-team-search', 'theme-select', 'mode-select', 'tournament-group-display', 'visibility-mode-select',
-    'add-event-home', 'add-event-away', 'fx-suggestion-icon',
-    'home-badge', 'home-badge-wrap', 'mini-home-badge', 'away-badge', 'away-badge-wrap', 'mini-away-badge'
+    'clock-display', 'clock-status-text', 'start-btn', 'home-events', 'away-events', 
+    'home-clear-search-btn', 'away-clear-search-btn', 'home-name', 'away-name', 
+    'event-icon', 'event-text', 'home-name-override', 'away-name-override', 
+    'home-team-search', 'away-team-search', 'theme-select', 'mode-select', 
+    'tournament-group-display', 'visibility-mode-select', 'add-event-home', 
+    'add-event-away', 'fx-suggestion-icon', 'home-badge', 'home-badge-wrap', 
+    'mini-home-badge', 'away-badge', 'away-badge-wrap', 'mini-away-badge',
+    'copy-obs-btn', 'home-logo-upload', 'away-logo-upload', 'set-clock-btn', 
+    'reset-clock-btn', 'reset-scores-btn', 'reset-teams-btn', 'reset-all-btn', 
+    'confirm-reset-all-btn', 'confirm-start-time-btn', 'remove-last-event-btn',
+    'crop-modal', 'crop-preview-img', 'confirm-crop-btn', 'close-crop-modal-btn',
+    'toggle-contact-btn', 'feedback-link', 'status-btn-not-started',
+    'clock-min', 'clock-sec'
   ];
 
   ids.forEach(id => {
@@ -99,22 +113,96 @@ function cacheElements() {
   // Cache status buttons
   ui.statusBtns = document.querySelectorAll('.status-btn');
 
-  // Add event listeners for clear search buttons
-  if (ui.homeClearSearchBtn) {
-    ui.homeClearSearchBtn.addEventListener('click', () => clearSearchInput('home'));
-  }
-  if (ui.awayClearSearchBtn) {
-    ui.awayClearSearchBtn.addEventListener('click', () => clearSearchInput('away'));
-  }
-
-  // Special wraps
+  // Re-establish wraps for mini badges (parents of the img elements)
   ui.miniHomeBadgeWrap = ui.miniHomeBadge?.parentElement;
   ui.miniAwayBadgeWrap = ui.miniAwayBadge?.parentElement;
 
-  // Set Accessibility attributes
-  if (ui.scoreHome) ui.scoreHome.setAttribute('aria-live', 'polite');
-  if (ui.scoreAway) ui.scoreAway.setAttribute('aria-live', 'polite');
-  if (ui.clockDisplay) ui.clockDisplay.setAttribute('role', 'timer');
+  setupListeners();
+}
+
+/**
+ * Centralized event listener setup to remove inline HTML handlers.
+ */
+function setupListeners() {
+  // Theme, Mode, FX
+  ui.themeSelect?.addEventListener('change', (e) => setTheme(e.target.value));
+  ui.modeSelect?.addEventListener('change', (e) => changeMode(e.target.value));
+  ui.visibilityModeSelect?.addEventListener('change', (e) => setVisibilityMode(e.target.value));
+  
+  // OBS and Utils
+  ui.copyObsBtn?.addEventListener('click', () => copyOBSLink(ui.copyObsBtn));
+  ui.toggleContactBtn?.addEventListener('click', toggleContactForm);
+  ui.feedbackLink?.addEventListener('click', (e) => { e.preventDefault(); toggleContactForm(); });
+
+  // Score & Teams
+  ui.resetScoresBtn?.addEventListener('click', resetScores);
+  ui.resetTeamsBtn?.addEventListener('click', resetTeams);
+  ui.resetAllBtn?.addEventListener('click', resetAll);
+  ui.confirmResetAllBtn?.addEventListener('click', confirmResetAll);
+  
+  // Crop Modal
+  ui.confirmCropBtn?.addEventListener('click', confirmLogoUpload);
+  ui.closeCropModalBtn?.addEventListener('click', () => ui.cropModal.classList.remove('active'));
+
+  document.querySelectorAll('.btn-plus, .btn-minus').forEach(btn => {
+    btn.addEventListener('click', () => changeScore(btn.dataset.side, parseInt(btn.dataset.delta)));
+  });
+
+  // Search & Inputs
+  ['home', 'away'].forEach(side => {
+    const searchInput = ui[`${side}TeamSearch`];
+    searchInput?.addEventListener('input', (e) => filterTeams(side, e.target.value));
+    searchInput?.addEventListener('click', (e) => filterTeams(side, e.target.value));
+    ui[`${side}ClearSearchBtn`]?.addEventListener('click', () => { searchInput.value = ''; filterTeams(side, ''); });
+    ui[`${side}NameOverride`]?.addEventListener('input', (e) => overrideName(side, e.target.value));
+    ui[`${side}LogoUpload`]?.addEventListener('change', (e) => handleLogoUpload(side, e.target));
+  });
+
+  // Clock
+  ui.startBtn?.addEventListener('click', toggleClock);
+  ui.setClockBtn?.addEventListener('click', setClock);
+  ui.resetClockBtn?.addEventListener('click', resetClock);
+  ui.confirmStartTimeBtn?.addEventListener('click', confirmStartTime);
+  ui.statusBtnNotStarted?.addEventListener('click', showStartTimeModal);
+  
+  // Clock Validation: Prevent letters and negative numbers
+  [ui.clockMin, ui.clockSec].forEach(input => {
+    if (!input) return;
+    input.addEventListener('keydown', (e) => {
+      if (['e', 'E', '-', '+', '.'].includes(e.key)) e.preventDefault();
+    });
+    input.addEventListener('input', () => {
+      let val = input.value.replace(/\D/g, '');
+      let num = parseInt(val) || 0;
+      if (input.id === 'clock-sec') num = Math.min(num, 59);
+      input.value = num;
+    });
+  });
+
+  // Status Buttons with data-status
+  ui.statusBtns.forEach(btn => {
+    if (btn.hasAttribute('data-status')) {
+      btn.addEventListener('click', () => setStatus(btn.dataset.status));
+    }
+  });
+
+  // Ensure Event Type selector blurs after an option is picked
+  ui.eventIcon?.addEventListener('change', () => ui.eventIcon.blur());
+
+  // Modals
+  document.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+  }));
+
+  // Events Timeline Delegation (removes need for inline onclick)
+  ['home', 'away'].forEach(side => {
+    ui[`${side}Events`]?.addEventListener('click', (e) => {
+      const icon = e.target.closest('i');
+      if (icon && icon.dataset.index !== undefined) {
+        removeEvent(parseInt(icon.dataset.index));
+      }
+    });
+  });
 }
 
 /**
@@ -174,13 +262,21 @@ function prepareTeamData() {
  * Switches between Club Leagues and World Cup data.
  */
 function changeMode(mode) {
-  state.mode = mode;
-  prepareTeamData();
-  // Reset selected teams when mode changes to prevent league/group mismatch
-  state.homeTeam = null;
-  state.awayTeam = null;
-  saveState();
-  syncUI();
+  const update = () => {
+    state.mode = mode;
+    prepareTeamData();
+    // Reset selected teams when mode changes to prevent league/group mismatch
+    state.homeTeam = null;
+    state.awayTeam = null;
+    saveState();
+    syncUI();
+  };
+
+  if (document.startViewTransition) {
+    document.startViewTransition(update);
+  } else {
+    update();
+  }
 
   // Remove focus to allow keyboard shortcuts to work immediately.
   if (document.activeElement && typeof document.activeElement.blur === 'function') {
@@ -232,7 +328,7 @@ const debouncedSearch = debounce((side, text) => {
   resultsDiv.classList.add('active');
   searchInput.focus();
   resultsDiv.scrollTop = 0;
-}, 200);
+}, 50);
 
 function renderSearchMode(fragment, side, filter, resultsDiv, searchInput) {
     const filteredByLeague = new Map();
@@ -365,6 +461,19 @@ function saveState() {
  * This is the single source of truth for the UI.
  */
 function syncUI() {
+  const wrapper = document.querySelector('.wrapper');
+  const bothTeamsPicked = !!(state.homeTeam && state.awayTeam);
+  const currentlySelectedClass = wrapper.classList.contains('teams-selected');
+
+  // Use View Transitions API if supported for "smooth go down" effect
+  if (bothTeamsPicked !== currentlySelectedClass) {
+    if (document.startViewTransition) {
+      document.startViewTransition(() => wrapper.classList.toggle('teams-selected', bothTeamsPicked));
+    } else {
+      wrapper.classList.toggle('teams-selected', bothTeamsPicked);
+    }
+  }
+
   ['home', 'away'].forEach(side => {
     const score = state[side + 'Score'];
     const team = state[side + 'Team'];
@@ -440,47 +549,57 @@ function analyzeBrightness(img) {
     return;
   }
 
+  // Helper to apply classes and update UI
+  const applyResult = (result) => {
+    img.classList.add(result === 'dark' ? 'is-dark' : 'is-light');
+    img.classList.remove(result === 'dark' ? 'is-light' : 'is-dark');
+    updateVisibilityHighlight();
+  };
+
   // Check cache to avoid recalculating if the same image is used multiple times (e.g. main vs mini badge)
   if (brightnessCache.has(src)) {
-    const cached = brightnessCache.get(src);
-    img.classList.add(cached === 'dark' ? 'is-dark' : 'is-light');
-    img.classList.remove(cached === 'dark' ? 'is-light' : 'is-dark');
+    applyResult(brightnessCache.get(src));
     return;
   }
 
   if (!analysisCtx) return;
 
-  try {
-    analysisCtx.clearRect(0, 0, 40, 40);
-    analysisCtx.drawImage(img, 0, 0, 40, 40);
-    const imageData = analysisCtx.getImageData(0, 0, 40, 40).data;
-    let brightnessSum = 0, saturationSum = 0, count = 0;
-    
-    for (let i = 0; i < imageData.length; i += 4) {
-      const r = imageData[i], g = imageData[i+1], b = imageData[i+2], a = imageData[i+3];
-      // Only consider pixels with significant opacity
-      if (a > 125) {
-        brightnessSum += (0.299 * r + 0.587 * g + 0.114 * b);
-        saturationSum += (Math.max(r, g, b) - Math.min(r, g, b));
-        count++;
-      }
+  const analyze = () => {
+    // Double-check cache in case multiple calls for the same src were queued during idle
+    if (brightnessCache.has(src)) {
+      applyResult(brightnessCache.get(src));
+      return;
     }
 
-    const brightness = count > 0 ? (brightnessSum / count) : 255;
-    const avgSat = count > 0 ? (saturationSum / count) : 0;
+    try {
+      analysisCtx.clearRect(0, 0, 40, 40);
+      analysisCtx.drawImage(img, 0, 0, 40, 40);
+      const imageData = analysisCtx.getImageData(0, 0, 40, 40).data;
+      let brightnessSum = 0, count = 0;
+      
+      for (let i = 0; i < imageData.length; i += 4) {
+        const r = imageData[i], g = imageData[i+1], b = imageData[i+2], a = imageData[i+3];
+        if (a > 125) {
+          brightnessSum += (0.299 * r + 0.587 * g + 0.114 * b);
+          count++;
+        }
+      }
 
-    // Optimized logic for broadcast visibility:
-    // Anything with brightness below 145 is considered "dark" for glow purposes on dark themes.
-    // Anything above 160 is considered "light" and might need a stroke on light themes.
-    const result = (brightness < 145) ? 'dark' : 'light';
+      const brightness = count > 0 ? (brightnessSum / count) : 255;
+      const result = (brightness < 145) ? 'dark' : 'light';
 
-    brightnessCache.set(src, result);
-    img.classList.add(result === 'dark' ? 'is-dark' : 'is-light');
-    img.classList.remove(result === 'dark' ? 'is-light' : 'is-dark');
-    updateVisibilityHighlight();
-  } catch (e) {
-    // Default to no specific class if CORS or other issues prevent analysis
-    img.classList.remove('is-dark', 'is-light');
+      brightnessCache.set(src, result);
+      applyResult(result);
+    } catch (e) {
+      img.classList.remove('is-dark', 'is-light');
+    }
+  };
+
+  // Defer heavy calculation to idle time to keep the UI snappy during team selection
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(analyze, { timeout: 2000 });
+  } else {
+    setTimeout(analyze, 1);
   }
 }
 
@@ -629,20 +748,50 @@ function handleLogoUpload(side, input) {
   const file = input.files[0];
   if (!file) return;
 
+  // Validation: Limit to 2MB to prevent localStorage quota issues and maintain UI performance.
+  const MAX_SIZE_MB = 2;
+  const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+  if (file.size > MAX_SIZE_BYTES) {
+    alert(`The selected image is too large (${(file.size / (1024 * 1024)).toFixed(2)}MB). Please upload a file smaller than ${MAX_SIZE_MB}MB.`);
+    input.value = ''; // Reset the input so the same file can be attempted again if resized
+    return;
+  }
+
+  const label = input.closest('label');
+  if (label) label.classList.add('uploading');
+
   const reader = new FileReader();
   reader.onload = (e) => {
-    const base64 = e.target.result;
+    if (label) label.classList.remove('uploading');
     
-    // If no team is selected, create a placeholder object in state
-    if (!state[side + 'Team']) {
-      state[side + 'Team'] = { id: 'custom-' + side, name: side === 'home' ? 'Home' : 'Away' };
-    }
-    
-    state[side + 'Team'].badge = base64;
-    setBadge(side, base64);
-    saveState();
+    pendingLogoSide = side;
+    pendingLogoBase64 = e.target.result;
+
+    // Open Preview Modal
+    ui.cropPreviewImg.src = pendingLogoBase64;
+    ui.cropModal.classList.add('active');
+    input.value = ''; // Reset input so same file can be chosen again
+  };
+  reader.onerror = () => {
+    if (label) label.classList.remove('uploading');
   };
   reader.readAsDataURL(file);
+}
+
+/**
+ * Finalizes the custom logo upload after user confirmation.
+ */
+function confirmLogoUpload() {
+  if (!pendingLogoSide || !pendingLogoBase64) return;
+
+  if (!state[pendingLogoSide + 'Team']) {
+    state[pendingLogoSide + 'Team'] = { id: 'custom-' + pendingLogoSide, name: pendingLogoSide === 'home' ? 'Home' : 'Away' };
+  }
+
+  state[pendingLogoSide + 'Team'].badge = pendingLogoBase64;
+  setBadge(pendingLogoSide, pendingLogoBase64);
+  saveState();
+  ui.cropModal.classList.remove('active');
 }
 
 /**
@@ -690,6 +839,16 @@ function resetScores() {
 }
 
 /**
+ * Resets selected teams for both sides.
+ */
+function resetTeams() {
+  state.homeTeam = null;
+  state.awayTeam = null;
+  saveState();
+  syncUI();
+}
+
+/**
  * Helper for formatting time (e.g. 5 becomes "05").
  */
 function pad(n) { return String(n).padStart(2,'0'); }
@@ -707,8 +866,8 @@ function renderClock() {
  * Manually sets the clock based on user input fields.
  */
 function setClock() {
-  const m = parseInt(document.getElementById('clock-min').value) || 0;
-  const s = parseInt(document.getElementById('clock-sec').value) || 0;
+  const m = parseInt(ui.clockMin.value) || 0;
+  const s = parseInt(ui.clockSec.value) || 0;
   state.clockSec = m * 60 + s;
   renderClock();
   saveState();
@@ -754,8 +913,8 @@ function resetClock() {
   renderClock();
   ui.startBtn.textContent = '▶ Start';
   ui.startBtn.className = 'btn btn-green';
-  document.getElementById('clock-min').value = 0;
-  document.getElementById('clock-sec').value = 0;
+  ui.clockMin.value = 0;
+  ui.clockSec.value = 0;
   saveState();
 }
 
@@ -779,18 +938,14 @@ function setTheme(themeName) {
 function setStatus(s) {
   state.status = s;
   
-  const statusLabels = { 'HT': 'HALF-TIME', 'FULL-TIME': 'FULL-TIME' };
-  let label = statusLabels[s] || s;
+  let label = STATUS_LABELS[s] || s;
   if (s === 'NOT STARTED' && state.startTime) {
     label = `KICK OFF ${state.startTime}`;
   }
   ui.clockStatusText.textContent = label;
 
-  const valToLabel = { '': 'NONE', 'HT': 'HT', 'FULL-TIME': 'FT', 'ET': 'ET', 'PEN': 'PEN' };
-  const targetLabel = (valToLabel[s] || s).toUpperCase();
-
   ui.statusBtns.forEach(b => {
-    const isActive = b.textContent.trim().toUpperCase() === targetLabel;
+    const isActive = b.dataset.status === s;
     b.classList.toggle('active', isActive);
     b.setAttribute('aria-pressed', isActive);
   });
@@ -856,7 +1011,7 @@ function renderEvents() {
   
   state.events.forEach((ev, idx) => {
     const iconData = EVENT_ICON_MAP[ev.icon] || EVENT_ICON_MAP.goal;
-    const iconHtml = `<i class="fa-solid ${iconData.class}" style="cursor:default; font-size:10px; ${iconData.color ? 'color:' + iconData.color : ''}" onclick="removeEvent(${idx})"></i>`;
+    const iconHtml = `<i class="fa-solid ${iconData.class}" style="cursor:pointer; font-size:10px; ${iconData.color ? 'color:' + iconData.color : ''}" data-index="${idx}" title="Click to remove"></i>`;
     const item = document.createElement('div');
     item.className = 'event-item';
     item.innerHTML = ev.side === 'home' 
@@ -940,10 +1095,19 @@ function copyOBSLink(btn) {
   });
 }
 
-// Close search popups when clicking outside
+// Global click handler to manage popups and clear element focus
 document.addEventListener('click', (e) => {
+  // 1. Close team search popups when clicking outside their container
   if (!e.target.closest('.search-container')) {
     document.querySelectorAll('.search-results-popup').forEach(p => p.classList.remove('active'));
+  }
+
+  // 2. Auto-blur selectors and inputs when clicking away
+  // This ensures keyboard shortcuts (H, A, Space) work immediately after interacting with the UI
+  const activeEl = document.activeElement;
+  const isLocked = activeEl && ['SELECT', 'INPUT', 'TEXTAREA'].includes(activeEl.tagName);
+  if (isLocked && !e.target.closest('select') && !e.target.closest('input') && !e.target.closest('textarea')) {
+    activeEl.blur();
   }
 });
 
@@ -961,8 +1125,21 @@ document.addEventListener('keydown', (e) => {
     case 'Space': e.preventDefault(); toggleClock(); break;
     case 'KeyH': changeScore('home', 1); break;
     case 'KeyA': changeScore('away', 1); break;
-    case 'KeyR': if(e.shiftKey) resetAll(); break;
+    case 'KeyX': if(e.shiftKey) resetAll(); break;
     case 'Backspace': removeLastEvent(); break;
+  }
+});
+
+/**
+ * Hides the preloader once all assets (images, fonts, scripts) are fully loaded.
+ */
+window.addEventListener('load', () => {
+  const preloader = document.getElementById('preloader');
+  if (preloader) {
+    preloader.classList.add('preloader-hidden');
+    document.body.classList.add('content-loaded');
+    // Remove from DOM after transition to free up resources
+    setTimeout(() => preloader.remove(), 600);
   }
 });
 

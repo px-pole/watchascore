@@ -308,6 +308,9 @@
       min-width: 90px;
       font-variant-numeric: tabular-nums;
       text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .clock-status {
       font-family: 'Barlow Condensed', sans-serif;
@@ -315,6 +318,7 @@
       letter-spacing: 2px;
       color: var(--text-muted);
       text-transform: uppercase;
+      min-height: 14px;
     }
   }
 
@@ -423,7 +427,7 @@
       content: '';
       position: absolute;
       left: 10px;
-      top: 7px;
+      top: 12px;
       width: 16px;
       height: 16px;
       background-color: var(--text-muted);
@@ -433,12 +437,41 @@
       mask-size: contain;
       z-index: 10;
       pointer-events: none;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    /* Always a search icon, color changes on focus */
     &:focus-within::before {
       background-color: var(--primary-color);
     }
+  }
+  .clear-search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%) scale(0.6);
+    opacity: 0;
+    visibility: hidden;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 5px;
+    z-index: 11;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      color: var(--danger-color);
+      transform: translateY(-50%) scale(1.15) rotate(90deg);
+    }
+  }
+
+  /* Show clear button when input has text */
+  .search-container:has(input:not(:placeholder-shown)) .clear-search-btn {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) scale(1);
   }
   .search-results-popup {
     position: absolute;
@@ -450,8 +483,9 @@
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid color-mix(in srgb, var(--border-color), transparent 30%);
     border-radius: 8px;
-    max-height: 350px;
+    max-height: 60vh;
     overflow-y: auto;
+    scroll-behavior: smooth;
     z-index: 3000;
     display: none;
     margin-top: 5px;
@@ -479,6 +513,19 @@
     font-weight: 700;
     position: sticky; top: 0;
     transition: background-color 0.5s ease;
+
+    &.collapsible {
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      &:hover { background: var(--bg-search-item-hover); color: var(--primary-color); }
+    }
+  }
+  .league-items-container {
+    display: none;
+    &.active { display: block; }
   }
   .search-results-item { 
     padding: 7px 10px; 
@@ -496,6 +543,18 @@
     }
   }
   .search-results-none { padding: 20px; color: var(--text-muted); text-align: center; font-size: 14px; font-style: italic; }
+  .search-results-close {
+    padding: 12px;
+    text-align: center;
+    background: color-mix(in srgb, var(--bg-search-header), #000 20%);
+    border-top: 1px solid var(--border-color);
+    position: sticky; bottom: 0;
+    cursor: pointer;
+    display: none;
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    color: var(--primary-color);
+    &:hover { background: var(--bg-search-item-hover); }
+  }
   .mini-badge {
     width: 40px; aspect-ratio: 1 / 1; flex-shrink: 0;
     border-radius: 6px;
@@ -518,8 +577,6 @@
     &:hover img { transform: scale(1.15); }
     &.loading img { opacity: 0; visibility: hidden; }
   }
-
-  /* Hide image while loading to prevent "broken image" icon or alt-text flicker */
 
   select, input[type="text"], input[type="number"] {
     background: color-mix(in srgb, var(--bg-input), transparent 15%);
@@ -551,8 +608,8 @@
   }
 
   .search-input {
-    margin-bottom: 8px;
-    padding: 6px 10px 6px 32px !important; /* Spacing for the mask icon */
+    height: 40px !important;
+    padding: 6px 35px 6px 32px !important; /* Spacing for search icon and clear button */
     font-size: 13px !important;
     background-image: none !important; /* Handled by container ::before for better color control */
 
@@ -692,13 +749,13 @@
 
   .badge-wrap.loading, .mini-badge.loading {
     background: linear-gradient(
-      90deg,
-      hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0.05) 25%,
-      hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0.18) 50%,
-      hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0.05) 75%
-    ) !important;
+      110deg,
+      rgba(255, 255, 255, 0) 35%,
+      rgba(255, 255, 255, 0.12) 50%,
+      rgba(255, 255, 255, 0) 65%
+    ) color-mix(in srgb, var(--bg-panel), #fff 3%) !important;
     background-size: 200% 100% !important;
-    animation: skeleton-shimmer 1.2s infinite linear;
+    animation: skeleton-shimmer 1.5s infinite linear !important;
     border-color: hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0.2) !important;
     box-shadow: none !important;
     cursor: wait !important;
@@ -983,15 +1040,22 @@
   }
 
   /* status chip */
-  .status-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .status-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+  }
   .status-btn {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
     border: 1px solid var(--border-color);
     background: transparent;
     color: var(--text-muted);
     border-radius: 6px;
-    padding: 5px 12px;
+    padding: 6px 2px;
+    text-align: center;
+    line-height: 1.1;
     cursor: pointer;
     position: relative;
     overflow: hidden;
@@ -1108,6 +1172,7 @@
     .v-divider { width: 100%; height: 1px; margin: 8px 0; }
 
     /* Compact Search Results for Mobile */
+    .search-results-popup { left: 0; } /* Reset offset on mobile */
     .search-results-header {
         padding: 6px 10px;
         font-size: 10px;
@@ -1121,4 +1186,5 @@
         width: 18px;
         height: 18px;
     }
+    .search-results-close { display: block; }
   }

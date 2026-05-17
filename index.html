@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WatchaScore</title>
+<title>WatchaScore - Football Scoreboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
@@ -71,7 +71,9 @@
           <div class="score-num" id="score-away" aria-label="Away score">0</div>
         </div>
         <div class="clock-wrap" aria-live="off">
-          <div class="clock" id="clock-display">00:00</div>
+          <div class="clock">
+            <span id="clock-display">00:00</span>
+          </div>
           <div class="clock-status" id="clock-status-text">NOT STARTED</div>
         </div>
       </div>
@@ -102,7 +104,7 @@
       <div class="clock-inputs">
         <div class="field">
           <label>Minutes</label>
-          <input type="number" id="clock-min" min="0" max="130" value="0" placeholder="00">
+          <input type="number" id="clock-min" min="0" value="0" placeholder="00">
         </div>
         <div class="field">
           <label>Seconds</label>
@@ -120,12 +122,13 @@
       <hr class="divider" aria-hidden="true">
       <div class="card-title" style="margin-bottom:10px;">Match Status</div>
       <div class="status-row">
-        <button class="status-btn" onclick="setStatus('NOT STARTED')" aria-label="Set status to Not Started">Not Started</button>
+        <button class="status-btn" onclick="setStatus('')" aria-label="Clear match status">None</button>
+        <button class="status-btn" onclick="showStartTimeModal()" aria-label="Set status to Not Started">Not Started</button>
         <button class="status-btn" onclick="setStatus('LIVE')" aria-label="Set status to Live">Live</button>
-        <button class="status-btn" onclick="setStatus('HT')" aria-label="Set status to Half Time">Half Time</button>
-        <button class="status-btn" onclick="setStatus('FULL-TIME')" aria-label="Set status to Full Time">Full Time</button>
-        <button class="status-btn" onclick="setStatus('ET')" aria-label="Set status to Extra Time">Extra Time</button>
-        <button class="status-btn" onclick="setStatus('PEN')" aria-label="Set status to Penalties">Penalties</button>
+        <button class="status-btn" onclick="setStatus('HT')" aria-label="Set status to Half Time">HT</button>
+        <button class="status-btn" onclick="setStatus('FULL-TIME')" aria-label="Set status to Full Time">FT</button>
+        <button class="status-btn" onclick="setStatus('ET')" aria-label="Set status to Extra Time">ET</button>
+        <button class="status-btn" onclick="setStatus('PEN')" aria-label="Set status to Penalties">Pen</button>
       </div>
     </div>
 
@@ -187,16 +190,14 @@
     <div class="team-selector-row">
       <div class="selector-group">
         <label>Home Team</label>
-        <div class="search-container">
-          <input type="text" class="search-input" id="home-team-search" placeholder="Search home teams..." oninput="filterTeams('home', this.value)" autocomplete="off">
-          <div id="home-team-results" class="search-results-popup"></div>
-        </div>
         <div class="selector-inner">
           <div class="mini-badge"><img id="mini-home-badge" src="" alt=""></div>
-          <select id="home-team-select" onchange="setTeam('home', this.value)">
-            <option value="">— Select Home Team —</option>
-          </select>
-        </div> 
+          <div class="search-container">
+            <input type="text" class="search-input" id="home-team-search" placeholder="Search or browse..." oninput="filterTeams('home', this.value)" onclick="filterTeams('home', this.value)" autocomplete="off" aria-controls="home-team-results">
+            <button type="button" class="clear-search-btn" id="home-clear-search-btn" aria-label="Clear home team search"><i class="fa-solid fa-xmark"></i></button>
+            <div id="home-team-results" class="search-results-popup"></div>
+          </div>
+        </div>
         <div class="name-input-row">
           <input type="text" id="home-name-override" placeholder="Custom name override…" oninput="overrideName('home', this.value)">
         </div>
@@ -210,15 +211,13 @@
       <div class="v-divider" aria-hidden="true"></div>
       <div class="selector-group">
         <label>Away Team</label>
-        <div class="search-container">
-          <input type="text" class="search-input" id="away-team-search" placeholder="Search away teams..." oninput="filterTeams('away', this.value)" autocomplete="off">
-          <div id="away-team-results" class="search-results-popup"></div>
-        </div>
         <div class="selector-inner">
           <div class="mini-badge"><img id="mini-away-badge" src="" alt=""></div>
-          <select id="away-team-select" onchange="setTeam('away', this.value)">
-            <option value="">— Select Away Team —</option>
-          </select>
+          <div class="search-container">
+            <input type="text" class="search-input" id="away-team-search" placeholder="Search or browse..." oninput="filterTeams('away', this.value)" onclick="filterTeams('away', this.value)" autocomplete="off" aria-controls="away-team-results">
+            <button type="button" class="clear-search-btn" id="away-clear-search-btn" aria-label="Clear away team search"><i class="fa-solid fa-xmark"></i></button>
+            <div id="away-team-results" class="search-results-popup"></div>
+          </div>
         </div>
         <div class="name-input-row">
           <input type="text" id="away-name-override" placeholder="Custom name override…" oninput="overrideName('away', this.value)">
@@ -272,6 +271,19 @@
       <div class="clock-btn-row">
         <button class="btn btn-danger" onclick="confirmResetAll()">Yes, Reset All</button>
         <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- START TIME MODAL -->
+  <div id="start-time-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="card-title">Set Start Time</div>
+      <p class="footer-text" style="margin-bottom: 16px;">Enter the scheduled kick-off time:</p>
+      <input type="time" id="start-time-input" class="search-input" style="margin-bottom: 20px; text-align: center; font-size: 18px; width: 140px; margin-left: auto; margin-right: auto; display: block;">
+      <div class="clock-btn-row">
+        <button class="btn btn-primary" onclick="confirmStartTime()">Confirm</button>
+        <button class="btn btn-secondary" onclick="closeStartTimeModal()">Cancel</button>
       </div>
     </div>
   </div>

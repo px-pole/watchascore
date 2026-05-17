@@ -842,10 +842,15 @@ function confirmResetAll() {
   clearInterval(timerInterval); // Stop the clock if it was running
   
   // Reset state to defaults
-  state = { ...INITIAL_STATE, theme: state.theme }; // Keep theme preference
+  state = { ...INITIAL_STATE, theme: state.theme, mode: state.mode }; // Keep theme and mode preference
   
+  // Re-prepare team data and repopulate dropdowns for the default mode
+  prepareTeamData();
+  populateTeamSelect('home-team-select');
+  populateTeamSelect('away-team-select');
+
   syncUI();
-  localStorage.removeItem('scoreboard_state');
+  saveState();
 }
 
 /**

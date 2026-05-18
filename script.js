@@ -46,6 +46,26 @@ let timerInterval = null; // Use a runtime variable instead of state for the int
 let ALL_TEAMS = []; // Global array to store all teams for efficient searching
 let TEAM_MAP = new Map(); // Fast lookup by ID
 const brightnessCache = new Map(); // Cache results of image analysis to avoid redundant canvas operations
+const brightnessWorker = new Worker('brightness-worker.js');
+const pendingAnalysis = new Map();
+
+brightnessWorker.onmessage = function(e) {
+  const { src, result } = e.data;
+  brightnessCache.set(src, result);
+
+  const imgs = pendingAnalysis.get(src);
+  if (imgs) {
+    imgs.forEach(img => {
+      if (img.src === src) {
+        img.classList.add(result === 'dark' ? 'is-dark' : 'is-light');
+        img.classList.remove(result === 'dark' ? 'is-light' : 'is-dark');
+      }
+    });
+    pendingAnalysis.delete(src);
+    updateVisibilityHighlight();
+  }
+};
+
 let pendingLogoSide = null; // Track which side is currently being previewed
 let pendingLogoBase64 = null; // Store base64 data during preview
 
@@ -550,57 +570,30 @@ function analyzeBrightness(img) {
   }
 
   // Helper to apply classes and update UI
-  const applyResult = (result) => {
+  if (brightnessCache.has(src)) {
+    const result = brightnessCache.get(src);
     img.classList.add(result === 'dark' ? 'is-dark' : 'is-light');
     img.classList.remove(result === 'dark' ? 'is-light' : 'is-dark');
     updateVisibilityHighlight();
-  };
-
-  // Check cache to avoid recalculating if the same image is used multiple times (e.g. main vs mini badge)
-  if (brightnessCache.has(src)) {
-    applyResult(brightnessCache.get(src));
     return;
   }
 
   if (!analysisCtx) return;
 
-  const analyze = () => {
-    // Double-check cache in case multiple calls for the same src were queued during idle
-    if (brightnessCache.has(src)) {
-      applyResult(brightnessCache.get(src));
-      return;
-    }
-
+  if (!pendingAnalysis.has(src)) {
+    pendingAnalysis.set(src, new Set());
     try {
       analysisCtx.clearRect(0, 0, 40, 40);
       analysisCtx.drawImage(img, 0, 0, 40, 40);
-      const imageData = analysisCtx.getImageData(0, 0, 40, 40).data;
-      let brightnessSum = 0, count = 0;
-      
-      for (let i = 0; i < imageData.length; i += 4) {
-        const r = imageData[i], g = imageData[i+1], b = imageData[i+2], a = imageData[i+3];
-        if (a > 125) {
-          brightnessSum += (0.299 * r + 0.587 * g + 0.114 * b);
-          count++;
-        }
-      }
-
-      const brightness = count > 0 ? (brightnessSum / count) : 255;
-      const result = (brightness < 145) ? 'dark' : 'light';
-
-      brightnessCache.set(src, result);
-      applyResult(result);
+      const imageData = analysisCtx.getImageData(0, 0, 40, 40);
+      // Transfer the buffer to the worker for high performance
+      brightnessWorker.postMessage({ imageData: imageData.data.buffer, src: src }, [imageData.data.buffer]);
     } catch (e) {
       img.classList.remove('is-dark', 'is-light');
+      pendingAnalysis.delete(src);
     }
-  };
-
-  // Defer heavy calculation to idle time to keep the UI snappy during team selection
-  if (window.requestIdleCallback) {
-    window.requestIdleCallback(analyze, { timeout: 2000 });
-  } else {
-    setTimeout(analyze, 1);
   }
+  pendingAnalysis.get(src).add(img);
 }
 
 /**

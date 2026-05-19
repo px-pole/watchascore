@@ -8,7 +8,7 @@
 
 ## 🚀 Features
 
-- **Real-time Controls:** Manage scores, match clock, and status (Live, HT, FT, etc.) instantaneously.
+- **Real-time Controls:** Manage scores, match clock, and status (HT, FT, etc.) instantaneously.
 - **Dynamic Team Search:** Quickly find and select teams from a built-in database with league grouping and matched-text highlighting.
 - **Event Timeline:** Track goals, yellow cards, and red cards with a professional visual timeline under the score.
 - **Customization:** 
@@ -25,6 +25,7 @@ For power users, WatchaScore supports global hotkeys to keep your hands on the a
 | Shortcut | Action |
 | :--- | :--- |
 | `[Space]` | Start / Pause the match clock |
+| `[V]` | Hide / Show clock |
 | `[H]` | Increment Home Team score |
 | `[A]` | Increment Away Team score |
 | `[Backspace]` | Undo/Remove the last match event |

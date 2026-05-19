@@ -247,7 +247,7 @@ footer { order: 4; }
   transition: border-color 0.5s ease, box-shadow 0.5s ease;
 
   /* Remove mouseover/hover effects and pointer cursors from the scoreboard output */
-  & * { 
+  & *:not(.clock-wrap, .clock-wrap *) { 
     cursor: default !important; 
     transition: none !important; 
     transform: none !important; 
@@ -312,12 +312,27 @@ footer { order: 4; }
   line-height: 1.1;
 }
 
+.group-name-display {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  min-height: 14px; /* Reserve space even when empty */
+  line-height: 1.4; /* Consistent line height */
+  transition: opacity 0.3s ease; /* Smooth fade in/out */
+}
+
 .score-center {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  min-width: 140px;
+  min-width: 140px; /* Maintain width */
+  min-height: 120px; /* Adjusted to fit score and clock without added time */
+  justify-content: center; /* Center content vertically */
+  padding-top: 0; /* No extra padding needed */
 }
 .score-display {
   display: flex;
@@ -349,22 +364,44 @@ footer { order: 4; }
   margin-top: -6px;
 }
 
+.clock {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  /* Opaque background is required for the "drawer" effect */
+  background: var(--clock-bg); /* Revert to original transparent background */
+  border: 1px solid var(--clock-border); /* Revert to original border */
+  border-radius: 6px; /* Revert to original border-radius */
+  transition: border-radius 0.3s ease;
+}
+
+.added-time {
+  /* All added-time styles removed */
+  display: none !important; /* Ensure it's completely gone */
+}
+
 .clock-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  visibility: visible;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s !important;
+  will-change: opacity, transform;
+
+  &.is-hidden {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none;
+    transform: translateY(-8px) !important;
+  }
 
   .clock {
     font-family: 'Barlow Condensed', sans-serif;
     font-weight: 700; font-size: 18px;
     letter-spacing: 2px;
     color: var(--primary-color);
-    background: var(--clock-bg);
-    border: 1px solid var(--clock-border);
-    border-radius: 6px;
     padding: 4px 14px;
-    min-width: 90px;
     font-variant-numeric: tabular-nums;
     text-align: center;
     display: flex;
@@ -455,15 +492,9 @@ footer { order: 4; }
   z-index: 500; /* Significant boost to ensure results float above everything else */
 }
 
-@keyframes floatingPanel {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
 /* Floating state when selection is active and both teams picked */
 .teams-selected .team-selection-panel {
   order: 4;
-  animation: floatingPanel 4s ease-in-out infinite;
   box-shadow: 0 15px 45px rgba(0,0,0,0.4);
   background-color: color-mix(in srgb, var(--bg-panel), var(--primary-color) 3%);
 }
@@ -776,8 +807,7 @@ input[type="range"] {
   }
 }
 
-.copy-link-btn {
-  margin-left: auto;
+#new-match-btn {
   height: 32px;
   font-size: 12px !important;
   padding: 0 12px !important;
@@ -1074,8 +1104,25 @@ input[type="range"] {
 /* clock controls */
 .clock-inputs { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; }
 .clock-inputs .field { flex: 1; }
+.clock-inputs .btn-small {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: 100px;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+.clock-inputs .btn-small:not(.btn-hidden):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.3);
+}
 .clock-inputs label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
-.clock-inputs input { padding: 9px 8px; text-align: center; }
+.clock-inputs input { 
+  padding: 9px 12px; 
+  text-align: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+}
 .clock-btn-row { display: flex; gap: 8px; }
 .clock-btn-row .btn { 
   flex: 1; 
@@ -1142,7 +1189,7 @@ input[type="range"] {
 /* status chip */
 .status-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   margin-bottom: 8px;
 }
@@ -1184,6 +1231,7 @@ footer {
   flex-direction: column;
 }
 .copyright {
+  margin-top: 10px;
   text-align: center;
   opacity: 0.5;
   font-size: 12px;

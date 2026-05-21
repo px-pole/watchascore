@@ -1,4 +1,12 @@
 /* ==========================================================================
+   0. BROWSER BEHAVIOR FIXES (Execute Immediately)
+   ========================================================================== */
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+window.scrollTo(0, 0);
+
+/* ==========================================================================
    1. CONSTANTS & CONFIGURATION
    ========================================================================== */
 
@@ -40,6 +48,43 @@ const PREFS_KEY = 'scoreboard_prefs'; // Global key for user preferences (Theme,
 let state = { ...INITIAL_STATE };
 let ui = {}; // DOM Cache
 let timerInterval = null; // Use a runtime variable instead of state for the interval ID
+
+/* ==========================================================================
+   2.1 PERSISTENCE LAYER
+   ========================================================================== */
+
+const Persistence = {
+  save(data) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      // Extract global preferences to persist across different game IDs
+      const prefs = { 
+        theme: data.theme, 
+        mode: data.mode, 
+        visibilityMode: data.visibilityMode 
+      };
+      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    } catch (e) {
+      if (e.name === 'QuotaExceededError') console.error('Persistence: Quota exceeded');
+    }
+  },
+
+  load() {
+    const savedState = localStorage.getItem(STORAGE_KEY);
+    const savedPrefs = localStorage.getItem(PREFS_KEY);
+    let prefs = {};
+    
+    try { 
+      if (savedPrefs) prefs = JSON.parse(savedPrefs); 
+      if (savedState) {
+        return { ...INITIAL_STATE, ...JSON.parse(savedState), running: false };
+      }
+    } catch (e) { console.error('Persistence: Error parsing data', e); }
+    
+    return { ...INITIAL_STATE, ...prefs };
+  }
+};
+
 let ALL_TEAMS = []; // Global array to store all teams for efficient searching
 let TEAM_MAP = new Map(); // Fast lookup by ID
 const brightnessCache = new Map(); // Cache results of image analysis to avoid redundant canvas operations
@@ -63,9 +108,13 @@ onmessage = function(e) {
 
 const blob = new Blob([workerCode], { type: 'application/javascript' });
 const brightnessWorker = new Worker(URL.createObjectURL(blob));
+brightnessWorker.onerror = (e) => {
+  console.warn('WatchaScore: Brightness Worker error:', e.message);
+};
 const pendingAnalysis = new Map();
 let pendingLogoSide = null; // Track which side is currently being previewed
 let pendingLogoBase64 = null; // Store base64 data during preview
+let modalTriggerElement = null; // Element that had focus before opening a modal
 
 const analysisCanvas = document.createElement('canvas');
 const analysisCtx = analysisCanvas.getContext('2d', { willReadFrequently: true });
@@ -75,22 +124,48 @@ analysisCanvas.width = 40; analysisCanvas.height = 40;
    3. INITIALIZATION & CORE SETUP
    ========================================================================== */
 
-function init() {
-  const savedState = localStorage.getItem(STORAGE_KEY);
-  const savedPrefs = localStorage.getItem(PREFS_KEY);
-  let prefs = {};
-  try { if (savedPrefs) prefs = JSON.parse(savedPrefs); } catch (e) {}
+/**
+ * Reactive State handler that maps state properties to specific UI update functions.
+ * This prevents layout thrashing by only updating what actually changed.
+ */
+const stateMap = {
+  homeScore: () => updateScoreUI(),
+  awayScore: () => updateScoreUI(),
+  homeTeam: () => { updateTeamsUI(); checkWrapperState(); },
+  awayTeam: () => { updateTeamsUI(); checkWrapperState(); },
+  homeNameOverride: () => updateTeamsUI(),
+  awayNameOverride: () => updateTeamsUI(),
+  clockSec: () => renderClock(),
+  running: () => updateClockUI(),
+  status: () => updateClockUI(),
+  clockVisible: () => updateClockUI(),
+  startTime: () => updateClockUI(),
+  theme: () => updateThemeUI(),
+  mode: () => { prepareTeamData(); updateTeamsUI(); updateThemeUI(); },
+  visibilityMode: () => updateThemeUI(),
+  events: () => updateEventsUI()
+};
 
-  if (savedState) {
-    state = { ...INITIAL_STATE, ...JSON.parse(savedState) };
-    state.running = false;
-  } else {
-    state = { ...INITIAL_STATE, ...prefs };
-  }
+function init() {
+  const rawData = Persistence.load();
+  
+  // Initialize Reactive State
+  state = new Proxy(rawData, {
+    set(target, prop, value) {
+      if (target[prop] === value) return true;
+      target[prop] = value;
+      
+      // Auto-persist and trigger specific UI slice
+      Persistence.save(target);
+      if (stateMap[prop]) stateMap[prop]();
+      
+      return true;
+    }
+  });
 
   cacheElements();
   prepareTeamData();
-  syncUI();
+  syncUI(); // Initial full render
 
   if (GAME_ID !== 'default') document.title = `${GAME_ID} - WatchaScore`;
   const yearEl = document.getElementById('current-year');
@@ -172,6 +247,7 @@ function setupListeners() {
   ['home', 'away'].forEach(side => {
     const searchInput = ui[`${side}TeamSearch`];
     searchInput?.addEventListener('input', (e) => filterTeams(side, e.target.value));
+    searchInput?.addEventListener('keydown', (e) => handleSearchKeyboard(e, side));
     searchInput?.addEventListener('click', (e) => filterTeams(side, e.target.value));
     ui[`${side}ClearSearchBtn`]?.addEventListener('click', () => { searchInput.value = ''; filterTeams(side, ''); });
     ui[`${side}NameOverride`]?.addEventListener('input', (e) => overrideName(side, e.target.value));
@@ -215,9 +291,7 @@ function setupListeners() {
   ui.eventIcon?.addEventListener('change', () => ui.eventIcon.blur());
 
   // Modals
-  document.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', () => {
-    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-  }));
+  document.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeActiveModal));
 
   // Events Timeline Delegation (removes need for inline onclick)
   ['home', 'away'].forEach(side => {
@@ -228,6 +302,40 @@ function setupListeners() {
       }
     });
   });
+}
+
+function handleSearchKeyboard(e, side) {
+  const resultsDiv = document.getElementById(`${side}-team-results`);
+  if (!resultsDiv.classList.contains('active')) return;
+
+  const items = Array.from(resultsDiv.querySelectorAll('.search-results-item, .search-results-header.collapsible'))
+    .filter(item => item.offsetHeight > 0); // Check if element has a visible height
+  let currentIndex = items.findIndex(item => item.classList.contains('keyboard-focus'));
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (currentIndex < items.length - 1) {
+      if (currentIndex >= 0) items[currentIndex].classList.remove('keyboard-focus');
+      currentIndex++;
+      items[currentIndex].classList.add('keyboard-focus');
+      items[currentIndex].scrollIntoView({ block: 'nearest' });
+    }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (currentIndex > 0) {
+      items[currentIndex].classList.remove('keyboard-focus');
+      currentIndex--;
+      items[currentIndex].classList.add('keyboard-focus');
+      items[currentIndex].scrollIntoView({ block: 'nearest' });
+    }
+  } else if (e.key === 'Enter') {
+    if (currentIndex >= 0) {
+      e.preventDefault();
+      items[currentIndex].click();
+    }
+  } else if (e.key === 'Escape') {
+    resultsDiv.classList.remove('active');
+  }
 }
 
 // Helper to get the active tournament data based on current mode.
@@ -265,7 +373,7 @@ const debouncedSearch = debounce((side, text) => {
   const fragment = document.createDocumentFragment();
 
   if (filter) {
-    renderSearchMode(fragment, side, filter, resultsDiv, searchInput);
+    renderSearchMode(fragment, side, filter, resultsDiv, searchInput); // resultsDiv and searchInput are not used here, can be removed from args
   } else {
     renderBrowseMode(fragment, side, resultsDiv, searchInput);
   }
@@ -282,7 +390,7 @@ const debouncedSearch = debounce((side, text) => {
 
   resultsDiv.replaceChildren(fragment);
   resultsDiv.classList.add('active');
-  searchInput.focus();
+  searchInput.focus(); // Keep focus on the input
   resultsDiv.scrollTop = 0;
 }, 50);
 
@@ -305,6 +413,7 @@ function renderSearchMode(fragment, side, filter, resultsDiv, searchInput) {
 
     filteredByLeague.forEach((teams, leagueName) => {
       const header = document.createElement('div');
+      header.setAttribute('role', 'presentation'); // Purely visual grouping in search mode
       header.className = 'search-results-header';
       header.textContent = leagueName;
       fragment.appendChild(header);
@@ -312,6 +421,7 @@ function renderSearchMode(fragment, side, filter, resultsDiv, searchInput) {
       teams.forEach(t => {
         const item = document.createElement('div');
         item.className = 'search-results-item';
+        item.setAttribute('role', 'option'); // ARIA role for list item
         const idx = t.nameLower.indexOf(filter);
         const highlightedName = idx >= 0 
           ? `${t.name.substring(0, idx)}<span class="search-highlight">${t.name.substring(idx, idx + filter.length)}</span>${t.name.substring(idx + filter.length)}`
@@ -326,6 +436,7 @@ function renderSearchMode(fragment, side, filter, resultsDiv, searchInput) {
     if (foundCount === 0) {
       const none = document.createElement('div');
       none.className = 'search-results-none empty-state';
+      none.setAttribute('aria-live', 'polite'); // Announce no results
       none.innerHTML = `<i class="fa-solid fa-magnifying-glass-question"></i><span>No teams matched your search</span>`;
       fragment.appendChild(none);
     } else if (isCapped) {
@@ -339,26 +450,32 @@ function renderSearchMode(fragment, side, filter, resultsDiv, searchInput) {
 
 function renderBrowseMode(fragment, side, resultsDiv, searchInput) {
     const leagues = new Map();
+    resultsDiv.setAttribute('role', 'listbox');
     ALL_TEAMS.forEach(t => { if (!leagues.has(t.league)) leagues.set(t.league, []); leagues.get(t.league).push(t); });
 
     leagues.forEach((teams, leagueName) => {
       const header = document.createElement('div');
       header.className = 'search-results-header collapsible';
-      header.innerHTML = `<span>${leagueName}</span> <i class="fa-solid fa-chevron-down" style="font-size:10px; opacity:0.6;"></i>`;
+      const containerId = `league-items-${side}-${leagueName.replace(/\s/g, '-')}`;
+      header.tabIndex = 0;
+      header.setAttribute('role', 'button'); // Make header a button for accessibility
+      header.setAttribute('aria-expanded', 'false'); // Initial state
+      header.setAttribute('aria-controls', containerId); // Link to controlled element
+      header.innerHTML = `<span>${leagueName}</span> <i class="fa-solid fa-chevron-down"></i>`;
 
       const teamContainer = document.createElement('div');
       teamContainer.className = 'league-items-container';
+      teamContainer.id = containerId;
       header.onclick = (e) => {
         e.stopPropagation();
         const isOpen = teamContainer.classList.toggle('active');
-        const icon = header.querySelector('i');
-        icon.classList.toggle('fa-chevron-up', isOpen);
-        icon.classList.toggle('fa-chevron-down', !isOpen);
+        header.setAttribute('aria-expanded', isOpen); // Update ARIA state
       };
 
       teams.forEach(t => {
         const item = document.createElement('div');
         item.className = 'search-results-item';
+        item.setAttribute('role', 'option'); // ARIA role for list item
         item.innerHTML = `<img src="${t.badge || PLACEHOLDER}" loading="lazy" alt=""> <span>${t.name}</span>`;
         item.onclick = () => { setTeam(side, t.id); resultsDiv.classList.remove('active'); searchInput.value = ''; };
         teamContainer.appendChild(item);
@@ -375,8 +492,6 @@ const getTeam = (id) => TEAM_MAP.get(id);
 function setTeam(side, id) {
   const t = getTeam(id);
   state[side + 'Team'] = t ? t : null;
-  saveState();
-  syncUI();
   if (document.activeElement && typeof document.activeElement.blur === 'function') {
     document.activeElement.blur();
   }
@@ -387,24 +502,26 @@ function setTeam(side, id) {
    ========================================================================== */
 
 function syncUI() {
-  const wrapper = document.querySelector('.wrapper');
-  const bothTeamsPicked = !!(state.homeTeam && state.awayTeam);
-  const currentlySelectedClass = wrapper.classList.contains('teams-selected');
-
-  if (bothTeamsPicked !== currentlySelectedClass) {
-    if (document.startViewTransition) {
-      document.startViewTransition(() => wrapper.classList.toggle('teams-selected', bothTeamsPicked));
-    } else {
-      wrapper.classList.toggle('teams-selected', bothTeamsPicked);
-    }
-  }
-
+  checkWrapperState();
   updateScoreUI();
   updateTeamsUI();
   updateClockUI();
   updateThemeUI();
   updateEventsUI();
   updateVisibilityHighlight();
+}
+
+function checkWrapperState() {
+  const wrapper = document.querySelector('.wrapper');
+  const bothTeamsPicked = !!(state.homeTeam && state.awayTeam);
+  const currentlySelectedClass = wrapper.classList.contains('teams-selected');
+
+  if (bothTeamsPicked === currentlySelectedClass) return;
+  if (document.startViewTransition) {
+    document.startViewTransition(() => wrapper.classList.toggle('teams-selected', bothTeamsPicked));
+  } else {
+    wrapper.classList.toggle('teams-selected', bothTeamsPicked);
+  }
 }
 
 function updateScoreUI() {
@@ -470,12 +587,12 @@ function updateThemeUI() {
   const visMode = state.visibilityMode || 'none';
   if (ui.visibilityModeSelect) ui.visibilityModeSelect.value = visMode;
   
-  document.body.classList.remove('visibility-none', 'visibility-glow', 'visibility-contrast');
-  document.body.classList.add(`visibility-${visMode}`);
+  document.documentElement.classList.remove('visibility-none', 'visibility-glow', 'visibility-contrast');
+  document.documentElement.classList.add(`visibility-${visMode}`);
 
-  document.body.classList.remove(...THEMES.map(t => `theme-${t}`));
+  document.documentElement.classList.remove(...THEMES.map(t => `theme-${t}`));
   if (state.theme && state.theme !== 'default') {
-    document.body.classList.add(`theme-${state.theme}`);
+    document.documentElement.classList.add(`theme-${state.theme}`);
   }
 }
 
@@ -540,7 +657,8 @@ function analyzeBrightness(img) {
       analysisCtx.clearRect(0, 0, 40, 40);
       analysisCtx.drawImage(img, 0, 0, 40, 40);
       const imageData = analysisCtx.getImageData(0, 0, 40, 40);
-      // Transfer the buffer to the worker for high performance
+      
+      // Robust handling: transfer buffer to worker for non-blocking analysis
       brightnessWorker.postMessage({ imageData: imageData.data.buffer, src: src }, [imageData.data.buffer]);
     } catch (e) {
       img.classList.remove('is-dark', 'is-light');
@@ -609,7 +727,10 @@ function handleLogoUpload(side, input) {
     if (label) label.classList.remove('uploading');
     pendingLogoSide = side; pendingLogoBase64 = e.target.result;
     ui.cropPreviewImg.src = pendingLogoBase64;
+    modalTriggerElement = document.activeElement;
     ui.cropModal.classList.add('active');
+    const applyBtn = ui.cropModal.querySelector('.btn-primary');
+    if (applyBtn) applyBtn.focus();
     input.value = '';
   };
   reader.onerror = () => { if (label) label.classList.remove('uploading'); };
@@ -624,7 +745,7 @@ function confirmLogoUpload() {
   state[pendingLogoSide + 'Team'].badge = pendingLogoBase64;
   setBadge(pendingLogoSide, pendingLogoBase64);
   saveState();
-  ui.cropModal.classList.remove('active');
+  closeActiveModal();
 }
 
 /* ==========================================================================
@@ -701,7 +822,6 @@ function changeScore(side, delta) {
   // Visual feedback
   el.classList.add('bump');
   setTimeout(() => el.classList.remove('bump'), 200);
-  saveState();
 }
 
 function resetScores() {
@@ -713,14 +833,11 @@ function resetScores() {
     if (el) el.textContent = '0';
     ctrlEl.textContent = '0';
   });
-  saveState();
 }
 
 function resetTeams() {
   state.homeTeam = null;
   state.awayTeam = null;
-  saveState();
-  syncUI();
 }
 /* ==========================================================================
    8. CLOCK & TIMER LOGIC
@@ -736,13 +853,11 @@ function setClock() {
   const s = parseInt(ui.clockSec.value) || 0;
   state.clockSec = m * 60 + s;
   renderClock();
-  saveState();
 }
 
 function toggleClockVisibility() {
   state.clockVisible = !state.clockVisible;
   updateClockUI();
-  saveState();
 }
 
 function toggleClock() {
@@ -785,9 +900,6 @@ function toggleClock() {
 
       state.clockSec++;
       renderClock(); 
-      if (state.clockSec % 5 === 0) {
-        saveState(); 
-      }
     }, 1000);
   }
 }
@@ -804,28 +916,16 @@ function resetClock() {
   ui.startBtn.className = 'btn btn-green';
   ui.clockMin.value = 0;
   ui.clockSec.value = 0;
-  saveState();
 }
 
 /* ==========================================================================
    9. SETTINGS & PERSISTENCE
    ========================================================================== */
 
-function saveState() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    const prefs = { theme: state.theme, mode: state.mode, visibilityMode: state.visibilityMode };
-    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
-  } catch (e) {
-    if (e.name === 'QuotaExceededError') console.warn('Scoreboard: Local storage quota exceeded.');
-  }
-}
-
 function changeMode(mode) {
   const update = () => {
-    state.mode = mode; prepareTeamData();
+    state.mode = mode; 
     state.homeTeam = null; state.awayTeam = null;
-    saveState(); syncUI();
   };
   if (document.startViewTransition) document.startViewTransition(update);
   else update();
@@ -833,14 +933,9 @@ function changeMode(mode) {
 }
 
 function setTheme(themeName) {
-  state.theme = themeName;
-  saveState(); syncUI();
-  if (document.activeElement?.blur) document.activeElement.blur();
-}
-
-function setVisibilityMode(mode) {
-  state.visibilityMode = mode;
-  saveState(); syncUI();
+  const update = () => state.theme = themeName;
+  if (document.startViewTransition) document.startViewTransition(update);
+  else update();
   if (document.activeElement?.blur) document.activeElement.blur();
 }
 
@@ -857,7 +952,6 @@ function setStatus(s) {
     b.classList.toggle('active', isActive);
     b.setAttribute('aria-pressed', isActive);
   });
-  saveState();
 }
 
 function addMatchEvent(side) {
@@ -866,16 +960,20 @@ function addMatchEvent(side) {
   if (!text) return;
   text = text.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   if (/\d$/.test(text)) text += "'";
-  state.events.push({ side, text, icon });
-  syncEventsUI();
+  
+  // To trigger the proxy, we re-assign the array
+  state.events = [...state.events, { side, text, icon }];
+  
+  ui.eventText.value = '';
   if (document.activeElement?.blur) document.activeElement.blur();
 }
 
-function removeEvent(index) { state.events.splice(index, 1); syncEventsUI(); }
+function removeEvent(index) { 
+  state.events = state.events.filter((_, i) => i !== index);
+}
 function removeLastEvent() { if (state.events.length > 0) removeEvent(state.events.length - 1); }
 
 function syncEventsUI() {
-  ui.eventText.value = ''; renderEvents(); saveState();
 }
 
 function renderEvents() {
@@ -887,20 +985,41 @@ function toggleContactForm() {
 }
 
 function resetAll() {
-  document.getElementById('modal-overlay').classList.add('active');
+  modalTriggerElement = document.activeElement;
+  const modal = document.getElementById('modal-overlay');
+  modal.classList.add('active');
+  const confirmBtn = modal.querySelector('#confirm-reset-all-btn');
+  if (confirmBtn) confirmBtn.focus();
 }
 
 function closeModal() {
-  document.getElementById('modal-overlay').classList.remove('active');
+  closeActiveModal();
 }
 
 function showStartTimeModal() {
-  document.getElementById('start-time-modal').classList.add('active');
-  document.getElementById('start-time-input').value = state.startTime || '';
+  modalTriggerElement = document.activeElement;
+  const modal = document.getElementById('start-time-modal');
+  modal.classList.add('active');
+  const input = document.getElementById('start-time-input');
+  if (input) {
+    input.value = state.startTime || '';
+    input.focus();
+  }
 }
 
 function closeStartTimeModal() {
-  document.getElementById('start-time-modal').classList.remove('active');
+  closeActiveModal();
+}
+
+function closeActiveModal() {
+  const active = document.querySelector('.modal-overlay.active');
+  if (active) {
+    active.classList.remove('active');
+    if (modalTriggerElement) {
+      modalTriggerElement.focus();
+      modalTriggerElement = null;
+    }
+  }
 }
 
 function confirmStartTime() {
@@ -978,6 +1097,36 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+  const activeModal = document.querySelector('.modal-overlay.active');
+
+  if (activeModal) {
+    if (e.key === 'Escape') {
+      closeActiveModal();
+      return;
+    }
+    if (e.key === 'Tab') {
+      const focusable = Array.from(activeModal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )).filter(el => !el.disabled && el.offsetParent !== null);
+      
+      if (focusable.length > 0) {
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        
+        if (e.shiftKey && document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      } else {
+        e.preventDefault();
+      }
+      return;
+    }
+  }
+
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
   switch(e.code) {
     case 'Space': e.preventDefault(); toggleClock(); break;
@@ -991,11 +1140,18 @@ document.addEventListener('keydown', (e) => {
 
 // Hides the preloader once all assets (images, fonts, scripts) are fully loaded.
 window.addEventListener('load', () => {
+  window.scrollTo(0, 0);
   const preloader = document.getElementById('preloader');
   if (preloader) {
     preloader.classList.add('preloader-hidden');
     document.body.classList.add('content-loaded');
-    setTimeout(() => preloader.remove(), 600);
+    
+    // Ensure scroll is at top after preloader begins to fade
+    window.scrollTo(0, 0);
+    
+    // Remove delays after the entrance animation (approx 1.5s) is done
+    setTimeout(() => document.body.classList.add('entrance-finished'), 1500);
+    setTimeout(() => preloader.remove(), 700);
   }
 });
 

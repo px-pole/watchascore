@@ -4,17 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WatchaScore - Football Scoreboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
+<script>
+  (function() {
+    try {
+      const prefs = JSON.parse(localStorage.getItem('scoreboard_prefs'));
+      if (prefs) {
+        if (prefs.theme && prefs.theme !== 'default') document.documentElement.classList.add('theme-' + prefs.theme);
+        if (prefs.visibilityMode && prefs.visibilityMode !== 'none') document.documentElement.classList.add('visibility-' + prefs.visibilityMode);
+      }
+    } catch (e) {}
+  })();
+</script>
 </head>
 
 <body>
   <!-- PRELOADER -->
-  <div id="preloader">
+  <div id="preloader" aria-busy="true" aria-label="Loading WatchaScore">
     <div class="preloader-content">
       <div class="loader-logo">Watcha<span>Score</span></div>
-      <div class="loader-spinner"></div>
+      <div class="loader-spinner" role="status" aria-label="Loading"></div>
     </div>
   </div>
 
@@ -96,10 +109,10 @@
 
     </div>
 
-    <div class="events-container">
-      <div id="home-events" class="events-list home-events"></div>
-      <div></div>
-      <div id="away-events" class="events-list away-events"></div>
+    <div class="events-container" aria-hidden="true">
+      <div id="home-events" class="events-list home-events" aria-live="polite"></div>
+      <div class="spacer"></div>
+      <div id="away-events" class="events-list away-events" aria-live="polite"></div>
     </div>
   </div>
   <!-- TEAM SELECTION -->

@@ -1,5 +1,5 @@
 # Ignore VS Code local history folder
 .history/
 
-# Project change log
-changelog.txt
+# Directory Icon
+.directory

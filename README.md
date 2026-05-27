@@ -37,9 +37,9 @@ For power users, WatchaScore supports global hotkeys to keep your hands on the a
 
 1. **Local Use:** Simply clone the repository and open `index.html` in any modern web browser.
 2. **OBS Integration:** 
-   - Click the **"Copy OBS Link"** button in the header.
+   - Copy the websites URL address.
    - In OBS, add a new **Browser Source**.
-   - Paste the URL and set the width to `1000` and height to `800` (adjust as needed).
+   - Paste the URL and set the width and height.
    - Use the **Interact** feature in OBS to manage the scoreboard during your stream.
 
 ## 📂 Project Structure

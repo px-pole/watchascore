@@ -30,7 +30,7 @@ const INITIAL_STATE = {
   theme: 'default',
   homeNameOverride: '',
   awayNameOverride: '',
-  mode: 'leagues',
+  mode: 'worldcup',
   visibilityMode: 'none',
   startTime: null,
   clockVisible: true
@@ -45,9 +45,22 @@ const GAME_ID = urlParams.get('id') || 'default';
 const STORAGE_KEY = `scoreboard_state_${GAME_ID}`;
 const PREFS_KEY = 'scoreboard_prefs'; // Global key for user preferences (Theme, Mode, etc.)
 
-let state = { ...INITIAL_STATE };
+let state = null;
 let ui = {}; // DOM Cache
 let timerInterval = null; // Use a runtime variable instead of state for the interval ID
+
+const stateHandler = {
+  set(target, prop, value) {
+    if (target[prop] === value) return true;
+    target[prop] = value;
+    Persistence.save(target);
+    EventBus.emit(prop, value);
+    return true;
+  }
+};
+
+const createState = (initialData) => new Proxy(initialData, stateHandler);
+const saveState = () => Persistence.save(state);
 
 /* ==========================================================================
    2.1 PERSISTENCE LAYER
@@ -124,44 +137,58 @@ analysisCanvas.width = 40; analysisCanvas.height = 40;
    3. INITIALIZATION & CORE SETUP
    ========================================================================== */
 
-/**
- * Reactive State handler that maps state properties to specific UI update functions.
- * This prevents layout thrashing by only updating what actually changed.
- */
-const stateMap = {
-  homeScore: () => updateScoreUI(),
-  awayScore: () => updateScoreUI(),
-  homeTeam: () => { updateTeamsUI(); checkWrapperState(); },
-  awayTeam: () => { updateTeamsUI(); checkWrapperState(); },
-  homeNameOverride: () => updateTeamsUI(),
-  awayNameOverride: () => updateTeamsUI(),
-  clockSec: () => renderClock(),
-  running: () => updateClockUI(),
-  status: () => updateClockUI(),
-  clockVisible: () => updateClockUI(),
-  startTime: () => updateClockUI(),
-  theme: () => updateThemeUI(),
-  mode: () => { prepareTeamData(); updateTeamsUI(); updateThemeUI(); },
-  visibilityMode: () => updateThemeUI(),
-  events: () => updateEventsUI()
+const EventBus = {
+  listeners: {},
+  on(event, callback) {
+    if (!this.listeners[event]) this.listeners[event] = [];
+    this.listeners[event].push(callback);
+  },
+  emit(event, data) {
+    if (this.listeners[event]) {
+      this.listeners[event].forEach(cb => cb(data));
+    }
+  }
 };
+
+function setupSubscriptions() {
+  // Scores
+  EventBus.on('homeScore', (val) => updateScoreUI('home', val));
+  EventBus.on('awayScore', (val) => updateScoreUI('away', val));
+
+  // Teams & Names
+  EventBus.on('homeTeam', updateTeamsUI);
+  EventBus.on('homeTeam', checkWrapperState);
+  EventBus.on('awayTeam', updateTeamsUI);
+  EventBus.on('awayTeam', checkWrapperState);
+  EventBus.on('homeNameOverride', updateTeamsUI);
+  EventBus.on('awayNameOverride', updateTeamsUI);
+
+  // Clock & Status
+  EventBus.on('clockSec', (val) => renderClock(val));
+  EventBus.on('running', updateClockUI);
+  EventBus.on('status', updateClockUI);
+  EventBus.on('clockVisible', updateClockUI);
+  EventBus.on('startTime', updateClockUI);
+
+  // Preferences & Layout
+  EventBus.on('theme', updateThemeUI);
+  EventBus.on('mode', prepareTeamData);
+  EventBus.on('mode', updateTeamsUI);
+  EventBus.on('mode', updateThemeUI);
+  EventBus.on('visibilityMode', updateThemeUI);
+
+  // Timeline
+  EventBus.on('events', (val) => updateEventsUI(val));
+}
 
 function init() {
   const rawData = Persistence.load();
-  
+
+  // Initialize Subscriptions before the Proxy starts emitting
+  setupSubscriptions();
+
   // Initialize Reactive State
-  state = new Proxy(rawData, {
-    set(target, prop, value) {
-      if (target[prop] === value) return true;
-      target[prop] = value;
-      
-      // Auto-persist and trigger specific UI slice
-      Persistence.save(target);
-      if (stateMap[prop]) stateMap[prop]();
-      
-      return true;
-    }
-  });
+  state = createState(rawData);
 
   cacheElements();
   prepareTeamData();
@@ -372,6 +399,7 @@ const debouncedSearch = debounce((side, text) => {
   const filter = text.toLowerCase().trim();
   const fragment = document.createDocumentFragment();
 
+  resultsDiv.setAttribute('role', 'listbox');
   if (filter) {
     renderSearchMode(fragment, side, filter, resultsDiv, searchInput); // resultsDiv and searchInput are not used here, can be removed from args
   } else {
@@ -466,11 +494,18 @@ function renderBrowseMode(fragment, side, resultsDiv, searchInput) {
       const teamContainer = document.createElement('div');
       teamContainer.className = 'league-items-container';
       teamContainer.id = containerId;
-      header.onclick = (e) => {
+      const toggleLeague = (e) => {
         e.stopPropagation();
         const isOpen = teamContainer.classList.toggle('active');
         header.setAttribute('aria-expanded', isOpen); // Update ARIA state
       };
+      header.onclick = toggleLeague;
+      header.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleLeague(e);
+        }
+      });
 
       teams.forEach(t => {
         const item = document.createElement('div');
@@ -524,11 +559,13 @@ function checkWrapperState() {
   }
 }
 
-function updateScoreUI() {
-  ['home', 'away'].forEach(side => {
-    const sideKey = capitalize(side);
-    if (ui[`score${sideKey}`]) ui[`score${sideKey}`].textContent = state[`${side}Score`];
-    if (ui[`ctrl${sideKey}Score`]) ui[`ctrl${sideKey}Score`].textContent = state[`${side}Score`];
+function updateScoreUI(side, value) {
+  const sides = side ? [side] : ['home', 'away'];
+  sides.forEach(s => {
+    const sideKey = capitalize(s);
+    const score = (side === s && value !== undefined) ? value : state[`${s}Score`];
+    if (ui[`score${sideKey}`]) ui[`score${sideKey}`].textContent = score;
+    if (ui[`ctrl${sideKey}Score`]) ui[`ctrl${sideKey}Score`].textContent = score;
   });
 }
 
@@ -559,7 +596,15 @@ function updateTeamsUI() {
     }
     const displayElement = ui.tournamentGroupDisplay;
     displayElement.textContent = groupInfo.toUpperCase();
-    displayElement.style.opacity = groupInfo ? '1' : '0'; // Control visibility via opacity
+    if (groupInfo) {
+      displayElement.style.opacity = '1';
+      displayElement.style.height = 'auto';
+      displayElement.style.minHeight = '14px';
+    } else {
+      displayElement.style.opacity = '0';
+      displayElement.style.height = '0';
+      displayElement.style.minHeight = '0';
+    }
   }
 }
 
@@ -596,11 +641,12 @@ function updateThemeUI() {
   }
 }
 
-function updateEventsUI() {
+function updateEventsUI(events) {
+  const evList = events || state.events;
   if (!ui.homeEvents || !ui.awayEvents) return;
   ui.homeEvents.innerHTML = '';
   ui.awayEvents.innerHTML = '';
-  state.events.forEach((ev, idx) => {
+  evList.forEach((ev, idx) => {
     const iconData = EVENT_ICON_MAP[ev.icon] || EVENT_ICON_MAP.goal;
     const iconHtml = `<i class="fa-solid ${iconData.class}" style="cursor:pointer; font-size:10px; ${iconData.color ? 'color:' + iconData.color : ''}" data-index="${idx}" title="Click to remove"></i>`;
     const item = document.createElement('div');
@@ -690,6 +736,7 @@ function setBadge(side, src) {
       img.src = PLACEHOLDER; img.style.opacity = '1'; img.style.transform = 'scale(1)';
       img.removeAttribute('aria-hidden');
       if (wrap) { wrap.classList.remove('loading'); wrap.removeAttribute('aria-busy'); }
+      updateVisibilityHighlight();
       return;
     }
 
@@ -706,6 +753,7 @@ function setBadge(side, src) {
       img.src = PLACEHOLDER; img.style.opacity = '1'; img.style.transform = 'scale(1)';
       img.removeAttribute('aria-hidden');
       if (wrap) { wrap.classList.remove('loading'); wrap.removeAttribute('aria-busy'); }
+      updateVisibilityHighlight();
     };
     img.src = targetSrc;
     if (img.complete && img.naturalWidth !== 0) finishLoading();
@@ -836,15 +884,28 @@ function resetScores() {
 }
 
 function resetTeams() {
-  state.homeTeam = null;
-  state.awayTeam = null;
+  const resetAction = () => {
+    const wrapper = document.querySelector('.wrapper');
+    if (wrapper) wrapper.classList.toggle('teams-selected', false);
+    state.homeTeam = null;
+    state.awayTeam = null;
+  };
+
+  if (document.startViewTransition) {
+    document.startViewTransition(resetAction);
+  } else {
+    resetAction();
+  }
+
+  syncUI();
 }
 /* ==========================================================================
    8. CLOCK & TIMER LOGIC
    ========================================================================== */
 
-function renderClock() {
-  const m = Math.floor(state.clockSec / 60), s = state.clockSec % 60;
+function renderClock(seconds) {
+  const sTotal = seconds !== undefined ? seconds : state.clockSec;
+  const m = Math.floor(sTotal / 60), s = sTotal % 60;
   ui.clockDisplay.textContent = pad(m) + ':' + pad(s);
 }
 
@@ -870,22 +931,20 @@ function toggleClock() {
     updateClockUI();
 
     // Handle auto-status updates when pausing after key milestones (Regulation & ET)
-    if (state.clockSec >= 120 * 60) {
-      state.clockSec = 120 * 60; // Set to exactly 120:00
-      setStatus('FULL-TIME');
-      renderClock();
-    } else if (state.clockSec >= 105 * 60) {
-      state.clockSec = 105 * 60; // Set to exactly 105:00
-      setStatus('HT ET');
-      renderClock();
-    } else if (state.clockSec >= 90 * 60) {
-      state.clockSec = 90 * 60; // Set to exactly 90:00
-      setStatus('FULL-TIME');
-      renderClock();
-    } else if (state.clockSec >= 45 * 60) {
-      state.clockSec = 45 * 60; // Set to exactly 45:00
-      setStatus('HT'); // Set status to Half Time
-      renderClock(); // Update clock display
+    const milestones = [
+      { seconds: 120 * 60, status: 'FULL-TIME' },
+      { seconds: 105 * 60, status: 'HT ET' },
+      { seconds: 90 * 60, status: 'FULL-TIME' },
+      { seconds: 45 * 60, status: 'HT' }
+    ];
+
+    for (const { seconds, status } of milestones) {
+      if (state.clockSec >= seconds) {
+        state.clockSec = seconds;
+        setStatus(status);
+        renderClock();
+        break;
+      }
     }
   } else {
     if (timerInterval) clearInterval(timerInterval); 
@@ -912,8 +971,6 @@ function resetClock() {
   state.running = false;
   state.clockSec = 0;
   updateClockUI();
-  ui.startBtn.textContent = '▶ Start';
-  ui.startBtn.className = 'btn btn-green';
   ui.clockMin.value = 0;
   ui.clockSec.value = 0;
 }
@@ -971,13 +1028,9 @@ function addMatchEvent(side) {
 function removeEvent(index) { 
   state.events = state.events.filter((_, i) => i !== index);
 }
-function removeLastEvent() { if (state.events.length > 0) removeEvent(state.events.length - 1); }
 
-function syncEventsUI() {
-}
-
-function renderEvents() {
-  updateEventsUI();
+function removeLastEvent() { 
+  if (state.events.length > 0) removeEvent(state.events.length - 1); 
 }
 
 function toggleContactForm() {
@@ -992,10 +1045,6 @@ function resetAll() {
   if (confirmBtn) confirmBtn.focus();
 }
 
-function closeModal() {
-  closeActiveModal();
-}
-
 function showStartTimeModal() {
   modalTriggerElement = document.activeElement;
   const modal = document.getElementById('start-time-modal');
@@ -1005,10 +1054,6 @@ function showStartTimeModal() {
     input.value = state.startTime || '';
     input.focus();
   }
-}
-
-function closeStartTimeModal() {
-  closeActiveModal();
 }
 
 function closeActiveModal() {
@@ -1025,13 +1070,13 @@ function closeActiveModal() {
 function confirmStartTime() {
   state.startTime = document.getElementById('start-time-input').value || null;
   setStatus('NOT STARTED');
-  closeStartTimeModal();
+  closeActiveModal();
 }
 
 function confirmResetAll() {
-  closeModal();
+  closeActiveModal();
   clearInterval(timerInterval);
-  state = { ...INITIAL_STATE, theme: state.theme, mode: state.mode, visibilityMode: state.visibilityMode };
+  state = createState({ ...INITIAL_STATE, theme: state.theme, mode: state.mode, visibilityMode: state.visibilityMode });
   prepareTeamData();
   syncUI();
   saveState();

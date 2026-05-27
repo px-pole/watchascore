@@ -572,10 +572,10 @@ function updateScoreUI(side, value) {
 function updateTeamsUI() {
   ['home', 'away'].forEach(side => {
     const team = state[`${side}Team`];
-    const override = state[`${side}NameOverride`];
+    const override = (state[`${side}NameOverride`] || '').trim();
     const name = override || team?.name || capitalize(side);
     
-    if (ui[`${side}NameOverride`]) ui[`${side}NameOverride`].value = override ?? '';
+    if (ui[`${side}NameOverride`]) ui[`${side}NameOverride`].value = override;
     syncTeamNameDisplay(side, name);
 
     let badgeSrc = PLACEHOLDER;
@@ -850,10 +850,11 @@ function syncTeamNameDisplay(side, name) {
 }
 
 function overrideName(side, val) {
-  state[side + 'NameOverride'] = val;
+  const normalized = val.trim();
+  state[side + 'NameOverride'] = normalized;
   saveState();
   const sideKey = capitalize(side);
-  const name = val || state[side + 'Team']?.name || sideKey;
+  const name = normalized || state[side + 'Team']?.name || sideKey;
   
   syncTeamNameDisplay(side, name);
 }

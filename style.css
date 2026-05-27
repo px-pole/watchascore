@@ -1318,12 +1318,12 @@ footer {
   color: var(--text-muted);
 }
 .footer-text {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 400;
   line-height: 1.7;
   color: var(--text-muted);
 }
-.footer-text p { margin-bottom: 12px; }
+.footer-text p { margin-bottom: 8px; }
 .footer-text p:last-child { margin-bottom: 0; }
 .footer-text a {
   color: var(--primary-color);

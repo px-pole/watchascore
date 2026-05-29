@@ -23,24 +23,24 @@ const TOURNAMENTS = {
     { "id": "tottenham", "name": "Tottenham Hotspur", "badge": "assets/badges/England-PremierLeague/tottenham.svg" }
   ],
   "France - Ligue 1": [
-    { "id": "auxerre", "name": "AJ Auxerre", "badge": "assets/badges/France-Ligue1/auxerre.svg" },
     { "id": "angers", "name": "Angers SCO", "badge": "assets/badges/France-Ligue1/angers.svg" },
-    { "id": "monaco", "name": "AS Monaco", "badge": "assets/badges/France-Ligue1/monaco.svg" },
-    { "id": "nantes", "name": "FC Nantes", "badge": "assets/badges/France-Ligue1/nantes.svg" },
+    { "id": "auxerre", "name": "AJ Auxerre", "badge": "assets/badges/France-Ligue1/auxerre.svg" },
+    { "id": "brest", "name": "Stade Brestois", "badge": "assets/badges/France-Ligue1/brest.svg" },
     { "id": "lehavre", "name": "Le Havre AC", "badge": "assets/badges/France-Ligue1/lehavre.svg" },
+    { "id": "lemans", "name": "Le Mans", "badge": "assets/badges/France-Ligue1/lemans.svg" },
+    { "id": "lens", "name": "RC Lens", "badge": "assets/badges/France-Ligue1/lens.svg" },
     { "id": "lille", "name": "Lille OSC", "badge": "assets/badges/France-Ligue1/lille.svg" },
     { "id": "lorient", "name": "Lorient", "badge": "assets/badges/France-Ligue1/lorient.svg" },
     { "id": "lyon", "name": "Lyon", "badge": "assets/badges/France-Ligue1/lyon.svg" },
     { "id": "marseille", "name": "Marseille", "badge": "assets/badges/France-Ligue1/marseille.svg" },
-    { "id": "metz", "name": "Metz", "badge": "assets/badges/France-Ligue1/metz.svg" },
+    { "id": "monaco", "name": "AS Monaco", "badge": "assets/badges/France-Ligue1/monaco.svg" },
     { "id": "nice", "name": "OGC Nice", "badge": "assets/badges/France-Ligue1/nice.svg" },
     { "id": "paris", "name": "Paris FC", "badge": "assets/badges/France-Ligue1/paris.svg" },
     { "id": "psg", "name": "Paris Saint-Germain", "badge": "assets/badges/France-Ligue1/psg.svg" },
-    { "id": "lens", "name": "RC Lens", "badge": "assets/badges/France-Ligue1/lens.svg" },
-    { "id": "strasbourg", "name": "RC Strasbourg", "badge": "assets/badges/France-Ligue1/strasbourg.svg" },
-    { "id": "brest", "name": "Stade Brestois", "badge": "assets/badges/France-Ligue1/brest.svg" },
     { "id": "rennes", "name": "Stade Rennais", "badge": "assets/badges/France-Ligue1/rennes.svg" },
-    { "id": "toulouse", "name": "Toulouse FC", "badge": "assets/badges/France-Ligue1/toulouse.svg" }
+    { "id": "strasbourg", "name": "RC Strasbourg", "badge": "assets/badges/France-Ligue1/strasbourg.svg" },
+    { "id": "toulouse", "name": "Toulouse FC", "badge": "assets/badges/France-Ligue1/toulouse.svg" },
+    { "id": "troyes", "name": "Troyes", "badge": "assets/badges/France-Ligue1/troyes.svg" }
   ],
   "Germany - Bundesliga": [
     { "id": "augsburg", "name": "FC Augsburg", "badge": "assets/badges/Germany-Bundesliga/augsburg.svg" },

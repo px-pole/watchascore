@@ -598,12 +598,8 @@ function updateTeamsUI() {
     displayElement.textContent = groupInfo.toUpperCase();
     if (groupInfo) {
       displayElement.style.opacity = '1';
-      displayElement.style.height = 'auto';
-      displayElement.style.minHeight = '14px';
     } else {
       displayElement.style.opacity = '0';
-      displayElement.style.height = '0';
-      displayElement.style.minHeight = '0';
     }
   }
 }
@@ -648,12 +644,25 @@ function updateEventsUI(events) {
   ui.awayEvents.innerHTML = '';
   evList.forEach((ev, idx) => {
     const iconData = EVENT_ICON_MAP[ev.icon] || EVENT_ICON_MAP.goal;
-    const iconHtml = `<i class="fa-solid ${iconData.class}" style="cursor:pointer; font-size:10px; ${iconData.color ? 'color:' + iconData.color : ''}" data-index="${idx}" title="Click to remove"></i>`;
+
+    const icon = document.createElement('i');
+    icon.className = `fa-solid ${iconData.class}`;
+    icon.style.cursor = 'pointer';
+    icon.style.fontSize = '10px';
+    if (iconData.color) icon.style.color = iconData.color;
+    icon.dataset.index = idx;
+    icon.title = 'Click to remove';
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = ev.text; // textContent prevents HTML injection from user input
+
     const item = document.createElement('div');
     item.className = 'event-item';
-    item.innerHTML = ev.side === 'home' 
-      ? `<span>${ev.text}</span> ${iconHtml}`
-      : `${iconHtml} <span>${ev.text}</span>`;
+    if (ev.side === 'home') {
+      item.append(textSpan, ' ', icon);
+    } else {
+      item.append(icon, ' ', textSpan);
+    }
     (ev.side === 'home' ? ui.homeEvents : ui.awayEvents).appendChild(item);
   });
 }
@@ -836,10 +845,27 @@ function setVisibilityMode(mode) {
   }
 }
 
+// Shrinks the font one or two steps if a name can't fit the fixed 2-line slot.
+function fitTeamName(el) {
+  if (!el) return;
+  el.classList.remove('is-long', 'is-xlong');
+  // scrollHeight > clientHeight means content overflows the 2-line slot.
+  if (el.scrollHeight - el.clientHeight > 2) {
+    el.classList.add('is-long');
+    if (el.scrollHeight - el.clientHeight > 2) el.classList.add('is-xlong');
+  }
+}
+
 // Updates all UI elements that display a team's name.
 function syncTeamNameDisplay(side, name) {
   const sideKey = capitalize(side);
-  if (ui[`${side}Name`]) ui[`${side}Name`].textContent = name;
+  const nameEl = ui[`${side}Name`];
+  if (nameEl) {
+    nameEl.textContent = name;
+    nameEl.setAttribute('title', name);
+    nameEl.setAttribute('aria-label', name);
+    fitTeamName(nameEl);
+  }
   
   const eventBtn = ui[`addEvent${sideKey}`];
   if (eventBtn) {
@@ -1083,23 +1109,6 @@ function confirmResetAll() {
   saveState();
 }
 
-// Copies the current page URL to the clipboard for use as an OBS Browser Source.
-function copyOBSLink(btn) {
-  const url = window.location.href;
-  navigator.clipboard.writeText(url).then(() => {
-    const originalContent = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-    btn.classList.replace('btn-secondary', 'btn-green');
-    
-    setTimeout(() => {
-      btn.innerHTML = originalContent;
-      btn.classList.replace('btn-green', 'btn-secondary');
-    }, 2000);
-  }).catch(err => {
-    console.error('Failed to copy link: ', err);
-  });
-}
-
 /* ==========================================================================
    10. UTILITIES & GLOBAL HANDLERS
    ========================================================================== */
@@ -1183,6 +1192,20 @@ document.addEventListener('keydown', (e) => {
     case 'Backspace': e.preventDefault(); removeLastEvent(); break;
   }
 });
+
+// Re-check name fit on resize (e.g. crossing the mobile breakpoint where the
+// base font-size changes, or an OBS browser source being resized).
+window.addEventListener('resize', debounce(() => {
+  ['home', 'away'].forEach(side => fitTeamName(ui[`${side}Name`]));
+}, 150));
+
+// The display font loads asynchronously; re-measure once it's ready so the
+// first fit decision isn't based on fallback-font metrics.
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    ['home', 'away'].forEach(side => fitTeamName(ui[`${side}Name`]));
+  });
+}
 
 // Hides the preloader once all assets (images, fonts, scripts) are fully loaded.
 window.addEventListener('load', () => {

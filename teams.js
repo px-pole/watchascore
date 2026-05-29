@@ -58,7 +58,7 @@ const TOURNAMENTS = {
     { "id": "leverkusen", "name": "Bayer Leverkusen", "badge": "assets/badges/Germany-Bundesliga/leverkusen.svg" },
     { "id": "mainz", "name": "FSV Mainz 05", "badge": "assets/badges/Germany-Bundesliga/mainz.svg" },
     { "id": "paderborn", "name": "Paderborn", "badge": "assets/badges/Germany-Bundesliga/paderborn.svg" },
-    { "id": "shalke", "name": "Shalke 04", "badge": "assets/badges/Germany-Bundesliga/shalke.svg" },
+    { "id": "schalke", "name": "Schalke 04", "badge": "assets/badges/Germany-Bundesliga/schalke.svg" },
     { "id": "stuttgart", "name": "VfB Stuttgart", "badge": "assets/badges/Germany-Bundesliga/stuttgart.svg" },
     { "id": "union", "name": "Union Berlin", "badge": "assets/badges/Germany-Bundesliga/union.svg" }
   ],
@@ -131,6 +131,7 @@ const TOURNAMENTS = {
     { "id": "philadelphia", "name": "Philadelphia Union", "badge": "assets/badges/USA-MajorLeagueSoccer/philadelphia.svg" },
     { "id": "portland", "name": "Portland Timbers", "badge": "assets/badges/USA-MajorLeagueSoccer/portland.svg" },
     { "id": "realsaltlake", "name": "Real Salt Lake", "badge": "assets/badges/USA-MajorLeagueSoccer/realsaltlake.svg" },
+    { "id": "sandiego", "name": "San Diego FC", "badge": "assets/badges/USA-MajorLeagueSoccer/sandiego.svg" },
     { "id": "sanjose", "name": "San Jose Earthquakes", "badge": "assets/badges/USA-MajorLeagueSoccer/sanjose.svg" },
     { "id": "seattle", "name": "Seattle Sounders FC", "badge": "assets/badges/USA-MajorLeagueSoccer/seattle.svg" },
     { "id": "stlouis", "name": "St. Louis City SC", "badge": "assets/badges/USA-MajorLeagueSoccer/stlouis.svg" },
@@ -161,11 +162,11 @@ const TOURNAMENTS = {
     { "id": "usa", "name": "USA", "badge": "assets/badges/WorldCup2026/usa.svg" },
     { "id": "paraguay", "name": "Paraguay", "badge": "assets/badges/WorldCup2026/paraguay.svg" },
     { "id": "australia", "name": "Australia", "badge": "assets/badges/WorldCup2026/australia.svg" },
-    { "id": "turkey", "name": "Turkiye", "badge": "assets/badges/WorldCup2026/turkey.svg" }
+    { "id": "turkey", "name": "Türkiye", "badge": "assets/badges/WorldCup2026/turkey.svg" }
   ],
   "Group E": [
     { "id": "germany", "name": "Germany", "badge": "assets/badges/WorldCup2026/germany.svg" },
-    { "id": "curacao", "name": "Curacao", "badge": "assets/badges/WorldCup2026/curacao.svg" },
+    { "id": "curacao", "name": "Curaçao", "badge": "assets/badges/WorldCup2026/curacao.svg" },
     { "id": "ivorycoast", "name": "Ivory Coast", "badge": "assets/badges/WorldCup2026/ivorycoast.svg" },
     { "id": "ecuador", "name": "Ecuador", "badge": "assets/badges/WorldCup2026/ecuador.svg" }
   ],

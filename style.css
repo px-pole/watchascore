@@ -75,6 +75,11 @@
 
   /* Typography */
   --font-display: 'Barlow Condensed', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  /* Badge sizing: used to keep team-name width in sync with badge */
+  --badge-size: 100px;
+  /* Team-name slot: max width before wrapping, and fixed height (~2 lines). */
+  --name-max-width: 140px;
+  --name-slot-h: 42px;
 
   /* Borders & Dividers */
   --border-color: #1e3a6e;
@@ -271,7 +276,6 @@ header h1 span { color: var(--primary-color); }
 
 .modal-body-text { margin-bottom: 24px; font-size: 15px; color: var(--text-primary); }
 .start-time-input { margin-bottom: 20px; text-align: center; font-size: 18px; width: 140px; margin-left: auto; margin-right: auto; display: block; }
-.text-center { text-align: center; }
 .header-side-left, .header-side-right {
   display: flex;
   align-items: center;
@@ -327,14 +331,23 @@ body.content-loaded .scoreboard-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px; 
 }
 .team-block.home { align-items: flex-end; }
 .team-block.away { align-items: flex-start; }
 
+/* The stack hugs the score (inner edge) but is only as wide as the badge, so
+   the name centers on the badge and overflows symmetrically when it's wider. */
+.team-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: var(--badge-size, 100px);
+}
+
 .badge-wrap {
-  width: 100px;
-  height: 100px;
+  width: var(--badge-size, 100px);
+  height: var(--badge-size, 100px);
   border-radius: 14px;
   background: color-mix(in srgb, var(--bg-panel), transparent var(--badge-bg-opacity));
   backdrop-filter: blur(12px);
@@ -358,12 +371,23 @@ body.content-loaded .scoreboard-wrap {
 
 .team-name {
   font-family: var(--font-display);
-  font-weight: 800; font-size: 18px;
+  font-weight: 800;
+  font-size: 18px;
   letter-spacing: 0.5px;
   color: var(--text-on-primary);
   text-align: center;
   line-height: 1.1;
+  display: inline-block;
+  max-width: var(--name-max-width, 120px);
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+  height: var(--name-slot-h, 42px);
+  overflow: hidden;
 }
+
+.team-name.is-long  { font-size: 15px; letter-spacing: 0.3px; }
+.team-name.is-xlong { font-size: 13px; letter-spacing: 0; }
 
 .group-name-display {
   font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -372,9 +396,10 @@ body.content-loaded .scoreboard-wrap {
   letter-spacing: 2px;
   color: var(--text-muted);
   text-transform: uppercase;
-  min-height: 14px;
+  height: 18px;
   line-height: 1.4;
   transition: opacity 0.3s ease;
+  overflow: hidden;
 }
 
 .score-center {
@@ -937,18 +962,6 @@ header #new-match-btn {
   display: none;
 }
 
-/* FX Suggestion Pulse */
-@keyframes pulse-fx-suggestion {
-  0% { box-shadow: 0 0 0 0 hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0.4); border-color: var(--border-color); }
-  50% { box-shadow: 0 0 0 8px hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0); border-color: var(--primary-color); }
-  100% { box-shadow: 0 0 0 0 hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0); border-color: var(--border-color); }
-}
-
-.theme-select.suggest-fx {
-  animation: pulse-fx-suggestion 2s infinite ease-in-out;
-  border-color: var(--primary-color) !important;
-}
-
 /* ─── SKELETON LOADING ─── */
 @keyframes skeleton-shimmer {
   0% { background-position: -200% 0; }
@@ -1182,13 +1195,9 @@ header #new-match-btn {
 .btn-full { width: 100%; }
 
 .upload-hint-inline {
-  margin-left: auto;
   font-size: 12px;
   opacity: 0.6;
   font-weight: 400;
-  padding-right: 4px;
-  display: inline-block;
-  white-space: nowrap;
 }
 
 .clock-inputs { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; }
@@ -1199,7 +1208,7 @@ header #new-match-btn {
   padding: 9px 12px;
   font-size: 14px;
 }
-.clock-inputs .btn-small:not(.btn-hidden):hover {
+.clock-inputs .btn-small:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.3);
 }
@@ -1396,7 +1405,8 @@ footer {
   }
   .theme-select { margin-left: 0; width: 100% !important; margin-top: 10px; }
   .score-num { font-size: 60px; }
-  .badge-wrap { width: 95px; height: 95px; }
+  :root { --badge-size: 95px; }
+  .badge-wrap { width: var(--badge-size, 95px); height: var(--badge-size, 95px); }
   .team-name { font-size: 16px; }
   .score-center { min-width: 110px; }
   .team-selector-row { flex-direction: column; }
@@ -1431,7 +1441,6 @@ footer {
 .btn-small { font-size: 12px; padding: 6px; }
 .hidden { display: none; }
 .text-center { text-align: center; }
-.start-time-input { margin-bottom: 20px; text-align: center; font-size: 18px; width: 140px; margin-left: auto; margin-right: auto; display: block; }
 
 /* --- PRELOADER --- */
 #preloader {
@@ -1480,12 +1489,6 @@ footer {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-
-@keyframes preloaderFadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 
 @keyframes preloaderFadeIn {
   from { opacity: 0; transform: translateY(10px); }

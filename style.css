@@ -491,7 +491,7 @@ body.content-loaded .scoreboard-wrap {
   display: grid;
   grid-template-columns: 1fr 160px 1fr;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 6px;
 }
 .events-list {
   display: flex;

@@ -75,9 +75,7 @@
 
   /* Typography */
   --font-display: 'Barlow Condensed', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  /* Badge sizing: used to keep team-name width in sync with badge */
   --badge-size: 100px;
-  /* Team-name slot: max width before wrapping, and fixed height (~2 lines). */
   --name-max-width: 140px;
   --name-slot-h: 42px;
 
@@ -102,7 +100,7 @@
   --warning-color: hsl(var(--warning-h), var(--warning-s), var(--warning-l));
   --warning-rgb: 255, 214, 0;
 
-  /* Sports Specific Colors */
+  /* Bookings Specific Colors */
   --card-yellow: #ffd600;
   --card-red: #ff5252;
 
@@ -164,7 +162,6 @@ body {
   background: var(--primary-color);
 }
 
-/* Firefox Support */
 * {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--primary-color), transparent 50%) transparent;
@@ -335,8 +332,6 @@ body.content-loaded .scoreboard-wrap {
 .team-block.home { align-items: flex-end; }
 .team-block.away { align-items: flex-start; }
 
-/* The stack hugs the score (inner edge) but is only as wide as the badge, so
-   the name centers on the badge and overflows symmetrically when it's wider. */
 .team-stack {
   display: flex;
   flex-direction: column;
@@ -560,7 +555,6 @@ body.content-loaded .controls-grid .card:nth-child(1) { transition-delay: 0s, 0s
 body.content-loaded .controls-grid .card:nth-child(2) { transition-delay: 0s, 0s, 0.5s, 0.5s; }
 body.content-loaded .controls-grid .card:nth-child(3) { transition-delay: 0s, 0s, 0.6s, 0.6s; }
 
-/* Once the entrance is finished, remove all delays so theme switching is perfectly synced */
 body.entrance-finished .scoreboard-wrap,
 body.entrance-finished .team-selection-panel,
 body.entrance-finished .card { transition-delay: 0s !important; }
@@ -591,17 +585,14 @@ body.content-loaded .team-selection-panel,
   z-index: 500;
 }
 
-/* Floating state when selection is active and both teams picked */
 .wrapper.teams-selected .team-selection-panel {
   order: 4;
   box-shadow: 0 18px 55px rgba(0,0,0,0.45);
   background-color: color-mix(in srgb, var(--bg-panel), var(--primary-color) 3%);
 }
 
-/* Shift footer down when teams are selected */
 .teams-selected footer { order: 5; }
 
-/* Smoother View Transition for the Team Selection panel */
 ::view-transition-group(team-selection) {
   animation-duration: 0.6s;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -747,7 +738,7 @@ body.content-loaded .team-selection-panel,
   transition: max-height 0.3s ease-out;
 }
 .league-items-container.active {
-  max-height: 2000px; /* A sufficiently large value to accommodate all content */
+  max-height: 2000px;
 }
 .search-results-item { 
   padding: 7px 10px; 
@@ -1003,12 +994,12 @@ header #new-match-btn {
 .theme-crimson {
   --primary-h: 352;
   --primary-s: 95%;
-  --primary-l: 73%; /* Increased for better glow/text contrast */
+  --primary-l: 73%;
   --secondary-l: 78%;
   --bg-body: #2d060e;
   --bg-panel: #4c0519;
   --bg-card: #3f0412;
-  --border-color: #9f1239; /* Sharper boundary */
+  --border-color: #9f1239;
   --scoreboard-gradient-start: #4c0519;
   --bg-gradient-radial-2-hsl: 343 88% 16%;
   --bg-gradient-radial-1-alpha: 0.12;
@@ -1065,7 +1056,7 @@ header #new-match-btn {
   --text-primary: #0f172a;
   --text-muted: #334155;
   --text-on-primary: #0f172a;
-  --border-color: #64748b; /* Darkened to meet 3:1 UI boundary requirement */
+  --border-color: #64748b;
   --bg-input: #ffffff;
   --bg-secondary-btn: #f1f5f9;
   --scoreboard-gradient-start: #ffffff;
@@ -1105,7 +1096,7 @@ header #new-match-btn {
   --bg-body: #2e1065;
   --bg-panel: #3b0764;
   --bg-card: #4c1d95;
-  --border-color: #7e22ce; /* Increased visibility for panel edges */
+  --border-color: #7e22ce;
   --scoreboard-gradient-start: #3b0764;
   --bg-gradient-radial-2-hsl: 274 87% 21%;
   --bg-gradient-radial-1-alpha: 0.15;
@@ -1124,6 +1115,10 @@ header #new-match-btn {
   text-transform: uppercase;
 }
 .score-btns { display: flex; gap: 6px; align-items: center; }
+.score-btns .btn {
+  flex: 1 1 0;
+  min-width: 0;
+}
 .score-val {
   font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 28px; font-weight: 900;
@@ -1229,8 +1224,8 @@ header #new-match-btn {
   overflow: visible; 
   position: relative;
   padding: 9px 12px;
-  height: auto; /* Return to original size */
-  font-size: 14px; /* Universal font size */
+  height: auto;
+  font-size: 14px;
 }
 .clock-btn-row .btn span {
   display: block;

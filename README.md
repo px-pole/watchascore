@@ -39,7 +39,8 @@ For power users, WatchaScore supports global hotkeys to keep your hands on the a
 2. **OBS Integration:** 
    - Copy the websites URL address.
    - In OBS, add a new **Browser Source**.
-   - Paste the URL and set the width and height.
+   - Paste the URL and set the width and height (**900x650** is recommended).
+   - Crop using **Transform** feature.
    - Use the **Interact** feature in OBS to manage the scoreboard during your stream.
 
 ## 📂 Project Structure

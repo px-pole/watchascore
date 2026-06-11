@@ -219,7 +219,8 @@ function cacheElements() {
     'reset-scores-btn', 'reset-teams-btn', 'reset-all-btn', 
     'confirm-reset-all-btn', 'confirm-start-time-btn', 'remove-last-event-btn', 'clock-min', 'clock-sec',
     'crop-modal', 'crop-preview-img', 'confirm-crop-btn', 'close-crop-modal-btn', 
-    'toggle-contact-btn', 'feedback-link', 'status-btn-not-started'
+    'toggle-contact-btn', 'feedback-link', 'status-btn-not-started',
+    'overlay-instructions-btn', 'close-overlay-instructions-btn', 'confirm-overlay-instructions-btn'
   ];
 
   ids.forEach(id => {
@@ -319,6 +320,17 @@ function setupListeners() {
 
   // Modals
   document.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeActiveModal));
+
+  // Overlay click to close when clicking outside modal-card
+  document.querySelectorAll('.modal-overlay').forEach(ov => {
+    ov.addEventListener('click', (e) => {
+      if (e.target === ov) closeActiveModal();
+    });
+  });
+
+  // Overlay instructions button
+  ui.overlayInstructionsBtn?.addEventListener('click', showOverlayInstructionsModal);
+  ui.confirmOverlayInstructionsBtn?.addEventListener('click', closeActiveModal);
 
   // Events Timeline Delegation (removes need for inline onclick)
   ['home', 'away'].forEach(side => {
@@ -1081,6 +1093,15 @@ function showStartTimeModal() {
     input.value = state.startTime || '';
     input.focus();
   }
+}
+
+function showOverlayInstructionsModal() {
+  modalTriggerElement = document.activeElement;
+  const modal = document.getElementById('overlay-instructions-modal');
+  if (!modal) return;
+  modal.classList.add('active');
+  const confirmBtn = modal.querySelector('#confirm-overlay-instructions-btn') || modal.querySelector('.modal-close-btn');
+  if (confirmBtn) confirmBtn.focus();
 }
 
 function closeActiveModal() {

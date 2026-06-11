@@ -28,6 +28,28 @@
     </div>
   </div>
 
+    <!-- OVERLAY INSTRUCTIONS MODAL -->
+    <div id="overlay-instructions-modal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="overlay-instructions-title">
+        <div class="card-title" id="overlay-instructions-title">Add to Stream / OBS Instructions</div>
+        <div class="footer-text modal-body-text">
+          <p><strong>Local Use:</strong> Clone the repository and open <strong>index.html</strong> in any modern web browser.</p>
+          <p><strong>OBS Integration:</strong></p>
+          <ol style="text-align:left; margin-left:18px;">
+            <li>Copy the website's URL address.</li>
+            <li>In OBS, add a new <strong>Browser Source</strong>.</li>
+            <li>Paste the URL and set the width and height (recommended: <strong>900x650</strong>).</li>
+            <li>Crop using the <strong>Transform</strong> feature as needed.</li>
+            <li>Use OBS <strong>Interact</strong> to control the scoreboard during your stream.</li>
+          </ol>
+        </div>
+        <div class="clock-btn-row">
+          <button id="close-overlay-instructions-btn" class="btn btn-secondary modal-close-btn">Close</button>
+          <button id="confirm-overlay-instructions-btn" class="btn btn-primary">Got it</button>
+        </div>
+      </div>
+    </div>
+
 <div class="wrapper">
   <h1 class="sr-only">WatchaScore - Football Scoreboard</h1>
   <!-- HEADER -->
@@ -62,9 +84,12 @@
         <option value="midnight">Midnight</option>
         <option value="amethyst">Amethyst</option>
       </select>
-      <button id="new-match-btn" class="btn btn-primary" title="Open a new independent match instance">
+      <button id="new-match-btn" class="btn btn-primary header-btn" title="Open a new independent match instance">
         <i class="fa-solid fa-plus"></i> New Match
       </button>
+            <button id="overlay-instructions-btn" class="btn btn-primary header-btn" title="View instructions for adding the scoreboard to your stream or OBS">
+              <i class="fa-solid fa-tv"></i> Add to Stream
+            </button>
     </div>
   </header>
 
@@ -267,9 +292,9 @@
         <i class="fa-solid fa-rotate-left"></i> Remove Last Event
       </button>
     </div>
-
+    
   </div>
-
+  
   <!-- FOOTER -->
   <footer>
     <div class="card">

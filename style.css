@@ -899,10 +899,10 @@ input[type="range"]:active::-moz-range-thumb { transform: scale(1.2); }
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-#new-match-btn {
+.header-btn {
   height: 32px;
-  font-size: 13px !important;
-  padding: 0 12px !important;
+  font-size: 13px;
+  padding: 0 12px;
 }
 
 .theme-select {
@@ -926,12 +926,12 @@ input[type="range"]:active::-moz-range-thumb { transform: scale(1.2); }
 }
 
 header #theme-select,
-header #new-match-btn {
+header .header-btn {
   min-width: 120px;
-  width: 120px !important;
+  width: 120px;
 }
 
-header #new-match-btn {
+header .header-btn {
   justify-content: center;
 }
 
@@ -1384,6 +1384,7 @@ footer {
   text-align: center;
   animation: modalPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+.modal-card.wide { max-width: 720px; padding: 28px; }
 .modal-card .card-title {
   justify-content: center;
   font-size: 16px;

@@ -21,6 +21,12 @@ const EVENT_ICON_MAP = {
 const STATUS_LABELS = { 'HT': 'HALF-TIME', 'FULL-TIME': 'FULL-TIME', 'NOT STARTED': 'NOT STARTED', 'HT ET': 'HALF-TIME (ET)' };
 const THEMES = ['emerald', 'crimson', 'forest', 'ocean', 'light', 'midnight', 'amethyst'];
 
+const SEARCH_RESULT_CAP = 50;
+const CLOCK_MAX_MINUTES = 999;
+const EVENT_TEXT_MAX_LENGTH = 50;
+const CANVAS_SAMPLE_SIZE = 40;
+const ALLOWED_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']);
+
 const INITIAL_STATE = {
   homeScore: 0, awayScore: 0,
   clockSec: 0, running: false,
@@ -131,7 +137,7 @@ let modalTriggerElement = null; // Element that had focus before opening a modal
 
 const analysisCanvas = document.createElement('canvas');
 const analysisCtx = analysisCanvas.getContext('2d', { willReadFrequently: true });
-analysisCanvas.width = 40; analysisCanvas.height = 40;
+analysisCanvas.width = CANVAS_SAMPLE_SIZE; analysisCanvas.height = CANVAS_SAMPLE_SIZE;
 
 /* ==========================================================================
    3. INITIALIZATION & CORE SETUP
@@ -214,13 +220,12 @@ function cacheElements() {
     'add-event-away', 'fx-suggestion-icon', 'home-badge', 'home-badge-wrap', 
     'mini-home-badge', 'away-badge', 'away-badge-wrap', 'mini-away-badge',
     'new-match-btn', 'home-logo-upload', 'away-logo-upload', 
-    'set-clock-btn', 
+    'set-clock-btn',
     'reset-clock-btn', 'toggle-clock-btn', 'clock-wrap',
     'reset-scores-btn', 'reset-teams-btn', 'reset-all-btn', 
     'confirm-reset-all-btn', 'confirm-start-time-btn', 'remove-last-event-btn', 'clock-min', 'clock-sec',
     'crop-modal', 'crop-preview-img', 'confirm-crop-btn', 'close-crop-modal-btn', 
-    'toggle-contact-btn', 'feedback-link', 'status-btn-not-started',
-    'overlay-instructions-btn', 'close-overlay-instructions-btn', 'confirm-overlay-instructions-btn'
+    'toggle-contact-btn', 'feedback-link', 'status-btn-not-started'
   ];
 
   ids.forEach(id => {
@@ -274,10 +279,10 @@ function setupListeners() {
   // Search & Inputs
   ['home', 'away'].forEach(side => {
     const searchInput = ui[`${side}TeamSearch`];
-    searchInput?.addEventListener('input', (e) => filterTeams(side, e.target.value));
+    searchInput?.addEventListener('input', (e) => debouncedSearch(side, e.target.value));
     searchInput?.addEventListener('keydown', (e) => handleSearchKeyboard(e, side));
-    searchInput?.addEventListener('click', (e) => filterTeams(side, e.target.value));
-    ui[`${side}ClearSearchBtn`]?.addEventListener('click', () => { searchInput.value = ''; filterTeams(side, ''); });
+    searchInput?.addEventListener('click', (e) => debouncedSearch(side, e.target.value));
+    ui[`${side}ClearSearchBtn`]?.addEventListener('click', () => { searchInput.value = ''; debouncedSearch(side, ''); });
     ui[`${side}NameOverride`]?.addEventListener('input', (e) => overrideName(side, e.target.value));
     ui[`${side}LogoUpload`]?.addEventListener('change', (e) => handleLogoUpload(side, e.target));
   });
@@ -327,10 +332,6 @@ function setupListeners() {
       if (e.target === ov) closeActiveModal();
     });
   });
-
-  // Overlay instructions button
-  ui.overlayInstructionsBtn?.addEventListener('click', showOverlayInstructionsModal);
-  ui.confirmOverlayInstructionsBtn?.addEventListener('click', closeActiveModal);
 
   // Events Timeline Delegation (removes need for inline onclick)
   ['home', 'away'].forEach(side => {
@@ -413,7 +414,7 @@ const debouncedSearch = debounce((side, text) => {
 
   resultsDiv.setAttribute('role', 'listbox');
   if (filter) {
-    renderSearchMode(fragment, side, filter, resultsDiv, searchInput); // resultsDiv and searchInput are not used here, can be removed from args
+    renderSearchMode(fragment, side, filter, resultsDiv, searchInput);
   } else {
     renderBrowseMode(fragment, side, resultsDiv, searchInput);
   }
@@ -447,7 +448,7 @@ function renderSearchMode(fragment, side, filter, resultsDiv, searchInput) {
       if (subMatch || fuzzyMatch) {
         if (!filteredByLeague.has(team.league)) filteredByLeague.set(team.league, []);
         filteredByLeague.get(team.league).push(team);
-        if (++foundCount >= 50) { isCapped = true; break; }
+        if (++foundCount >= SEARCH_RESULT_CAP) { isCapped = true; break; }
       }
     }
 
@@ -490,7 +491,6 @@ function renderSearchMode(fragment, side, filter, resultsDiv, searchInput) {
 
 function renderBrowseMode(fragment, side, resultsDiv, searchInput) {
     const leagues = new Map();
-    resultsDiv.setAttribute('role', 'listbox');
     ALL_TEAMS.forEach(t => { if (!leagues.has(t.league)) leagues.set(t.league, []); leagues.get(t.league).push(t); });
 
     leagues.forEach((teams, leagueName) => {
@@ -533,7 +533,6 @@ function renderBrowseMode(fragment, side, resultsDiv, searchInput) {
     });
 }
 
-const filterTeams = (side, text) => debouncedSearch(side, text);
 const getTeam = (id) => TEAM_MAP.get(id);
 
 function setTeam(side, id) {
@@ -630,7 +629,20 @@ function updateClockUI() {
   }
 
   renderClock();
-  setStatus(state.status);
+  renderStatusUI(state.status);
+}
+
+function renderStatusUI(s) {
+  let label = STATUS_LABELS[s] || s;
+  if (s === 'NOT STARTED' && state.startTime) {
+    label = `KICK OFF ${state.startTime}`;
+  }
+  ui.clockStatusText.textContent = label;
+  ui.statusBtns.forEach(b => {
+    const isActive = b.dataset.status === s;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-pressed', isActive);
+  });
 }
 
 function updateThemeUI() {
@@ -721,9 +733,9 @@ function analyzeBrightness(img) {
   if (!pendingAnalysis.has(src)) {
     pendingAnalysis.set(src, new Set());
     try {
-      analysisCtx.clearRect(0, 0, 40, 40);
-      analysisCtx.drawImage(img, 0, 0, 40, 40);
-      const imageData = analysisCtx.getImageData(0, 0, 40, 40);
+      analysisCtx.clearRect(0, 0, CANVAS_SAMPLE_SIZE, CANVAS_SAMPLE_SIZE);
+      analysisCtx.drawImage(img, 0, 0, CANVAS_SAMPLE_SIZE, CANVAS_SAMPLE_SIZE);
+      const imageData = analysisCtx.getImageData(0, 0, CANVAS_SAMPLE_SIZE, CANVAS_SAMPLE_SIZE);
       
       // Robust handling: transfer buffer to worker for non-blocking analysis
       brightnessWorker.postMessage({ imageData: imageData.data.buffer, src: src }, [imageData.data.buffer]);
@@ -784,6 +796,10 @@ function setBadge(side, src) {
 function handleLogoUpload(side, input) {
   const file = input.files[0];
   if (!file) return;
+  if (!ALLOWED_LOGO_TYPES.has(file.type)) {
+    alert('Please upload a valid image file (PNG, JPG, GIF, WebP, or SVG).');
+    input.value = ''; return;
+  }
   const MAX_SIZE_MB = 2;
   if (file.size > MAX_SIZE_MB * 1024 * 1024) {
     alert(`The selected image is too large. Please upload a file smaller than ${MAX_SIZE_MB}MB.`);
@@ -798,6 +814,7 @@ function handleLogoUpload(side, input) {
     ui.cropPreviewImg.src = pendingLogoBase64;
     modalTriggerElement = document.activeElement;
     ui.cropModal.classList.add('active');
+    ui.cropModal.removeAttribute('aria-hidden');
     const applyBtn = ui.cropModal.querySelector('.btn-primary');
     if (applyBtn) applyBtn.focus();
     input.value = '';
@@ -850,11 +867,8 @@ function updateVisibilityHighlight() {
 // Manually updates the visibility enhancement mode (None, Glow, or Contrast).
 function setVisibilityMode(mode) {
   state.visibilityMode = mode;
-  saveState();
-  syncUI();
-  if (document.activeElement && typeof document.activeElement.blur === 'function') {
-    document.activeElement.blur();
-  }
+  updateVisibilityHighlight();
+  document.activeElement?.blur();
 }
 
 // Shrinks the font one or two steps if a name can't fit the fixed 2-line slot.
@@ -864,6 +878,7 @@ function fitTeamName(el) {
   // scrollHeight > clientHeight means content overflows the 2-line slot.
   if (el.scrollHeight - el.clientHeight > 2) {
     el.classList.add('is-long');
+    void el.offsetHeight; // Force reflow so the reduced font-size is measured before the second check
     if (el.scrollHeight - el.clientHeight > 2) el.classList.add('is-xlong');
   }
 }
@@ -890,10 +905,7 @@ function syncTeamNameDisplay(side, name) {
 function overrideName(side, val) {
   const normalized = val.trim();
   state[side + 'NameOverride'] = normalized;
-  saveState();
-  const sideKey = capitalize(side);
-  const name = normalized || state[side + 'Team']?.name || sideKey;
-  
+  const name = normalized || state[side + 'Team']?.name || capitalize(side);
   syncTeamNameDisplay(side, name);
 }
 
@@ -901,25 +913,16 @@ function overrideName(side, val) {
 function changeScore(side, delta) {
   const key = side + 'Score';
   state[key] = Math.max(0, state[key] + delta);
-  const sideKey = capitalize(side);
-  const [el, ctrlEl] = [ui['score' + sideKey], ui['ctrl' + sideKey + 'Score']];
-  el.textContent = state[key];
-  ctrlEl.textContent = state[key];
-  
-  // Visual feedback
-  el.classList.add('bump');
-  setTimeout(() => el.classList.remove('bump'), 200);
+  const el = ui['score' + capitalize(side)];
+  if (el) {
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 200);
+  }
 }
 
 function resetScores() {
-  state.homeScore = 0; state.awayScore = 0;
-  ['home','away'].forEach(s => {
-    const sideKey = capitalize(s);
-    const el = ui['score' + sideKey];
-    const ctrlEl = ui['ctrl' + sideKey + 'Score'];
-    if (el) el.textContent = '0';
-    ctrlEl.textContent = '0';
-  });
+  state.homeScore = 0;
+  state.awayScore = 0;
 }
 
 function resetTeams() {
@@ -949,8 +952,8 @@ function renderClock(seconds) {
 }
 
 function setClock() {
-  const m = parseInt(ui.clockMin.value) || 0;
-  const s = parseInt(ui.clockSec.value) || 0;
+  const m = Math.min(parseInt(ui.clockMin.value) || 0, CLOCK_MAX_MINUTES);
+  const s = Math.min(parseInt(ui.clockSec.value) || 0, 59);
   state.clockSec = m * 60 + s;
   renderClock();
 }
@@ -1037,24 +1040,14 @@ function setTheme(themeName) {
 
 function setStatus(s) {
   state.status = s;
-  let label = STATUS_LABELS[s] || s;
-  if (s === 'NOT STARTED' && state.startTime) {
-    label = `KICK OFF ${state.startTime}`;
-  }
-  ui.clockStatusText.textContent = label;
-
-  ui.statusBtns.forEach(b => {
-    const isActive = b.dataset.status === s;
-    b.classList.toggle('active', isActive);
-    b.setAttribute('aria-pressed', isActive);
-  });
+  renderStatusUI(s);
 }
 
 function addMatchEvent(side) {
   const icon = ui.eventIcon.value;
-  let text = ui.eventText.value.trim();
+  let text = ui.eventText.value.trim().slice(0, EVENT_TEXT_MAX_LENGTH);
   if (!text) return;
-  text = text.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  text = text.toLowerCase().replace(/(^|\s)(\S)/g, (_, sp, ch) => sp + ch.toUpperCase());
   if (/\d$/.test(text)) text += "'";
   
   // To trigger the proxy, we re-assign the array
@@ -1080,6 +1073,7 @@ function resetAll() {
   modalTriggerElement = document.activeElement;
   const modal = document.getElementById('modal-overlay');
   modal.classList.add('active');
+  modal.removeAttribute('aria-hidden');
   const confirmBtn = modal.querySelector('#confirm-reset-all-btn');
   if (confirmBtn) confirmBtn.focus();
 }
@@ -1088,6 +1082,7 @@ function showStartTimeModal() {
   modalTriggerElement = document.activeElement;
   const modal = document.getElementById('start-time-modal');
   modal.classList.add('active');
+  modal.removeAttribute('aria-hidden');
   const input = document.getElementById('start-time-input');
   if (input) {
     input.value = state.startTime || '';
@@ -1095,19 +1090,11 @@ function showStartTimeModal() {
   }
 }
 
-function showOverlayInstructionsModal() {
-  modalTriggerElement = document.activeElement;
-  const modal = document.getElementById('overlay-instructions-modal');
-  if (!modal) return;
-  modal.classList.add('active');
-  const confirmBtn = modal.querySelector('#confirm-overlay-instructions-btn') || modal.querySelector('.modal-close-btn');
-  if (confirmBtn) confirmBtn.focus();
-}
-
 function closeActiveModal() {
   const active = document.querySelector('.modal-overlay.active');
   if (active) {
     active.classList.remove('active');
+    active.setAttribute('aria-hidden', 'true');
     if (modalTriggerElement) {
       modalTriggerElement.focus();
       modalTriggerElement = null;
@@ -1235,10 +1222,7 @@ window.addEventListener('load', () => {
   if (preloader) {
     preloader.classList.add('preloader-hidden');
     document.body.classList.add('content-loaded');
-    
-    // Ensure scroll is at top after preloader begins to fade
-    window.scrollTo(0, 0);
-    
+
     // Remove delays after the entrance animation (approx 1.5s) is done
     setTimeout(() => document.body.classList.add('entrance-finished'), 1500);
     setTimeout(() => preloader.remove(), 700);

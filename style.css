@@ -44,7 +44,7 @@
   src: url('assets/fonts/Barlow_Condensed/BarlowCondensed-Black.ttf') format('truetype');
   font-weight: 900;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 :root {
@@ -162,7 +162,7 @@ body {
   background: var(--primary-color);
 }
 
-* {
+html {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--primary-color), transparent 50%) transparent;
 }
@@ -224,10 +224,11 @@ header h1 {
 header h1 span { color: var(--primary-color); }
 
 /* --- SHORTCUTS CHIP & POPUP --- */
-.shortcuts-chip-container { margin-top: 12px; display: flex; }
+.chip-container { margin-top: 12px; display: flex; gap: 8px; }
 
-.shortcuts-chip {
-  display: inline-flex; align-items: center; gap: 6px;
+.chip {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  flex: 1; white-space: nowrap;
   background: var(--bg-secondary-btn);
   border: 1px solid var(--border-color);
   padding: 5px 12px; border-radius: 6px;
@@ -236,13 +237,13 @@ header h1 span { color: var(--primary-color); }
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.shortcuts-chip:hover {
+.chip:hover {
   color: var(--primary-color);
   border-color: var(--primary-color);
   background: var(--status-btn-active-bg);
 }
 
-.shortcuts-popup {
+.chip-popup {
   position: absolute; bottom: calc(100% + 12px); left: 0;
   background: var(--bg-panel);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
@@ -255,21 +256,32 @@ header h1 span { color: var(--primary-color); }
   text-align: left;
 }
 
-.shortcuts-chip:hover .shortcuts-popup { opacity: 1; visibility: visible; transform: translateY(0); }
+.chip:hover .chip-popup { opacity: 1; visibility: visible; transform: translateY(0); }
 
-.shortcuts-popup::after {
+.chip-popup.how-to-popup { width: 260px; }
+.how-to-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--primary-color);
+  padding: 6px 0 2px;
+}
+.how-to-title:first-child { padding-top: 0; }
+
+.chip-popup::after {
   content: ''; position: absolute; top: 100%; left: 15px;
   border: 6px solid transparent; border-top-color: var(--border-color);
 }
 
-.shortcut-row {
+.chip-row {
   display: flex; justify-content: space-between; align-items: center;
   font-size: 13px; color: var(--text-muted); padding: 5px 0;
   border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 
-.shortcut-row:last-child { border-bottom: none; }
-.shortcut-row span { color: var(--primary-color); font-weight: 700; font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.chip-row:last-child { border-bottom: none; }
+.chip-row span { color: var(--primary-color); font-weight: 700; font-family: var(--font-display); }
 
 .modal-body-text { margin-bottom: 24px; font-size: 15px; color: var(--text-primary); }
 .start-time-input { margin-bottom: 20px; text-align: center; font-size: 18px; width: 140px; margin-left: auto; margin-right: auto; display: block; }
@@ -279,10 +291,6 @@ header h1 span { color: var(--primary-color); }
   gap: 14px;
 }
 
-.scoreboard-wrap { order: 1; }
-.team-selection-panel { order: 2; view-transition-name: team-selection; transition: transform 0.3s ease; }
-.controls-grid { order: 3; }
-footer { order: 4; }
 
 /* ─── SCOREBOARD ─── */
 .scoreboard-wrap {
@@ -385,7 +393,7 @@ body.content-loaded .scoreboard-wrap {
 .team-name.is-xlong { font-size: 13px; letter-spacing: 0; }
 
 .group-name-display {
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 2px;
@@ -429,7 +437,7 @@ body.content-loaded .scoreboard-wrap {
 }
 
 .score-divider {
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-weight: 400; font-size: 40px;
   color: var(--text-muted);
   line-height: 1;
@@ -461,7 +469,7 @@ body.content-loaded .scoreboard-wrap {
   transform: translateY(-8px) !important;
 }
 .clock-wrap .clock {
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700; font-size: 18px;
   letter-spacing: 2px;
   color: var(--primary-color);
@@ -473,7 +481,7 @@ body.content-loaded .scoreboard-wrap {
   justify-content: center;
 }
 .clock-wrap .clock-status {
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-size: 12px; font-weight: 600;
   letter-spacing: 2px;
   color: var(--text-muted);
@@ -506,10 +514,16 @@ body.content-loaded .scoreboard-wrap {
 
 /* ─── CONTROLS PANEL ─── */
 .controls-grid, .donation-buttons {
+  order: 3;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
 }
+.controls-grid {
+  position: relative;
+  z-index: 600;
+}
+.controls-grid .card:first-child { z-index: 1; }
 
 .card {
   background: color-mix(in srgb, var(--bg-panel), transparent 15%);
@@ -522,7 +536,7 @@ body.content-loaded .scoreboard-wrap {
   position: relative;
 }
 .card-title {
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-weight: 800; font-size: 13px;
   letter-spacing: 2.5px;
   color: var(--primary-color);
@@ -584,6 +598,7 @@ body.content-loaded .team-selection-panel,
   position: relative;
   z-index: 500;
 }
+.team-selection-panel:has(.search-results-popup.active) { z-index: 700; }
 
 .wrapper.teams-selected .team-selection-panel {
   order: 4;
@@ -607,7 +622,7 @@ body.content-loaded .team-selection-panel,
   flex: 1;
 }
 
-.v-divider, .h-divider {
+.v-divider {
   width: 1px;
   align-self: stretch;
   background: var(--border-color);
@@ -796,7 +811,7 @@ select, input[type="text"], input[type="number"] {
   border: 1px solid color-mix(in srgb, var(--border-color), transparent 40%);
   border-radius: 8px;
   color: var(--text-primary);
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: none;
@@ -841,64 +856,6 @@ select optgroup {
   font-weight: 700;
 }
 
-/* ─── SLIDER STYLING ─── */
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  background: transparent;
-  cursor: pointer;
-}
-input[type="range"]:focus { outline: none; }
-input[type="range"]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 6px;
-  background: color-mix(in srgb, var(--bg-input), #fff 5%);
-  border: 1px solid var(--border-color);
-  border-radius: 3px;
-  transition: border-color 0.3s ease;
-}
-input[type="range"]:hover::-webkit-slider-runnable-track {
-  border-color: var(--primary-color);
-}
-input[type="range"]::-moz-range-track {
-  width: 100%; height: 6px;
-  background: color-mix(in srgb, var(--bg-input), #fff 5%);
-  border: 1px solid var(--border-color);
-  border-radius: 3px;
-}
-input[type="range"]::-webkit-slider-thumb {
-  height: 18px;
-  width: 18px;
-  border-radius: 50%;
-  background: var(--primary-color);
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  margin-top: -7px;
-  box-shadow: 0 0 10px hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0.4);
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s;
-}
-input[type="range"]:active::-webkit-slider-thumb {
-  transform: scale(1.2);
-  background: var(--secondary-color);
-}
-input[type="range"]::-moz-range-thumb {
-  height: 18px;
-  width: 18px;
-  border: none;
-  border-radius: 50%;
-  background: var(--primary-color);
-  cursor: pointer;
-  box-shadow: 0 0 10px hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0.4);
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-input[type="range"]:active::-moz-range-thumb { transform: scale(1.2); }
-
-.theme-light input[type="range"]::-webkit-slider-thumb {
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
 .header-btn {
   height: 32px;
   font-size: 13px;
@@ -910,7 +867,7 @@ input[type="range"]:active::-moz-range-thumb { transform: scale(1.2); }
   min-width: 60px;
   height: 32px;
   padding: 0 10px !important;
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-size: 13px !important;
   font-weight: 600;
   letter-spacing: 1px;
@@ -1120,7 +1077,7 @@ header .header-btn {
   min-width: 0;
 }
 .score-val {
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-size: 28px; font-weight: 900;
   color: var(--text-on-primary); min-width: 32px;
   text-align: center;
@@ -1130,7 +1087,7 @@ header .header-btn {
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   border: none; border-radius: 8px;
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700; font-size: 14px;
   letter-spacing: 1px; cursor: pointer;
   padding: 9px 14px;
@@ -1151,20 +1108,20 @@ header .header-btn {
   content: ' ⏳';
   animation: loader-spin 1s infinite linear;
 }
-.btn-plus {
+.btn-plus, .btn-green {
   background: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.15);
   border: 1px solid hsl(var(--success-h) var(--success-s) var(--success-l) / 0.3);
   color: var(--success-color);
-  font-size: 18px; padding: 6px 12px;
 }
-.btn-plus:hover { background: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.25); }
-.btn-minus {
+.btn-plus:hover, .btn-green:hover { background: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.25); }
+.btn-plus { font-size: 18px; padding: 6px 12px; }
+.btn-minus, .btn-danger {
   background: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.12);
   border: 1px solid hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.3);
   color: var(--danger-color);
-  font-size: 18px; padding: 6px 12px;
 }
-.btn-minus:hover { background: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.22); }
+.btn-minus:hover, .btn-danger:hover { background: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.22); }
+.btn-minus { font-size: 18px; padding: 6px 12px; }
 .btn-primary {
   background: var(--primary-color);
   color: var(--text-on-primary);
@@ -1176,18 +1133,6 @@ header .header-btn {
   color: var(--text-primary);
 }
 .btn-secondary:hover { background: var(--secondary-btn-hover-bg); }
-.btn-danger {
-  background: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.12);
-  border: 1px solid hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.3);
-  color: var(--danger-color);
-}
-.btn-danger:hover { background: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.22); }
-.btn-green {
-  background: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.15);
-  border: 1px solid hsl(var(--success-h) var(--success-s) var(--success-l) / 0.3);
-  color: var(--success-color);
-}
-.btn-green:hover { background: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.25); }
 .btn-full { width: 100%; }
 
 .upload-hint-inline {
@@ -1212,22 +1157,22 @@ header .header-btn {
 .clock-inputs input { 
   padding: 9px 12px; 
   text-align: center;
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 14px;
   border: 1px solid var(--border-color);
 }
-.clock-btn-row { display: flex; gap: 8px; }
-.clock-btn-row .btn { 
-  flex: 1; 
+.btn-row { display: flex; gap: 8px; }
+.btn-row .btn {
+  flex: 1;
   min-width: 0;
-  overflow: visible; 
+  overflow: visible;
   position: relative;
   padding: 9px 12px;
   height: auto;
   font-size: 14px;
 }
-.clock-btn-row .btn span {
+.btn-row .btn span {
   display: block;
   width: 100%;
   overflow: hidden;
@@ -1283,7 +1228,7 @@ header .header-btn {
   margin-bottom: 8px;
 }
 .status-btn {
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
   border: 1px solid var(--border-color);
   background: transparent;
@@ -1463,7 +1408,7 @@ footer {
   text-align: center;
 }
 .loader-logo {
-  font-family: 'Barlow Condensed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-display);
   font-weight: 900;
   font-size: 32px;
   color: var(--text-on-primary);

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WatchaScore - Football Scoreboard</title>
+<link rel="preload" href="assets/fonts/Barlow_Condensed/BarlowCondensed-Black.ttf" as="font" type="font/truetype" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
 <script>
@@ -28,36 +29,12 @@
     </div>
   </div>
 
-    <!-- OVERLAY INSTRUCTIONS MODAL -->
-    <div id="overlay-instructions-modal" class="modal-overlay" aria-hidden="true">
-      <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="overlay-instructions-title">
-        <div class="card-title" id="overlay-instructions-title">Add to Stream / OBS Instructions</div>
-        <div class="footer-text modal-body-text">
-          <p><strong>Local Use:</strong> Clone the repository and open <strong>index.html</strong> in any modern web browser.</p>
-          <p><strong>OBS Integration:</strong></p>
-          <ol style="text-align:left; margin-left:18px;">
-            <li>Copy the website's URL address.</li>
-            <li>In OBS, add a new <strong>Browser Source</strong>.</li>
-            <li>Paste the URL and set the width and height (recommended: <strong>900x650</strong>).</li>
-            <li>Crop using the <strong>Transform</strong> feature as needed.</li>
-            <li>Use OBS <strong>Interact</strong> to control the scoreboard during your stream.</li>
-          </ol>
-        </div>
-        <div class="clock-btn-row">
-          <button id="close-overlay-instructions-btn" class="btn btn-secondary modal-close-btn">Close</button>
-          <button id="confirm-overlay-instructions-btn" class="btn btn-primary">Got it</button>
-        </div>
-      </div>
-    </div>
-
 <div class="wrapper">
-  <h1 class="sr-only">WatchaScore - Football Scoreboard</h1>
   <!-- HEADER -->
   <header>
     <div class="header-side-left">
       <h1><span>WatchaScore</span></h1>
       <select id="mode-select" class="theme-select">
-        <option disabled>— Mode —</option>
         <option value="leagues">Club Leagues</option>
         <option value="worldcup">World Cup 2026</option>
       </select>
@@ -76,20 +53,17 @@
       <select id="theme-select" class="theme-select">
         <option disabled>— Theme —</option>
         <option value="default">Sky Blue</option>
+        <option value="light">Light</option>
+        <option value="midnight">Midnight</option>
         <option value="emerald">Emerald</option>
         <option value="crimson">Crimson</option>
         <option value="forest">Forest</option>
         <option value="ocean">Ocean</option>
-        <option value="light">Light</option>
-        <option value="midnight">Midnight</option>
         <option value="amethyst">Amethyst</option>
       </select>
       <button id="new-match-btn" class="btn btn-primary header-btn" title="Open a new independent match instance">
         <i class="fa-solid fa-plus"></i> New Match
       </button>
-            <button id="overlay-instructions-btn" class="btn btn-primary header-btn" title="View instructions for adding the scoreboard to your stream or OBS">
-              <i class="fa-solid fa-tv"></i> Add to Stream
-            </button>
     </div>
   </header>
 
@@ -135,7 +109,7 @@
 
     </div>
 
-    <div class="events-container" aria-hidden="true">
+    <div class="events-container">
       <div id="home-events" class="events-list home-events" aria-live="polite"></div>
       <div class="spacer"></div>
       <div id="away-events" class="events-list away-events" aria-live="polite"></div>
@@ -146,7 +120,7 @@
     <div class="card-title">Team Selection</div>
     <div class="team-selector-row">
       <div class="selector-group">
-        <label>Home Team</label>
+        <label for="home-team-search">Home Team</label>
         <div class="selector-inner">
           <div class="mini-badge"><img id="mini-home-badge" src="" alt=""></div>
           <div class="search-container">
@@ -170,7 +144,7 @@
       </div>
       <div class="v-divider" aria-hidden="true"></div>
       <div class="selector-group">
-        <label>Away Team</label>
+        <label for="away-team-search">Away Team</label>
         <div class="selector-inner">
           <div class="mini-badge"><img id="mini-away-badge" src="" alt=""></div>
           <div class="search-container">
@@ -204,7 +178,7 @@
       <div class="clock-inputs">
         <div class="field">
           <label>Minutes</label>
-          <input type="number" id="clock-min" min="0" value="0" placeholder="00">
+          <input type="number" id="clock-min" min="0" max="999" value="0" placeholder="00">
         </div>
         <div class="field">
           <label>Seconds</label>
@@ -212,21 +186,34 @@
         </div>
         <button id="set-clock-btn" class="btn btn-secondary btn-small">Set</button>
       </div>
-      <div class="clock-btn-row">
+      <div class="btn-row">
         <button id="start-btn" class="btn btn-green" aria-label="Start or pause match clock">▶ Start</button>
         <button id="reset-clock-btn" class="btn btn-danger" aria-label="Reset match clock">↺ Reset</button>
         <button id="toggle-clock-btn" class="btn btn-secondary" aria-label="Hide or show match clock">Hide</button>
       </div>
-      <div class="shortcuts-chip-container">
-        <div class="shortcuts-chip" aria-haspopup="true">
+      <div class="chip-container">
+        <div class="chip" id="chip-keyboard" aria-haspopup="true">
           <i class="fa-solid fa-keyboard"></i> Keyboard Shortcuts
-          <div class="shortcuts-popup" role="tooltip">
-            <div class="shortcut-row"><span>[Space]</span> Start / Pause Clock</div>
-            <div class="shortcut-row"><span>[V]</span> Hide / Show Clock</div>
-            <div class="shortcut-row"><span>[H]</span> Home Goal</div>
-            <div class="shortcut-row"><span>[A]</span> Away Goal</div>
-            <div class="shortcut-row"><span>[Backspace]</span> Undo Event</div>
-            <div class="shortcut-row"><span>[Shift] + [X]</span> Reset All</div>
+          <div class="chip-popup" role="tooltip">
+            <div class="chip-row"><span>[Space]</span> Start / Pause Clock</div>
+            <div class="chip-row"><span>[V]</span> Hide / Show Clock</div>
+            <div class="chip-row"><span>[H]</span> Home Goal</div>
+            <div class="chip-row"><span>[A]</span> Away Goal</div>
+            <div class="chip-row"><span>[Backspace]</span> Undo Event</div>
+            <div class="chip-row"><span>[Shift] + [X]</span> Reset All</div>
+          </div>
+        </div>
+        <div class="chip" id="chip-howto" aria-haspopup="true">
+          <i class="fa-solid fa-circle-question"></i> How to use
+          <div class="chip-popup how-to-popup" role="tooltip">
+            <div class="how-to-title">Local</div>
+            <div class="chip-row">Open index.html in any browser.</div>
+            <div class="how-to-title">OBS / Stream</div>
+            <div class="chip-row">1. Copy this page's URL.</div>
+            <div class="chip-row">2. Add a Browser Source in OBS.</div>
+            <div class="chip-row">3. Set size to 900 × 650.</div>
+            <div class="chip-row">4. Crop using the Transform feature.</div>
+            <div class="chip-row">5. Use Interact to control live.</div>
           </div>
         </div>
       </div>
@@ -282,8 +269,8 @@
       </div>
       <div class="selector-group mt-3">
         <label>Event (e.g. Scorer + Minute)</label>
-        <input type="text" id="event-text" placeholder="e.g. Maradona 55">
-        <div class="clock-btn-row mt-2">
+        <input type="text" id="event-text" placeholder="e.g. Maradona 55" maxlength="50">
+        <div class="btn-row mt-2">
           <button class="btn btn-primary" id="add-event-home"><span>Home</span></button>
           <button class="btn btn-primary" id="add-event-away"><span>Away</span></button>
         </div>
@@ -327,11 +314,11 @@
 </div>
 
 <!-- MODAL -->
-<div id="modal-overlay" class="modal-overlay">
+<div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Confirm Reset" aria-hidden="true">
   <div class="modal-card">
     <div class="card-title">Confirm Reset</div>
     <p class="footer-text mb-3 modal-body-text">Are you sure you want to reset the entire scoreboard? This cannot be undone.</p>
-    <div class="clock-btn-row">
+    <div class="btn-row">
       <button id="confirm-reset-all-btn" class="btn btn-danger">Yes, Reset All</button>
       <button id="close-reset-modal-btn" class="btn btn-secondary modal-close-btn">Cancel</button>
     </div>
@@ -339,12 +326,12 @@
 </div>
 
 <!-- START TIME MODAL -->
-<div id="start-time-modal" class="modal-overlay">
+<div id="start-time-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Set Start Time" aria-hidden="true">
   <div class="modal-card">
     <div class="card-title">Set Start Time</div>
     <p class="footer-text mb-3">Enter the scheduled kick-off time:</p>
     <input type="time" id="start-time-input" class="search-input start-time-input">
-    <div class="clock-btn-row">
+    <div class="btn-row">
       <button id="confirm-start-time-btn" class="btn btn-primary">Confirm</button>
       <button id="close-start-time-modal-btn" class="btn btn-secondary modal-close-btn">Cancel</button>
     </div>
@@ -352,7 +339,7 @@
 </div>
 
 <!-- LOGO PREVIEW MODAL -->
-<div id="crop-modal" class="modal-overlay">
+<div id="crop-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Preview Logo" aria-hidden="true">
   <div class="modal-card">
     <div class="card-title">Preview Logo</div>
     <p class="footer-text mb-3">Ensure your logo looks correct before applying.</p>
@@ -361,7 +348,7 @@
          <img id="crop-preview-img" src="" alt="Logo Preview">
       </div>
     </div>
-    <div class="clock-btn-row">
+    <div class="btn-row">
       <button id="confirm-crop-btn" class="btn btn-primary">Apply Logo</button>
       <button id="close-crop-modal-btn" class="btn btn-secondary modal-close-btn">Cancel</button>
     </div>

@@ -8,14 +8,14 @@
 
 ## 🚀 Features
 
-- **Real-time Controls:** Manage scores, match clock, and status (HT, FT, etc.) instantaneously.
+- **Real-time Controls:** Manage scores, game clock, and status (HT, FT, etc.) instantaneously.
 - **Dynamic Team Search:** Quickly find and select teams from a built-in database with league grouping and matched-text highlighting.
 - **Event Timeline:** Track goals, yellow cards, and red cards with a professional visual timeline under the score.
 - **Customization:** 
   - **Theme Engine:** Switch between 8+ professional color palettes (Sky Blue, Emerald, Crimson, Midnight, etc.).
   - **Logo Upload:** Upload custom team badges directly from your local machine.
   - **Name Overrides:** Set custom display names for any team.
-- **Persistence:** Automatically saves the match state to local storage so you don't lose data on page refresh.
+- **Persistence:** Automatically saves the game state to local storage so you don't lose data on page refresh.
 - **Optimized for OBS:** Clean layout designed for high-visibility and easy cropping as a browser source.
 
 ## ⌨️ Keyboard Shortcuts
@@ -24,11 +24,11 @@ For power users, WatchaScore supports global hotkeys to keep your hands on the a
 
 | Shortcut | Action |
 | :--- | :--- |
-| `[Space]` | Start / Pause the match clock |
+| `[Space]` | Start / Pause the game clock |
 | `[V]` | Hide / Show clock |
 | `[H]` | Increment Home Team score |
 | `[A]` | Increment Away Team score |
-| `[Backspace]` | Undo/Remove the last match event |
+| `[Backspace]` | Undo/Remove the last game event |
 | `[Shift] + [X]` | Trigger "Reset All" confirmation |
 
 *Note: Shortcuts are disabled while typing in input fields.*
@@ -39,7 +39,7 @@ For power users, WatchaScore supports global hotkeys to keep your hands on the a
 2. **OBS Integration:** 
    - Copy the websites URL address.
    - In OBS, add a new **Browser Source**.
-   - Paste the URL and set the width and height (**900x650** is recommended).
+   - Paste the URL and set the width and height (**900x700** is recommended).
    - Crop using **Transform** feature.
    - Use the **Interact** feature in OBS to manage the scoreboard during your stream.
 

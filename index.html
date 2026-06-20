@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WatchaScore - Football Scoreboard</title>
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="apple-touch-icon" href="assets/logo.png">
+<meta name="theme-color" content="#060e1f">
 <link rel="preload" href="assets/fonts/Barlow_Condensed/BarlowCondensed-Black.ttf" as="font" type="font/truetype" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
@@ -24,6 +27,7 @@
   <!-- PRELOADER -->
   <div id="preloader" aria-busy="true" aria-label="Loading WatchaScore">
     <div class="preloader-content">
+      <img src="assets/logo.png" alt="WatchaScore" class="loader-logo-img">
       <div class="loader-logo">Watcha<span>Score</span></div>
       <div class="loader-spinner" role="status" aria-label="Loading"></div>
     </div>
@@ -33,7 +37,8 @@
   <!-- HEADER -->
   <header>
     <div class="header-side-left">
-      <h1><span>WatchaScore</span></h1>
+      <img src="assets/logo.png" alt="WatchaScore Logo" class="header-logo">
+      <h1>Watcha<span>Score</span></h1>
       <select id="mode-select" class="theme-select">
         <option value="leagues">Club Leagues</option>
         <option value="worldcup">World Cup 2026</option>
@@ -61,8 +66,8 @@
         <option value="ocean">Ocean</option>
         <option value="amethyst">Amethyst</option>
       </select>
-      <button id="new-match-btn" class="btn btn-primary header-btn" title="Open a new independent match instance">
-        <i class="fa-solid fa-plus"></i> New Match
+      <button id="new-game-btn" class="btn btn-primary header-btn" title="Open a new independent game instance">
+        <i class="fa-solid fa-plus"></i> New Game
       </button>
     </div>
   </header>
@@ -174,7 +179,7 @@
 
     <!-- CLOCK CONTROLS -->
     <div class="card">
-      <div class="card-title">Match Clock</div>
+      <div class="card-title">Game Clock</div>
       <div class="clock-inputs">
         <div class="field">
           <label>Minutes</label>
@@ -187,9 +192,9 @@
         <button id="set-clock-btn" class="btn btn-secondary btn-small">Set</button>
       </div>
       <div class="btn-row">
-        <button id="start-btn" class="btn btn-green" aria-label="Start or pause match clock">▶ Start</button>
-        <button id="reset-clock-btn" class="btn btn-danger" aria-label="Reset match clock">↺ Reset</button>
-        <button id="toggle-clock-btn" class="btn btn-secondary" aria-label="Hide or show match clock">Hide</button>
+        <button id="start-btn" class="btn btn-green" aria-label="Start or pause game clock">▶ Start</button>
+        <button id="reset-clock-btn" class="btn btn-danger" aria-label="Reset game clock">↺ Reset</button>
+        <button id="toggle-clock-btn" class="btn btn-secondary" aria-label="Hide or show game clock">Hide</button>
       </div>
       <div class="chip-container">
         <div class="chip" id="chip-keyboard" aria-haspopup="true">
@@ -207,20 +212,20 @@
           <i class="fa-solid fa-circle-question"></i> How to use
           <div class="chip-popup how-to-popup" role="tooltip">
             <div class="how-to-title">Local</div>
-            <div class="chip-row">Open index.html in any browser.</div>
+            <div class="chip-row">Open <span>index.html</span> in any browser.</div>
             <div class="how-to-title">OBS / Stream</div>
-            <div class="chip-row">1. Copy this page's URL.</div>
-            <div class="chip-row">2. Add a Browser Source in OBS.</div>
-            <div class="chip-row">3. Set size to 900 × 650.</div>
-            <div class="chip-row">4. Crop using the Transform feature.</div>
-            <div class="chip-row">5. Use Interact to control live.</div>
+            <div class="chip-row">1. Copy this page's <span>URL</span>.</div>
+            <div class="chip-row">2. Add a <span>Browser Source</span> in OBS.</div>
+            <div class="chip-row">3. Set size to <span>900 × 700</span>.</div>
+            <div class="chip-row">4. Crop using the <span>Transform</span> feature.</div>
+            <div class="chip-row">5. Use <span>Interact</span> to control live.</div>
           </div>
         </div>
       </div>
       <hr class="divider" aria-hidden="true">
-      <div class="card-title mb-2">Match Status</div>
+      <div class="card-title mb-2">Game Status</div>
       <div class="status-row">
-        <button class="status-btn" data-status="" aria-label="Clear match status">None</button>
+        <button class="status-btn" data-status="" aria-label="Clear game status">None</button>
         <button id="status-btn-not-started" class="status-btn" data-status="NOT STARTED" aria-label="Set status to Not Started">Not Started</button>
         <button class="status-btn" data-status="HT" aria-label="Set status to Half Time">Half Time</button>
         <button class="status-btn" data-status="FULL-TIME" aria-label="Set status to Full Time">Full Time</button>
@@ -256,9 +261,9 @@
       <button id="reset-all-btn" class="btn btn-danger btn-full mt-2">Reset All</button>
     </div>
 
-    <!-- MATCH EVENTS -->
+    <!-- GAME EVENTS -->
     <div class="card">
-      <div class="card-title">Match Events</div>
+      <div class="card-title">Game Events</div>
       <div class="selector-group mt-3">
         <label>Event Type</label>
         <select id="event-icon" class="theme-select">
@@ -287,7 +292,7 @@
     <div class="card">
       <div class="card-title">About This Project</div>
       <div class="footer-text">
-        <p><strong>WatchaScore</strong> is a free, open-source football scoreboard overlay designed for streamers and amateur broadcasters. Customize team names, scores, match events, and the clock in real-time.</p>
+        <p><strong>WatchaScore</strong> is a free, open-source football scoreboard overlay designed for streamers and amateur broadcasters. Customize team names, scores, game events, and the clock in real-time.</p>
         <p>I am continuously working to improve WatchaScore. Your <a href="#" id="feedback-link">feedback</a> and suggestions are highly valued!</p>
         <p>If you find this tool useful, please consider supporting its development. Every contribution helps keep the project alive and growing. Don't feel obliged to pay. Use it freely for as long as you like.</p>
         <p>Find the project on <a href="https://github.com/px-pole/watchascore" target="_blank">GitHub</a>.</p>

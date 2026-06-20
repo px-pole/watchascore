@@ -219,7 +219,7 @@ function cacheElements() {
     'tournament-group-display', 'visibility-mode-select', 'add-event-home', 
     'add-event-away', 'fx-suggestion-icon', 'home-badge', 'home-badge-wrap', 
     'mini-home-badge', 'away-badge', 'away-badge-wrap', 'mini-away-badge',
-    'new-match-btn', 'home-logo-upload', 'away-logo-upload', 
+    'new-game-btn', 'home-logo-upload', 'away-logo-upload', 
     'set-clock-btn',
     'reset-clock-btn', 'toggle-clock-btn', 'clock-wrap',
     'reset-scores-btn', 'reset-teams-btn', 'reset-all-btn', 
@@ -250,7 +250,7 @@ function setupListeners() {
   ui.visibilityModeSelect?.addEventListener('change', (e) => setVisibilityMode(e.target.value));
   
   // OBS and Utils
-  ui.newMatchBtn?.addEventListener('click', () => {
+  ui.newGameBtn?.addEventListener('click', () => {
     const newId = Math.random().toString(36).substring(2, 9);
     window.open(`${window.location.origin}${window.location.pathname}?id=${newId}`, '_blank');
   });
@@ -263,9 +263,9 @@ function setupListeners() {
   ui.resetAllBtn?.addEventListener('click', resetAll);
   ui.confirmResetAllBtn?.addEventListener('click', confirmResetAll);
   
-  // Match Events
-  ui.addEventHome?.addEventListener('click', () => addMatchEvent('home'));
-  ui.addEventAway?.addEventListener('click', () => addMatchEvent('away'));
+  // Game Events
+  ui.addEventHome?.addEventListener('click', () => addGameEvent('home'));
+  ui.addEventAway?.addEventListener('click', () => addGameEvent('away'));
   ui.removeLastEventBtn?.addEventListener('click', removeLastEvent);
 
   // Crop Modal
@@ -406,6 +406,26 @@ function prepareTeamData() {
   });
 }
 
+// Keeps the team dropdown inside the visible viewport (useful in OBS when the
+// browser source is cropped or has limited height).
+function positionSearchPopup(resultsDiv, searchInput) {
+  if (!resultsDiv || !searchInput) return;
+
+  const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const inputRect = searchInput.getBoundingClientRect();
+  const edgeGap = 8;
+  const minUsefulHeight = 180;
+
+  const spaceBelow = viewportHeight - inputRect.bottom - edgeGap;
+  const spaceAbove = inputRect.top - edgeGap;
+  const openUp = spaceBelow < minUsefulHeight && spaceAbove > spaceBelow;
+  const availableSpace = openUp ? spaceAbove : spaceBelow;
+  const maxPopupHeight = Math.floor(Math.max(140, Math.min(availableSpace, viewportHeight * 0.75)));
+
+  resultsDiv.classList.toggle('open-up', openUp);
+  resultsDiv.style.maxHeight = `${maxPopupHeight}px`;
+}
+
 const debouncedSearch = debounce((side, text) => {
   const resultsDiv = document.getElementById(side + '-team-results');
   const searchInput = document.getElementById(side + '-team-search');
@@ -431,6 +451,7 @@ const debouncedSearch = debounce((side, text) => {
 
   resultsDiv.replaceChildren(fragment);
   resultsDiv.classList.add('active');
+  positionSearchPopup(resultsDiv, searchInput);
   searchInput.focus(); // Keep focus on the input
   resultsDiv.scrollTop = 0;
 }, 50);
@@ -835,7 +856,7 @@ function confirmLogoUpload() {
 }
 
 /* ==========================================================================
-   7. SCORE & MATCH EVENTS
+  7. SCORE & GAME EVENTS
    ========================================================================== */
 
 // Highlights the Visibility FX dropdown if a selected badge would benefit from FX
@@ -1043,7 +1064,7 @@ function setStatus(s) {
   renderStatusUI(s);
 }
 
-function addMatchEvent(side) {
+function addGameEvent(side) {
   const icon = ui.eventIcon.value;
   let text = ui.eventText.value.trim().slice(0, EVENT_TEXT_MAX_LENGTH);
   if (!text) return;
@@ -1205,6 +1226,10 @@ document.addEventListener('keydown', (e) => {
 // base font-size changes, or an OBS browser source being resized).
 window.addEventListener('resize', debounce(() => {
   ['home', 'away'].forEach(side => fitTeamName(ui[`${side}Name`]));
+  document.querySelectorAll('.search-results-popup.active').forEach(popup => {
+    const side = popup.id.startsWith('home-') ? 'home' : 'away';
+    positionSearchPopup(popup, ui[`${side}TeamSearch`]);
+  });
 }, 150));
 
 // The display font loads asynchronously; re-measure once it's ready so the

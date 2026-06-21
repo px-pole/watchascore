@@ -1,59 +1,36 @@
-/* ==========================================================================
-   0. BROWSER BEHAVIOR FIXES (Execute Immediately)
-   ========================================================================== */
-if ('scrollRestoration' in history) {
-  history.scrollRestoration = 'manual';
-}
-window.scrollTo(0, 0);
+import {
+  PLACEHOLDER,
+  EVENT_ICON_MAP,
+  STATUS_LABELS,
+  THEMES,
+  SEARCH_RESULT_CAP,
+  CLOCK_MAX_MINUTES,
+  EVENT_TEXT_MAX_LENGTH,
+  CANVAS_SAMPLE_SIZE,
+  ALLOWED_LOGO_TYPES,
+  HELP_FAB_SEEN_KEY,
+  INITIAL_STATE
+} from './js/config/constants.js';
+import { createEventBus } from './js/core/event-bus.js';
+import { createPersistence } from './js/core/persistence.js';
+import { pad, capitalize, levenshteinDistance, debounce } from './js/utils/helpers.js';
+import { createTeamSearchManager } from './js/features/team-search.js';
+import { createGameEventsManager } from './js/features/game-events.js';
+import { createGameClockManager } from './js/features/game-clock.js';
+import { createMediaManager } from './js/features/media.js';
+import { TOURNAMENTS } from './teams.js';
 
-/* ==========================================================================
-   1. CONSTANTS & CONFIGURATION
-   ========================================================================== */
-
-const PLACEHOLDER = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48Y2lyY2xlIGN4PSI0MCIgY3k9IjQwIiByPSIzNiIgZmlsbD0iIzE1MmE1MCIgc3Ryb2tlPSIjMWUzYTZlIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI0MCIgeT0iNDYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiM3YTk5YzAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj4/PC90ZXh0Pjwvc3ZnPg==`;
-
-const EVENT_ICON_MAP = {
-  goal: { class: 'fa-futbol', color: '' },
-  yellow: { class: 'fa-square', color: 'var(--card-yellow)' },
-  red: { class: 'fa-square', color: 'var(--card-red)' }
-};
-
-const STATUS_LABELS = { 'HT': 'HALF-TIME', 'FULL-TIME': 'FULL-TIME', 'NOT STARTED': 'NOT STARTED', 'HT ET': 'HALF-TIME (ET)' };
-const THEMES = ['emerald', 'crimson', 'forest', 'ocean', 'light', 'midnight', 'amethyst'];
-
-const SEARCH_RESULT_CAP = 50;
-const CLOCK_MAX_MINUTES = 999;
-const EVENT_TEXT_MAX_LENGTH = 50;
-const CANVAS_SAMPLE_SIZE = 40;
-const ALLOWED_LOGO_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']);
-
-const INITIAL_STATE = {
-  homeScore: 0, awayScore: 0,
-  clockSec: 0, running: false,
-  status: '',
-  homeTeam: null, awayTeam: null,
-  events: [],
-  theme: 'default',
-  homeNameOverride: '',
-  awayNameOverride: '',
-  mode: 'worldcup',
-  visibilityMode: 'none',
-  startTime: null,
-  clockVisible: true
-};
-
-/* ==========================================================================
-   2. APP STATE & GLOBAL VARIABLES
-   ========================================================================== */
+// App-level state, storage keys, and reactive state proxy.
 
 const urlParams = new URLSearchParams(window.location.search);
 const GAME_ID = urlParams.get('id') || 'default';
 const STORAGE_KEY = `scoreboard_state_${GAME_ID}`;
 const PREFS_KEY = 'scoreboard_prefs'; // Global key for user preferences (Theme, Mode, etc.)
+const Persistence = createPersistence({ storageKey: STORAGE_KEY, prefsKey: PREFS_KEY, initialState: INITIAL_STATE });
 
 let state = null;
 let ui = {}; // DOM Cache
-let timerInterval = null; // Use a runtime variable instead of state for the interval ID
+let modalTriggerElement = null; // Element that had focus before opening a modal
 
 const stateHandler = {
   set(target, prop, value) {
@@ -68,93 +45,68 @@ const stateHandler = {
 const createState = (initialData) => new Proxy(initialData, stateHandler);
 const saveState = () => Persistence.save(state);
 
-/* ==========================================================================
-   2.1 PERSISTENCE LAYER
-   ========================================================================== */
+// Feature module wiring.
 
-const Persistence = {
-  save(data) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      // Extract global preferences to persist across different game IDs
-      const prefs = { 
-        theme: data.theme, 
-        mode: data.mode, 
-        visibilityMode: data.visibilityMode 
-      };
-      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
-    } catch (e) {
-      if (e.name === 'QuotaExceededError') console.error('Persistence: Quota exceeded');
-    }
+const EventBus = createEventBus();
+const getState = () => state;
+const getUi = () => ui;
+
+const teamSearchManager = createTeamSearchManager({
+  getState,
+  debounce,
+  levenshteinDistance,
+  placeholder: PLACEHOLDER,
+  searchResultCap: SEARCH_RESULT_CAP,
+  tournaments: TOURNAMENTS
+});
+
+const gameEventsManager = createGameEventsManager({
+  getState,
+  getUi,
+  eventIconMap: EVENT_ICON_MAP,
+  eventTextMaxLength: EVENT_TEXT_MAX_LENGTH
+});
+
+const gameClockManager = createGameClockManager({
+  getState,
+  getUi,
+  pad,
+  clockMaxMinutes: CLOCK_MAX_MINUTES,
+  setStatus,
+  updateClockUI
+});
+
+const mediaManager = createMediaManager({
+  getState,
+  getUi,
+  placeholder: PLACEHOLDER,
+  allowedLogoTypes: ALLOWED_LOGO_TYPES,
+  canvasSampleSize: CANVAS_SAMPLE_SIZE,
+  capitalize,
+  saveState,
+  closeActiveModal,
+  updateVisibilityHighlight,
+  setModalTriggerElement: (el) => {
+    modalTriggerElement = el;
   },
-
-  load() {
-    const savedState = localStorage.getItem(STORAGE_KEY);
-    const savedPrefs = localStorage.getItem(PREFS_KEY);
-    let prefs = {};
-    
-    try { 
-      if (savedPrefs) prefs = JSON.parse(savedPrefs); 
-      if (savedState) {
-        return { ...INITIAL_STATE, ...JSON.parse(savedState), running: false };
-      }
-    } catch (e) { console.error('Persistence: Error parsing data', e); }
-    
-    return { ...INITIAL_STATE, ...prefs };
+  getModalTriggerElement: () => modalTriggerElement,
+  clearModalTriggerElement: () => {
+    modalTriggerElement = null;
   }
-};
+});
 
-let ALL_TEAMS = []; // Global array to store all teams for efficient searching
-let TEAM_MAP = new Map(); // Fast lookup by ID
-const brightnessCache = new Map(); // Cache results of image analysis to avoid redundant canvas operations
+const {
+  prepareTeamData,
+  handleSearchKeyboard,
+  debouncedSearch,
+  getTeam,
+  repositionActivePopups
+} = teamSearchManager;
+const { updateEventsUI, addGameEvent, removeEvent, removeLastEvent } = gameEventsManager;
+const { renderClock, setClock, toggleClockVisibility, toggleClock, resetClock, stopTimer } = gameClockManager;
+const { setBadge, handleLogoUpload, confirmLogoUpload } = mediaManager;
 
-// Inline Web Worker to handle image processing
-const workerCode = `
-onmessage = function(e) {
-  const { imageData, src } = e.data;
-  const data = new Uint8ClampedArray(imageData);
-  let colorSum = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i+1];
-    const b = data[i+2];
-    colorSum += (r * 0.299 + g * 0.587 + b * 0.114);
-  }
-  const brightness = colorSum / (data.length / 4);
-  postMessage({ src, result: brightness < 128 ? 'dark' : 'light' });
-};
-`;
-
-const blob = new Blob([workerCode], { type: 'application/javascript' });
-const brightnessWorker = new Worker(URL.createObjectURL(blob));
-brightnessWorker.onerror = (e) => {
-  console.warn('WatchaScore: Brightness Worker error:', e.message);
-};
-const pendingAnalysis = new Map();
-let pendingLogoSide = null; // Track which side is currently being previewed
-let pendingLogoBase64 = null; // Store base64 data during preview
-let modalTriggerElement = null; // Element that had focus before opening a modal
-
-const analysisCanvas = document.createElement('canvas');
-const analysisCtx = analysisCanvas.getContext('2d', { willReadFrequently: true });
-analysisCanvas.width = CANVAS_SAMPLE_SIZE; analysisCanvas.height = CANVAS_SAMPLE_SIZE;
-
-/* ==========================================================================
-   3. INITIALIZATION & CORE SETUP
-   ========================================================================== */
-
-const EventBus = {
-  listeners: {},
-  on(event, callback) {
-    if (!this.listeners[event]) this.listeners[event] = [];
-    this.listeners[event].push(callback);
-  },
-  emit(event, data) {
-    if (this.listeners[event]) {
-      this.listeners[event].forEach(cb => cb(data));
-    }
-  }
-};
+// App initialization and DOM bindings.
 
 function setupSubscriptions() {
   // Scores
@@ -225,7 +177,9 @@ function cacheElements() {
     'reset-scores-btn', 'reset-teams-btn', 'reset-all-btn', 
     'confirm-reset-all-btn', 'confirm-start-time-btn', 'remove-last-event-btn', 'clock-min', 'clock-sec',
     'crop-modal', 'crop-preview-img', 'confirm-crop-btn', 'close-crop-modal-btn', 
-    'toggle-contact-btn', 'feedback-link', 'status-btn-not-started'
+    'toggle-contact-btn', 'feedback-link', 'status-btn-not-started',
+    'help-fab', 'help-panel', 'help-close-btn',
+    'header-menu-toggle', 'header-controls'
   ];
 
   ids.forEach(id => {
@@ -256,6 +210,10 @@ function setupListeners() {
   });
   ui.toggleContactBtn?.addEventListener('click', toggleContactForm);
   ui.feedbackLink?.addEventListener('click', (e) => { e.preventDefault(); toggleContactForm(); });
+  ui.helpFab?.addEventListener('click', toggleHelpPanel);
+  ui.helpCloseBtn?.addEventListener('click', () => setHelpPanel(false));
+  ui.headerMenuToggle?.addEventListener('click', toggleHeaderMenu);
+  initHelpAttentionHint();
 
   // Score & Teams
   ui.resetScoresBtn?.addEventListener('click', resetScores);
@@ -281,7 +239,9 @@ function setupListeners() {
     const searchInput = ui[`${side}TeamSearch`];
     searchInput?.addEventListener('input', (e) => debouncedSearch(side, e.target.value));
     searchInput?.addEventListener('keydown', (e) => handleSearchKeyboard(e, side));
-    searchInput?.addEventListener('click', (e) => debouncedSearch(side, e.target.value));
+    searchInput?.addEventListener('focus', (e) => {
+      if (!e.target.value.trim()) debouncedSearch(side, '');
+    });
     ui[`${side}ClearSearchBtn`]?.addEventListener('click', () => { searchInput.value = ''; debouncedSearch(side, ''); });
     ui[`${side}NameOverride`]?.addEventListener('input', (e) => overrideName(side, e.target.value));
     ui[`${side}LogoUpload`]?.addEventListener('change', (e) => handleLogoUpload(side, e.target));
@@ -344,229 +304,7 @@ function setupListeners() {
   });
 }
 
-function handleSearchKeyboard(e, side) {
-  const resultsDiv = document.getElementById(`${side}-team-results`);
-  if (!resultsDiv.classList.contains('active')) return;
-
-  const items = Array.from(resultsDiv.querySelectorAll('.search-results-item, .search-results-header.collapsible'))
-    .filter(item => item.offsetHeight > 0); // Check if element has a visible height
-  let currentIndex = items.findIndex(item => item.classList.contains('keyboard-focus'));
-
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    if (currentIndex < items.length - 1) {
-      if (currentIndex >= 0) items[currentIndex].classList.remove('keyboard-focus');
-      currentIndex++;
-      items[currentIndex].classList.add('keyboard-focus');
-      items[currentIndex].scrollIntoView({ block: 'nearest' });
-    }
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    if (currentIndex > 0) {
-      items[currentIndex].classList.remove('keyboard-focus');
-      currentIndex--;
-      items[currentIndex].classList.add('keyboard-focus');
-      items[currentIndex].scrollIntoView({ block: 'nearest' });
-    }
-  } else if (e.key === 'Enter') {
-    if (currentIndex >= 0) {
-      e.preventDefault();
-      items[currentIndex].click();
-    }
-  } else if (e.key === 'Escape') {
-    resultsDiv.classList.remove('active');
-  }
-}
-
-// Helper to get the active tournament data based on current mode.
-function getActiveSource() {
-  return TOURNAMENTS[state.mode];
-}
-
-// Flattens the current data source into a single array of teams,
-// adding the league name to each team object for easier searching and grouping.
-function prepareTeamData() {
-  ALL_TEAMS = [];
-  TEAM_MAP.clear();
-  const source = getActiveSource();
-
-  // Sort leagues and teams during preparation to avoid sorting during every search
-  Object.keys(source).sort().forEach(leagueName => {
-    const sortedTeams = [...source[leagueName]].sort((a, b) => a.name.localeCompare(b.name));
-    sortedTeams.forEach(team => {
-      const teamObj = {
-        ...team,
-        league: leagueName,
-        nameLower: team.name.toLowerCase(), // Pre-normalize for faster searching
-        idLower: team.id.toLowerCase()
-      };
-      ALL_TEAMS.push(teamObj);
-      TEAM_MAP.set(team.id, teamObj);
-    });
-  });
-}
-
-// Keeps the team dropdown inside the visible viewport (useful in OBS when the
-// browser source is cropped or has limited height).
-function positionSearchPopup(resultsDiv, searchInput) {
-  if (!resultsDiv || !searchInput) return;
-
-  const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  const inputRect = searchInput.getBoundingClientRect();
-  const edgeGap = 8;
-  const minUsefulHeight = 180;
-
-  const spaceBelow = viewportHeight - inputRect.bottom - edgeGap;
-  const spaceAbove = inputRect.top - edgeGap;
-  const openUp = spaceBelow < minUsefulHeight && spaceAbove > spaceBelow;
-  const availableSpace = openUp ? spaceAbove : spaceBelow;
-  const maxPopupHeight = Math.floor(Math.max(140, Math.min(availableSpace, viewportHeight * 0.75)));
-
-  resultsDiv.classList.toggle('open-up', openUp);
-  resultsDiv.style.maxHeight = `${maxPopupHeight}px`;
-}
-
-const debouncedSearch = debounce((side, text) => {
-  const resultsDiv = document.getElementById(side + '-team-results');
-  const searchInput = document.getElementById(side + '-team-search');
-  const filter = text.toLowerCase().trim();
-  const fragment = document.createDocumentFragment();
-
-  resultsDiv.setAttribute('role', 'listbox');
-  if (filter) {
-    renderSearchMode(fragment, side, filter, resultsDiv, searchInput);
-  } else {
-    renderBrowseMode(fragment, side, resultsDiv, searchInput);
-  }
-
-  // Add Close Button for mobile UX
-  const closeBtn = document.createElement('div');
-  closeBtn.className = 'search-results-close';
-  closeBtn.innerHTML = '<i class="fa-solid fa-times"></i> Close Selection';
-  closeBtn.onclick = (e) => {
-    e.stopPropagation();
-    resultsDiv.classList.remove('active');
-  };
-  fragment.appendChild(closeBtn);
-
-  resultsDiv.replaceChildren(fragment);
-  resultsDiv.classList.add('active');
-  positionSearchPopup(resultsDiv, searchInput);
-  searchInput.focus(); // Keep focus on the input
-  resultsDiv.scrollTop = 0;
-}, 50);
-
-function renderSearchMode(fragment, side, filter, resultsDiv, searchInput) {
-    const filteredByLeague = new Map();
-    let foundCount = 0;
-    let isCapped = false;
-
-    for (const team of ALL_TEAMS) {
-      const subMatch = team.nameLower.includes(filter) || team.idLower.includes(filter);
-      const fuzzyMatch = !subMatch && filter.length > 3 && 
-        team.nameLower.split(' ').some(word => levenshteinDistance(filter, word.substring(0, filter.length)) <= 1);
-
-      if (subMatch || fuzzyMatch) {
-        if (!filteredByLeague.has(team.league)) filteredByLeague.set(team.league, []);
-        filteredByLeague.get(team.league).push(team);
-        if (++foundCount >= SEARCH_RESULT_CAP) { isCapped = true; break; }
-      }
-    }
-
-    filteredByLeague.forEach((teams, leagueName) => {
-      const header = document.createElement('div');
-      header.setAttribute('role', 'presentation'); // Purely visual grouping in search mode
-      header.className = 'search-results-header';
-      header.textContent = leagueName;
-      fragment.appendChild(header);
-
-      teams.forEach(t => {
-        const item = document.createElement('div');
-        item.className = 'search-results-item';
-        item.setAttribute('role', 'option'); // ARIA role for list item
-        const idx = t.nameLower.indexOf(filter);
-        const highlightedName = idx >= 0 
-          ? `${t.name.substring(0, idx)}<span class="search-highlight">${t.name.substring(idx, idx + filter.length)}</span>${t.name.substring(idx + filter.length)}`
-          : t.name;
-
-        item.innerHTML = `<img src="${t.badge || PLACEHOLDER}" loading="lazy" alt=""> <span>${highlightedName}</span>`;
-        item.onclick = () => { setTeam(side, t.id); resultsDiv.classList.remove('active'); searchInput.value = ''; };
-        fragment.appendChild(item);
-      });
-    });
-
-    if (foundCount === 0) {
-      const none = document.createElement('div');
-      none.className = 'search-results-none empty-state';
-      none.setAttribute('aria-live', 'polite'); // Announce no results
-      none.innerHTML = `<i class="fa-solid fa-magnifying-glass-question"></i><span>No teams matched your search</span>`;
-      fragment.appendChild(none);
-    } else if (isCapped) {
-      const more = document.createElement('div');
-      more.className = 'search-results-none';
-      more.style.borderTop = '1px solid var(--border-color)';
-      more.textContent = 'Keep typing to narrow results...';
-      fragment.appendChild(more);
-    }
-}
-
-function renderBrowseMode(fragment, side, resultsDiv, searchInput) {
-    const leagues = new Map();
-    ALL_TEAMS.forEach(t => { if (!leagues.has(t.league)) leagues.set(t.league, []); leagues.get(t.league).push(t); });
-
-    leagues.forEach((teams, leagueName) => {
-      const header = document.createElement('div');
-      header.className = 'search-results-header collapsible';
-      const containerId = `league-items-${side}-${leagueName.replace(/\s/g, '-')}`;
-      header.tabIndex = 0;
-      header.setAttribute('role', 'button'); // Make header a button for accessibility
-      header.setAttribute('aria-expanded', 'false'); // Initial state
-      header.setAttribute('aria-controls', containerId); // Link to controlled element
-      header.innerHTML = `<span>${leagueName}</span> <i class="fa-solid fa-chevron-down"></i>`;
-
-      const teamContainer = document.createElement('div');
-      teamContainer.className = 'league-items-container';
-      teamContainer.id = containerId;
-      const toggleLeague = (e) => {
-        e.stopPropagation();
-        const isOpen = teamContainer.classList.toggle('active');
-        header.setAttribute('aria-expanded', isOpen); // Update ARIA state
-      };
-      header.onclick = toggleLeague;
-      header.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          toggleLeague(e);
-        }
-      });
-
-      teams.forEach(t => {
-        const item = document.createElement('div');
-        item.className = 'search-results-item';
-        item.setAttribute('role', 'option'); // ARIA role for list item
-        item.innerHTML = `<img src="${t.badge || PLACEHOLDER}" loading="lazy" alt=""> <span>${t.name}</span>`;
-        item.onclick = () => { setTeam(side, t.id); resultsDiv.classList.remove('active'); searchInput.value = ''; };
-        teamContainer.appendChild(item);
-      });
-
-      fragment.appendChild(header);
-      fragment.appendChild(teamContainer);
-    });
-}
-
-const getTeam = (id) => TEAM_MAP.get(id);
-
-function setTeam(side, id) {
-  const t = getTeam(id);
-  state[side + 'Team'] = t ? t : null;
-  if (document.activeElement && typeof document.activeElement.blur === 'function') {
-    document.activeElement.blur();
-  }
-}
-
-/* ==========================================================================
-   4. UI SYNCHRONIZATION & RENDERING
-   ========================================================================== */
+// UI synchronization and rendering.
 
 function syncUI() {
   checkWrapperState();
@@ -682,182 +420,7 @@ function updateThemeUI() {
   }
 }
 
-function updateEventsUI(events) {
-  const evList = events || state.events;
-  if (!ui.homeEvents || !ui.awayEvents) return;
-  ui.homeEvents.innerHTML = '';
-  ui.awayEvents.innerHTML = '';
-  evList.forEach((ev, idx) => {
-    const iconData = EVENT_ICON_MAP[ev.icon] || EVENT_ICON_MAP.goal;
-
-    const icon = document.createElement('i');
-    icon.className = `fa-solid ${iconData.class}`;
-    icon.style.cursor = 'pointer';
-    icon.style.fontSize = '10px';
-    if (iconData.color) icon.style.color = iconData.color;
-    icon.dataset.index = idx;
-    icon.title = 'Click to remove';
-
-    const textSpan = document.createElement('span');
-    textSpan.textContent = ev.text; // textContent prevents HTML injection from user input
-
-    const item = document.createElement('div');
-    item.className = 'event-item';
-    if (ev.side === 'home') {
-      item.append(textSpan, ' ', icon);
-    } else {
-      item.append(icon, ' ', textSpan);
-    }
-    (ev.side === 'home' ? ui.homeEvents : ui.awayEvents).appendChild(item);
-  });
-}
-
-/* ==========================================================================
-   6. MEDIA & IMAGE ANALYSIS
-   ========================================================================== */
-
-brightnessWorker.onmessage = function(e) {
-  const { src, result } = e.data;
-  brightnessCache.set(src, result);
-  const imgs = pendingAnalysis.get(src);
-  if (imgs) {
-    imgs.forEach(img => {
-      if (img.src === src) {
-        img.classList.add(result === 'dark' ? 'is-dark' : 'is-light');
-        img.classList.remove(result === 'dark' ? 'is-light' : 'is-dark');
-      }
-    });
-    pendingAnalysis.delete(src);
-    updateVisibilityHighlight();
-  }
-};
-
-// Detects if an image is predominantly dark or light to selectively apply a glow.
-// Samples pixels using a canvas for accurate brightness detection.
-function analyzeBrightness(img) {
-  const src = img.src;
-  if (!img?.complete || img.naturalWidth === 0 || src.includes('data:image/svg+xml')) {
-    return;
-  }
-
-  // Helper to apply classes and update UI
-  if (brightnessCache.has(src)) {
-    const result = brightnessCache.get(src);
-    img.classList.add(result === 'dark' ? 'is-dark' : 'is-light');
-    img.classList.remove(result === 'dark' ? 'is-light' : 'is-dark');
-    updateVisibilityHighlight();
-    return;
-  }
-
-  if (!analysisCtx) return;
-
-  if (!pendingAnalysis.has(src)) {
-    pendingAnalysis.set(src, new Set());
-    try {
-      analysisCtx.clearRect(0, 0, CANVAS_SAMPLE_SIZE, CANVAS_SAMPLE_SIZE);
-      analysisCtx.drawImage(img, 0, 0, CANVAS_SAMPLE_SIZE, CANVAS_SAMPLE_SIZE);
-      const imageData = analysisCtx.getImageData(0, 0, CANVAS_SAMPLE_SIZE, CANVAS_SAMPLE_SIZE);
-      
-      // Robust handling: transfer buffer to worker for non-blocking analysis
-      brightnessWorker.postMessage({ imageData: imageData.data.buffer, src: src }, [imageData.data.buffer]);
-    } catch (e) {
-      img.classList.remove('is-dark', 'is-light');
-      pendingAnalysis.delete(src);
-    }
-  }
-  pendingAnalysis.get(src).add(img);
-}
-
-function setBadge(side, src) {
-  const sideKey = capitalize(side);
-  const badgeConfigs = [
-    { img: ui[side + 'Badge'], wrap: ui[side + 'BadgeWrap'] },
-    { img: ui['mini' + sideKey + 'Badge'], wrap: ui['mini' + sideKey + 'BadgeWrap'] }
-  ];
-  const targetSrc = src || PLACEHOLDER;
-
-  badgeConfigs.forEach(({ img, wrap }) => {
-    if (!img || img.dataset.currentSrc === targetSrc) return;
-    img.dataset.currentSrc = targetSrc;
-    img.classList.remove('is-dark', 'is-light');
-    img.style.opacity = '0'; img.style.transform = 'scale(0.92)';
-    img.setAttribute('aria-hidden', 'true');
-
-    if (targetSrc.startsWith('http')) img.crossOrigin = 'anonymous';
-    else img.removeAttribute('crossorigin');
-
-    if (targetSrc === PLACEHOLDER) {
-      img.src = PLACEHOLDER; img.style.opacity = '1'; img.style.transform = 'scale(1)';
-      img.removeAttribute('aria-hidden');
-      if (wrap) { wrap.classList.remove('loading'); wrap.removeAttribute('aria-busy'); }
-      updateVisibilityHighlight();
-      return;
-    }
-
-    if (wrap) { wrap.classList.add('loading'); wrap.setAttribute('aria-busy', 'true'); }
-    const finishLoading = () => {
-      if (wrap) { wrap.classList.remove('loading'); wrap.removeAttribute('aria-busy'); }
-      requestAnimationFrame(() => {
-        img.style.opacity = '1'; img.style.transform = 'scale(1)';
-        img.removeAttribute('aria-hidden'); analyzeBrightness(img);
-      });
-    };
-    img.onload = finishLoading;
-    img.onerror = () => {
-      img.src = PLACEHOLDER; img.style.opacity = '1'; img.style.transform = 'scale(1)';
-      img.removeAttribute('aria-hidden');
-      if (wrap) { wrap.classList.remove('loading'); wrap.removeAttribute('aria-busy'); }
-      updateVisibilityHighlight();
-    };
-    img.src = targetSrc;
-    if (img.complete && img.naturalWidth !== 0) finishLoading();
-  });
-}
-
-function handleLogoUpload(side, input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (!ALLOWED_LOGO_TYPES.has(file.type)) {
-    alert('Please upload a valid image file (PNG, JPG, GIF, WebP, or SVG).');
-    input.value = ''; return;
-  }
-  const MAX_SIZE_MB = 2;
-  if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-    alert(`The selected image is too large. Please upload a file smaller than ${MAX_SIZE_MB}MB.`);
-    input.value = ''; return;
-  }
-  const label = input.closest('label');
-  if (label) label.classList.add('uploading');
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    if (label) label.classList.remove('uploading');
-    pendingLogoSide = side; pendingLogoBase64 = e.target.result;
-    ui.cropPreviewImg.src = pendingLogoBase64;
-    modalTriggerElement = document.activeElement;
-    ui.cropModal.classList.add('active');
-    ui.cropModal.removeAttribute('aria-hidden');
-    const applyBtn = ui.cropModal.querySelector('.btn-primary');
-    if (applyBtn) applyBtn.focus();
-    input.value = '';
-  };
-  reader.onerror = () => { if (label) label.classList.remove('uploading'); };
-  reader.readAsDataURL(file);
-}
-
-function confirmLogoUpload() {
-  if (!pendingLogoSide || !pendingLogoBase64) return;
-  if (!state[pendingLogoSide + 'Team']) {
-    state[pendingLogoSide + 'Team'] = { id: 'custom-' + pendingLogoSide, name: pendingLogoSide === 'home' ? 'Home' : 'Away' };
-  }
-  state[pendingLogoSide + 'Team'].badge = pendingLogoBase64;
-  setBadge(pendingLogoSide, pendingLogoBase64);
-  saveState();
-  closeActiveModal();
-}
-
-/* ==========================================================================
-  7. SCORE & GAME EVENTS
-   ========================================================================== */
+// Score, team display, and visibility behavior.
 
 // Highlights the Visibility FX dropdown if a selected badge would benefit from FX
 // but "No FX" is currently selected.
@@ -962,85 +525,7 @@ function resetTeams() {
 
   syncUI();
 }
-/* ==========================================================================
-   8. CLOCK & TIMER LOGIC
-   ========================================================================== */
-
-function renderClock(seconds) {
-  const sTotal = seconds !== undefined ? seconds : state.clockSec;
-  const m = Math.floor(sTotal / 60), s = sTotal % 60;
-  ui.clockDisplay.textContent = pad(m) + ':' + pad(s);
-}
-
-function setClock() {
-  const m = Math.min(parseInt(ui.clockMin.value) || 0, CLOCK_MAX_MINUTES);
-  const s = Math.min(parseInt(ui.clockSec.value) || 0, 59);
-  state.clockSec = m * 60 + s;
-  renderClock();
-}
-
-function toggleClockVisibility() {
-  state.clockVisible = !state.clockVisible;
-  updateClockUI();
-}
-
-function toggleClock() {
-  if (state.running) {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
-    state.running = false;
-    updateClockUI();
-
-    // Handle auto-status updates when pausing after key milestones (Regulation & ET)
-    const milestones = [
-      { seconds: 120 * 60, status: 'FULL-TIME' },
-      { seconds: 105 * 60, status: 'HT ET' },
-      { seconds: 90 * 60, status: 'FULL-TIME' },
-      { seconds: 45 * 60, status: 'HT' }
-    ];
-
-    for (const { seconds, status } of milestones) {
-      if (state.clockSec >= seconds) {
-        state.clockSec = seconds;
-        setStatus(status);
-        renderClock();
-        break;
-      }
-    }
-  } else {
-    if (timerInterval) clearInterval(timerInterval); 
-    state.running = true;
-    state.clockVisible = true;
-    updateClockUI();
-    timerInterval = setInterval(() => {
-      // If starting from a Half-Time interval, clear the status automatically
-      if (state.status === 'HT' || state.status === 'HT ET') {
-        setStatus('');
-      }
-
-      state.clockSec++;
-      renderClock(); 
-    }, 1000);
-  }
-}
-
-function resetClock() {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-  state.running = false;
-  state.clockSec = 0;
-  updateClockUI();
-  ui.clockMin.value = 0;
-  ui.clockSec.value = 0;
-}
-
-/* ==========================================================================
-   9. SETTINGS & PERSISTENCE
-   ========================================================================== */
+// Settings, help panel, and modal actions.
 
 function changeMode(mode) {
   const update = () => {
@@ -1064,30 +549,79 @@ function setStatus(s) {
   renderStatusUI(s);
 }
 
-function addGameEvent(side) {
-  const icon = ui.eventIcon.value;
-  let text = ui.eventText.value.trim().slice(0, EVENT_TEXT_MAX_LENGTH);
-  if (!text) return;
-  text = text.toLowerCase().replace(/(^|\s)(\S)/g, (_, sp, ch) => sp + ch.toUpperCase());
-  if (/\d$/.test(text)) text += "'";
-  
-  // To trigger the proxy, we re-assign the array
-  state.events = [...state.events, { side, text, icon }];
-  
-  ui.eventText.value = '';
-  if (document.activeElement?.blur) document.activeElement.blur();
-}
-
-function removeEvent(index) { 
-  state.events = state.events.filter((_, i) => i !== index);
-}
-
-function removeLastEvent() { 
-  if (state.events.length > 0) removeEvent(state.events.length - 1); 
-}
-
 function toggleContactForm() {
   document.getElementById('contact-form').classList.toggle('active');
+}
+
+function isHelpPanelOpen() {
+  return Boolean(ui.helpPanel?.classList.contains('active'));
+}
+
+function initHelpAttentionHint() {
+  if (!ui.helpFab) return;
+
+  const seen = localStorage.getItem(HELP_FAB_SEEN_KEY) === '1';
+  if (!seen) ui.helpFab.classList.add('attention');
+}
+
+function setHelpPanel(open) {
+  if (!ui.helpPanel || !ui.helpFab) return;
+
+  ui.helpPanel.classList.toggle('active', open);
+  ui.helpPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
+  ui.helpFab.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+  if (open) {
+    localStorage.setItem(HELP_FAB_SEEN_KEY, '1');
+    ui.helpFab.classList.remove('attention');
+  }
+
+  if (open) {
+    ui.helpCloseBtn?.focus();
+  } else {
+    ui.helpFab.focus();
+  }
+}
+
+function toggleHelpPanel() {
+  setHelpPanel(!isHelpPanelOpen());
+}
+
+function isMobileHeaderViewport() {
+  return window.matchMedia('(max-width: 820px)').matches;
+}
+
+function setHeaderMenu(open) {
+  const header = document.querySelector('header');
+  if (!header || !ui.headerMenuToggle || !ui.headerControls) return;
+
+  const shouldOpen = Boolean(open) && isMobileHeaderViewport();
+  header.classList.toggle('menu-open', shouldOpen);
+  ui.headerMenuToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+  ui.headerControls.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+}
+
+function toggleHeaderMenu() {
+  const header = document.querySelector('header');
+  if (!header || !isMobileHeaderViewport()) return;
+  setHeaderMenu(!header.classList.contains('menu-open'));
+}
+
+function syncHeaderMenuViewportState() {
+  if (!ui.headerControls || !ui.headerMenuToggle) return;
+
+  if (isMobileHeaderViewport()) {
+    const header = document.querySelector('header');
+    const isOpen = header?.classList.contains('menu-open');
+    ui.headerControls.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    ui.headerMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    return;
+  }
+
+  const header = document.querySelector('header');
+  if (header) header.classList.remove('menu-open');
+  ui.headerControls.setAttribute('aria-hidden', 'false');
+  ui.headerMenuToggle.setAttribute('aria-expanded', 'false');
 }
 
 function resetAll() {
@@ -1131,45 +665,27 @@ function confirmStartTime() {
 
 function confirmResetAll() {
   closeActiveModal();
-  clearInterval(timerInterval);
+  stopTimer();
   state = createState({ ...INITIAL_STATE, theme: state.theme, mode: state.mode, visibilityMode: state.visibilityMode });
   prepareTeamData();
   syncUI();
   saveState();
 }
 
-/* ==========================================================================
-   10. UTILITIES & GLOBAL HANDLERS
-   ========================================================================== */
-
-const pad = (n) => String(n).padStart(2,'0');
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
-const levenshteinDistance = (s1, s2) => {
-  if (s1.length < s2.length) [s1, s2] = [s2, s1];
-  if (s2.length === 0) return s1.length;
-  let prevRow = Array.from({ length: s2.length + 1 }, (_, i) => i);
-  for (let i = 0; i < s1.length; i++) {
-    let currRow = [i + 1];
-    for (let j = 0; j < s2.length; j++) {
-      const insertions = prevRow[j + 1] + 1, deletions = currRow[j] + 1;
-      const subs = prevRow[j] + (s1[i] !== s2[j] ? 1 : 0);
-      currRow.push(Math.min(insertions, deletions, subs));
-    }
-    prevRow = currRow;
-  }
-  return prevRow[s2.length];
-};
-
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => { clearTimeout(timeout); func(...args); };
-    clearTimeout(timeout); timeout = setTimeout(later, wait);
-  };
-}
+// Global document and window handlers.
 
 document.addEventListener('click', (e) => {
+  if (isMobileHeaderViewport()) {
+    const header = document.querySelector('header');
+    if (header?.classList.contains('menu-open') && !e.target.closest('header')) {
+      setHeaderMenu(false);
+    }
+  }
+
+  if (isHelpPanelOpen() && !e.target.closest('.floating-help')) {
+    setHelpPanel(false);
+  }
+
   if (!e.target.closest('.search-container')) {
     document.querySelectorAll('.search-results-popup').forEach(p => p.classList.remove('active'));
   }
@@ -1181,6 +697,20 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+  if (isMobileHeaderViewport() && e.key === 'Escape') {
+    const header = document.querySelector('header');
+    if (header?.classList.contains('menu-open')) {
+      setHeaderMenu(false);
+      ui.headerMenuToggle?.focus();
+      return;
+    }
+  }
+
+  if (isHelpPanelOpen() && e.key === 'Escape') {
+    setHelpPanel(false);
+    return;
+  }
+
   const activeModal = document.querySelector('.modal-overlay.active');
 
   if (activeModal) {
@@ -1209,6 +739,8 @@ document.addEventListener('keydown', (e) => {
       }
       return;
     }
+    // Do not execute global shortcuts while a modal is active.
+    return;
   }
 
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
@@ -1226,10 +758,8 @@ document.addEventListener('keydown', (e) => {
 // base font-size changes, or an OBS browser source being resized).
 window.addEventListener('resize', debounce(() => {
   ['home', 'away'].forEach(side => fitTeamName(ui[`${side}Name`]));
-  document.querySelectorAll('.search-results-popup.active').forEach(popup => {
-    const side = popup.id.startsWith('home-') ? 'home' : 'away';
-    positionSearchPopup(popup, ui[`${side}TeamSearch`]);
-  });
+  repositionActivePopups(() => ui);
+  syncHeaderMenuViewportState();
 }, 150));
 
 // The display font loads asynchronously; re-measure once it's ready so the
@@ -1255,3 +785,4 @@ window.addEventListener('load', () => {
 });
 
 init();
+syncHeaderMenuViewportState();

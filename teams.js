@@ -1,4 +1,4 @@
-const TOURNAMENTS = {
+export const TOURNAMENTS = {
   leagues: {
   "England - Premier League": [
     { "id": "arsenal", "name": "Arsenal", "badge": "assets/badges/England-PremierLeague/arsenal.svg" },

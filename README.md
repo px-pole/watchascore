@@ -35,8 +35,7 @@ For power users, WatchaScore supports global hotkeys to keep your hands on the a
 
 ## 🛠️ Setup & Usage
 
-1. **Local Use:** Simply clone the repository and open `index.html` in any modern web browser.
-2. **OBS Integration:** 
+1. **OBS Integration:** 
    - Copy the websites URL address.
    - In OBS, add a new **Browser Source**.
    - Paste the URL and set the width and height (**950×750** is recommended).

@@ -7,7 +7,6 @@
 <link rel="icon" type="image/png" href="assets/logo.png">
 <link rel="apple-touch-icon" href="assets/logo.png">
 <meta name="theme-color" content="#060e1f">
-<link rel="preload" href="assets/fonts/Barlow_Condensed/BarlowCondensed-Black.ttf" as="font" type="font/truetype" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
 <script>
@@ -45,7 +44,19 @@
       </select>
     </div>
 
-    <div class="header-side-right">
+    <button
+      id="header-menu-toggle"
+      class="header-menu-toggle"
+      type="button"
+      aria-label="Toggle header controls"
+      aria-controls="header-controls"
+      aria-expanded="false"
+    >
+      <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      <span class="sr-only">Toggle header controls</span>
+    </button>
+
+    <div class="header-side-right" id="header-controls">
       <div class="settings-control-wrapper">
         <select id="visibility-mode-select" class="theme-select">
           <option disabled>— Visibility FX —</option>
@@ -196,32 +207,6 @@
         <button id="reset-clock-btn" class="btn btn-danger" aria-label="Reset game clock">↺ Reset</button>
         <button id="toggle-clock-btn" class="btn btn-secondary" aria-label="Hide or show game clock">Hide</button>
       </div>
-      <div class="chip-container">
-        <div class="chip" id="chip-keyboard" aria-haspopup="true">
-          <i class="fa-solid fa-keyboard"></i> Keyboard Shortcuts
-          <div class="chip-popup" role="tooltip">
-            <div class="chip-row"><span>[Space]</span> Start / Pause Clock</div>
-            <div class="chip-row"><span>[V]</span> Hide / Show Clock</div>
-            <div class="chip-row"><span>[H]</span> Home Goal</div>
-            <div class="chip-row"><span>[A]</span> Away Goal</div>
-            <div class="chip-row"><span>[Backspace]</span> Undo Event</div>
-            <div class="chip-row"><span>[Shift] + [X]</span> Reset All</div>
-          </div>
-        </div>
-        <div class="chip" id="chip-howto" aria-haspopup="true">
-          <i class="fa-solid fa-circle-question"></i> How to use
-          <div class="chip-popup how-to-popup" role="tooltip">
-            <div class="how-to-title">Local</div>
-            <div class="chip-row">Open <span>index.html</span> in any browser.</div>
-            <div class="how-to-title">OBS / Stream</div>
-            <div class="chip-row">1. Copy this page's <span>URL</span>.</div>
-            <div class="chip-row">2. Add a <span>Browser Source</span> in OBS.</div>
-            <div class="chip-row">3. Set size to <span>950 × 750</span>.</div>
-            <div class="chip-row">4. Crop using the <span>Transform</span> feature.</div>
-            <div class="chip-row">5. Use <span>Interact</span> to control live.</div>
-          </div>
-        </div>
-      </div>
       <hr class="divider" aria-hidden="true">
       <div class="card-title mb-2">Game Status</div>
       <div class="status-row">
@@ -318,6 +303,42 @@
   </footer>
 </div>
 
+<div class="floating-help" id="floating-help">
+  <button id="help-fab" class="help-fab" aria-haspopup="dialog" aria-expanded="false" aria-controls="help-panel" aria-label="Open quick help">
+    <i class="fa-solid fa-circle-question"></i>
+    <span>Help</span>
+  </button>
+
+  <section id="help-panel" class="help-panel" role="dialog" aria-label="Quick Help" aria-hidden="true">
+    <div class="help-panel-head">
+      <div class="help-panel-title">Quick Help</div>
+      <button id="help-close-btn" class="help-close-btn" aria-label="Close quick help">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title"><i class="fa-solid fa-keyboard"></i> Keyboard Shortcuts</div>
+      <div class="help-row"><span>[Space]</span> Start / Pause Clock</div>
+      <div class="help-row"><span>[V]</span> Hide / Show Clock</div>
+      <div class="help-row"><span>[H]</span> Home Goal</div>
+      <div class="help-row"><span>[A]</span> Away Goal</div>
+      <div class="help-row"><span>[Backspace]</span> Undo Event</div>
+      <div class="help-row"><span>[Shift] + [X]</span> Reset All</div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title"><i class="fa-solid fa-circle-info"></i> How to use</div>
+      <div class="how-to-title">OBS / Stream</div>
+      <div class="help-row">1. Copy this page's <span>URL</span>.</div>
+      <div class="help-row">2. Add a <span>Browser Source</span> in OBS.</div>
+      <div class="help-row">3. Set size to <span>950 x 750</span>.</div>
+      <div class="help-row">4. Crop using the <span>Transform</span> feature.</div>
+      <div class="help-row">5. Use <span>Interact</span> to control live.</div>
+    </div>
+  </section>
+</div>
+
 <!-- MODAL -->
 <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Confirm Reset" aria-hidden="true">
   <div class="modal-card">
@@ -360,7 +381,6 @@
   </div>
 </div>
 
-<script src="teams.js"></script>
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
 </html>

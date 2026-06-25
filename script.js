@@ -20,6 +20,30 @@ import { createGameClockManager } from './js/features/game-clock.js';
 import { createMediaManager } from './js/features/media.js';
 import { TOURNAMENTS } from './teams.js';
 
+// Force top-of-page start on reload instead of browser-restored scroll position.
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+
+const ensureTopScrollPosition = () => {
+  window.scrollTo(0, 0);
+};
+
+const ensureTopScrollPositionWithFallback = () => {
+  ensureTopScrollPosition();
+
+  // Handle late layout shifts (fonts/images/transitions) after load.
+  requestAnimationFrame(() => {
+    ensureTopScrollPosition();
+    requestAnimationFrame(ensureTopScrollPosition);
+  });
+
+  setTimeout(ensureTopScrollPosition, 120);
+};
+
+document.addEventListener('DOMContentLoaded', ensureTopScrollPosition);
+window.addEventListener('pageshow', ensureTopScrollPosition);
+
 // App-level state, storage keys, and reactive state proxy.
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -771,7 +795,7 @@ if (document.fonts && document.fonts.ready) {
 
 // Hides the preloader once all assets (images, fonts, scripts) are fully loaded.
 window.addEventListener('load', () => {
-  window.scrollTo(0, 0);
+  ensureTopScrollPositionWithFallback();
   const preloader = document.getElementById('preloader');
   if (preloader) {
     preloader.classList.add('preloader-hidden');

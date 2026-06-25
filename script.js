@@ -152,7 +152,6 @@ function init() {
   prepareTeamData();
   syncUI(); // Initial full render
 
-  if (GAME_ID !== 'default') document.title = `${GAME_ID} - WatchaScore`;
   const yearEl = document.getElementById('current-year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 }

@@ -719,7 +719,44 @@ document.addEventListener('click', (e) => {
   }
 });
 
-document.addEventListener('keydown', (e) => {
+function isEditableShortcutTarget(target) {
+  if (!(target instanceof Element)) return false;
+  if (target.isContentEditable) return true;
+  return Boolean(target.closest('input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]'));
+}
+
+function getShortcutKey(e) {
+  switch (e.code) {
+    case 'Space':
+      return 'space';
+    case 'KeyH':
+      return 'h';
+    case 'KeyA':
+      return 'a';
+    case 'KeyX':
+      return 'x';
+    case 'KeyV':
+      return 'v';
+    case 'Backspace':
+      return 'backspace';
+  }
+
+  switch ((e.key || '').toLowerCase()) {
+    case ' ':
+    case 'spacebar':
+      return 'space';
+    case 'h':
+    case 'a':
+    case 'x':
+    case 'v':
+    case 'backspace':
+      return (e.key || '').toLowerCase();
+    default:
+      return '';
+  }
+}
+
+window.addEventListener('keydown', (e) => {
   if (isMobileHeaderViewport() && e.key === 'Escape') {
     const header = document.querySelector('header');
     if (header?.classList.contains('menu-open')) {
@@ -766,16 +803,31 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
-  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
-  switch(e.code) {
-    case 'Space': e.preventDefault(); toggleClock(); break;
-    case 'KeyH': changeScore('home', 1); break;
-    case 'KeyA': changeScore('away', 1); break;
-    case 'KeyX': if(e.shiftKey) resetAll(); break;
-    case 'KeyV': toggleClockVisibility(); break;
-    case 'Backspace': e.preventDefault(); removeLastEvent(); break;
+  if (isEditableShortcutTarget(e.target) || isEditableShortcutTarget(document.activeElement)) return;
+
+  switch (getShortcutKey(e)) {
+    case 'space':
+      e.preventDefault();
+      toggleClock();
+      break;
+    case 'h':
+      changeScore('home', 1);
+      break;
+    case 'a':
+      changeScore('away', 1);
+      break;
+    case 'x':
+      if (e.shiftKey) resetAll();
+      break;
+    case 'v':
+      toggleClockVisibility();
+      break;
+    case 'backspace':
+      e.preventDefault();
+      removeLastEvent();
+      break;
   }
-});
+}, true);
 
 // Re-check name fit on resize (e.g. crossing the mobile breakpoint where the
 // base font-size changes, or an OBS browser source being resized).

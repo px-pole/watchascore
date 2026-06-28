@@ -90,7 +90,7 @@ export const TOURNAMENTS = {
     { "id": "atletico", "name": "Atlético Madrid", "badge": "assets/badges/Spain-LaLiga/atletico.svg" },
     { "id": "osasuna", "name": "CA Osasuna", "badge": "assets/badges/Spain-LaLiga/osasuna.svg" },
     { "id": "celta", "name": "Celta Vigo", "badge": "assets/badges/Spain-LaLiga/celta.svg" },
-    { "id": "deportivo", "name": "Deportivo La Coruña", "badge": "assets/badges/Spain-LaLiga/deportivo.svg" },
+    { "id": "deportivo", "name": "Deportivo de A Coruña", "badge": "assets/badges/Spain-LaLiga/deportivo.svg" },
     { "id": "espanyol", "name": "Espanyol", "badge": "assets/badges/Spain-LaLiga/espanyol.svg" },
     { "id": "barcelona", "name": "FC Barcelona", "badge": "assets/badges/Spain-LaLiga/barcelona.svg" },
     { "id": "getafe", "name": "Getafe CF", "badge": "assets/badges/Spain-LaLiga/getafe.svg" },

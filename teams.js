@@ -140,39 +140,23 @@ export const TOURNAMENTS = {
   ]
   },
   worldcup: {
-  "Round of 32": [
-    { "id": "mexico", "name": "Mexico", "badge": "assets/badges/WorldCup2026/mexico.svg" },
-    { "id": "southafrica", "name": "South Africa", "badge": "assets/badges/WorldCup2026/southafrica.svg" },
-    { "id": "canada", "name": "Canada", "badge": "assets/badges/WorldCup2026/canada.svg" },
-    { "id": "bosnia", "name": "Bosnia and Herzegovina", "badge": "assets/badges/WorldCup2026/bosnia.svg" },
-    { "id": "switzerland", "name": "Switzerland", "badge": "assets/badges/WorldCup2026/switzerland.svg" },
-    { "id": "brazil", "name": "Brazil", "badge": "assets/badges/WorldCup2026/brazil.svg" },
-    { "id": "morocco", "name": "Morocco", "badge": "assets/badges/WorldCup2026/morocco.svg" },
-    { "id": "usa", "name": "USA", "badge": "assets/badges/WorldCup2026/usa.svg" },
-    { "id": "paraguay", "name": "Paraguay", "badge": "assets/badges/WorldCup2026/paraguay.svg" },
-    { "id": "australia", "name": "Australia", "badge": "assets/badges/WorldCup2026/australia.svg" },
-    { "id": "germany", "name": "Germany", "badge": "assets/badges/WorldCup2026/germany.svg" },
-    { "id": "ivorycoast", "name": "Côte d'Ivoire", "badge": "assets/badges/WorldCup2026/ivorycoast.svg" },
-    { "id": "ecuador", "name": "Ecuador", "badge": "assets/badges/WorldCup2026/ecuador.svg" },
-    { "id": "netherlands", "name": "Netherlands", "badge": "assets/badges/WorldCup2026/netherlands.svg" },
-    { "id": "japan", "name": "Japan", "badge": "assets/badges/WorldCup2026/japan.svg" },
-    { "id": "sweden", "name": "Sweden", "badge": "assets/badges/WorldCup2026/sweden.svg" },
-    { "id": "belgium", "name": "Belgium", "badge": "assets/badges/WorldCup2026/belgium.svg" },
-    { "id": "egypt", "name": "Egypt", "badge": "assets/badges/WorldCup2026/egypt.svg" },
-    { "id": "spain", "name": "Spain", "badge": "assets/badges/WorldCup2026/spain.svg" },
-    { "id": "capeverde", "name": "Cape Verde", "badge": "assets/badges/WorldCup2026/capeverde.svg" },
-    { "id": "france", "name": "France", "badge": "assets/badges/WorldCup2026/france.svg" },
-    { "id": "senegal", "name": "Senegal", "badge": "assets/badges/WorldCup2026/senegal.svg" },
-    { "id": "norway", "name": "Norway", "badge": "assets/badges/WorldCup2026/norway.svg" },
+  "Round of 16": [
     { "id": "argentina", "name": "Argentina", "badge": "assets/badges/WorldCup2026/argentina.svg" },
-    { "id": "algeria", "name": "Algeria", "badge": "assets/badges/WorldCup2026/algeria.svg" },
-    { "id": "austria", "name": "Austria", "badge": "assets/badges/WorldCup2026/austria.svg" },
-    { "id": "portugal", "name": "Portugal", "badge": "assets/badges/WorldCup2026/portugal.svg" },
-    { "id": "drcongo", "name": "DR Congo", "badge": "assets/badges/WorldCup2026/drcongo.svg" },
+    { "id": "belgium", "name": "Belgium", "badge": "assets/badges/WorldCup2026/belgium.svg" },
+    { "id": "brazil", "name": "Brazil", "badge": "assets/badges/WorldCup2026/brazil.svg" },
+    { "id": "canada", "name": "Canada", "badge": "assets/badges/WorldCup2026/canada.svg" },
     { "id": "colombia", "name": "Colombia", "badge": "assets/badges/WorldCup2026/colombia.svg" },
+    { "id": "egypt", "name": "Egypt", "badge": "assets/badges/WorldCup2026/egypt.svg" },
     { "id": "england", "name": "England", "badge": "assets/badges/WorldCup2026/england.svg" },
-    { "id": "croatia", "name": "Croatia", "badge": "assets/badges/WorldCup2026/croatia.svg" },
-    { "id": "ghana", "name": "Ghana", "badge": "assets/badges/WorldCup2026/ghana.svg" }
+    { "id": "france", "name": "France", "badge": "assets/badges/WorldCup2026/france.svg" },
+    { "id": "mexico", "name": "Mexico", "badge": "assets/badges/WorldCup2026/mexico.svg" },
+    { "id": "morocco", "name": "Morocco", "badge": "assets/badges/WorldCup2026/morocco.svg" },
+    { "id": "norway", "name": "Norway", "badge": "assets/badges/WorldCup2026/norway.svg" },
+    { "id": "paraguay", "name": "Paraguay", "badge": "assets/badges/WorldCup2026/paraguay.svg" },
+    { "id": "portugal", "name": "Portugal", "badge": "assets/badges/WorldCup2026/portugal.svg" },
+    { "id": "spain", "name": "Spain", "badge": "assets/badges/WorldCup2026/spain.svg" },
+    { "id": "switzerland", "name": "Switzerland", "badge": "assets/badges/WorldCup2026/switzerland.svg" },
+    { "id": "usa", "name": "USA", "badge": "assets/badges/WorldCup2026/usa.svg" }
   ]
   }
 };

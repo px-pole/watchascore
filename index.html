@@ -125,11 +125,6 @@
 
     </div>
 
-    <div class="events-container">
-      <div id="home-events" class="events-list home-events" aria-live="polite"></div>
-      <div class="spacer"></div>
-      <div id="away-events" class="events-list away-events" aria-live="polite"></div>
-    </div>
   </div>
   <!-- TEAM SELECTION -->
   <div class="team-selection-panel">
@@ -183,6 +178,9 @@
         </div>
       </div>
     </div>
+    <button id="toggle-team-names-btn" class="btn btn-secondary btn-full mt-2" aria-pressed="false">
+      <i class="fa-solid fa-eye-slash"></i> Hide Team Names
+    </button>
   </div>
 
   <!-- CONTROLS -->
@@ -245,30 +243,6 @@
       <button id="reset-teams-btn" class="btn btn-danger btn-full mt-2">Reset Teams</button>
       <button id="reset-all-btn" class="btn btn-danger btn-full mt-2">Reset All</button>
     </div>
-
-    <!-- GAME EVENTS -->
-    <div class="card">
-      <div class="card-title">Game Events</div>
-      <div class="selector-group mt-3">
-        <label>Event Type</label>
-        <select id="event-icon" class="theme-select">
-          <option value="goal">⚽ Goal</option>
-          <option value="yellow">🟨 Yellow Card</option>
-          <option value="red">🟥 Red Card</option>
-        </select>
-      </div>
-      <div class="selector-group mt-3">
-        <label>Event (e.g. Scorer + Minute)</label>
-        <input type="text" id="event-text" placeholder="e.g. Maradona 55" maxlength="50">
-        <div class="btn-row mt-2">
-          <button class="btn btn-primary" id="add-event-home"><span>Home</span></button>
-          <button class="btn btn-primary" id="add-event-away"><span>Away</span></button>
-        </div>
-      </div> 
-      <button id="remove-last-event-btn" class="btn btn-secondary btn-full mt-2">
-        <i class="fa-solid fa-rotate-left"></i> Remove Last Event
-      </button>
-    </div>
     
   </div>
   
@@ -277,7 +251,7 @@
     <div class="card">
       <div class="card-title">About This Project</div>
       <div class="footer-text">
-        <p><strong>WatchaScore</strong> is a free, open-source football scoreboard overlay designed for streamers and amateur broadcasters. Customize team names, scores, game events, and the clock in real-time.</p>
+        <p><strong>WatchaScore</strong> is a free, open-source football scoreboard overlay designed for streamers and amateur broadcasters. Customize team names, scores, and the clock in real-time.</p>
         <p>I am continuously working to improve WatchaScore. Your <a href="#" id="feedback-link">feedback</a> and suggestions are highly valued!</p>
         <p>If you find this tool useful, please consider supporting its development. Every contribution helps keep the project alive and growing. Don't feel obliged to pay. Use it freely for as long as you like.</p>
         <p>Find the project on <a href="https://github.com/px-pole/watchascore" target="_blank">GitHub</a>.</p>
@@ -323,7 +297,6 @@
       <div class="help-row"><span>[V]</span> Hide / Show Clock</div>
       <div class="help-row"><span>[H]</span> Home Goal</div>
       <div class="help-row"><span>[A]</span> Away Goal</div>
-      <div class="help-row"><span>[Backspace]</span> Undo Event</div>
       <div class="help-row"><span>[Shift] + [X]</span> Reset All</div>
     </div>
 

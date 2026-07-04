@@ -1,11 +1,10 @@
 import {
   PLACEHOLDER,
-  EVENT_ICON_MAP,
   STATUS_LABELS,
   THEMES,
   SEARCH_RESULT_CAP,
+  SEARCH_DEBOUNCE_MS,
   CLOCK_MAX_MINUTES,
-  EVENT_TEXT_MAX_LENGTH,
   CANVAS_SAMPLE_SIZE,
   ALLOWED_LOGO_TYPES,
   HELP_FAB_SEEN_KEY,
@@ -15,7 +14,6 @@ import { createEventBus } from './js/core/event-bus.js';
 import { createPersistence } from './js/core/persistence.js';
 import { pad, capitalize, levenshteinDistance, debounce } from './js/utils/helpers.js';
 import { createTeamSearchManager } from './js/features/team-search.js';
-import { createGameEventsManager } from './js/features/game-events.js';
 import { createGameClockManager } from './js/features/game-clock.js';
 import { createMediaManager } from './js/features/media.js';
 import { TOURNAMENTS } from './teams.js';
@@ -55,6 +53,7 @@ const Persistence = createPersistence({ storageKey: STORAGE_KEY, prefsKey: PREFS
 let state = null;
 let ui = {}; // DOM Cache
 let modalTriggerElement = null; // Element that had focus before opening a modal
+let activeModalCleanup = null;
 
 const stateHandler = {
   set(target, prop, value) {
@@ -69,6 +68,42 @@ const stateHandler = {
 const createState = (initialData) => new Proxy(initialData, stateHandler);
 const saveState = () => Persistence.save(state);
 
+function setStateValues(updates) {
+  Object.entries(updates).forEach(([key, value]) => {
+    state[key] = value;
+  });
+}
+
+function setSelectedTeam(side, team) {
+  state[`${side}Team`] = team ? { ...team } : null;
+}
+
+function clearSelectedTeams({ clearOverrides = false } = {}) {
+  const updates = {
+    homeTeam: null,
+    awayTeam: null
+  };
+
+  if (clearOverrides) {
+    updates.homeNameOverride = '';
+    updates.awayNameOverride = '';
+  }
+
+  setStateValues(updates);
+}
+
+function applyTeamBadge(side, badge) {
+  const existingTeam = state[`${side}Team`];
+  const teamName = existingTeam?.name || capitalize(side);
+
+  setSelectedTeam(side, {
+    ...(existingTeam || {}),
+    id: existingTeam?.id || `custom-${side}`,
+    name: teamName,
+    badge
+  });
+}
+
 // Feature module wiring.
 
 const EventBus = createEventBus();
@@ -81,14 +116,9 @@ const teamSearchManager = createTeamSearchManager({
   levenshteinDistance,
   placeholder: PLACEHOLDER,
   searchResultCap: SEARCH_RESULT_CAP,
+  searchDebounceMs: SEARCH_DEBOUNCE_MS,
+  setSelectedTeam,
   tournaments: TOURNAMENTS
-});
-
-const gameEventsManager = createGameEventsManager({
-  getState,
-  getUi,
-  eventIconMap: EVENT_ICON_MAP,
-  eventTextMaxLength: EVENT_TEXT_MAX_LENGTH
 });
 
 const gameClockManager = createGameClockManager({
@@ -107,16 +137,10 @@ const mediaManager = createMediaManager({
   allowedLogoTypes: ALLOWED_LOGO_TYPES,
   canvasSampleSize: CANVAS_SAMPLE_SIZE,
   capitalize,
-  saveState,
+  applyTeamBadge,
+  openModal,
   closeActiveModal,
-  updateVisibilityHighlight,
-  setModalTriggerElement: (el) => {
-    modalTriggerElement = el;
-  },
-  getModalTriggerElement: () => modalTriggerElement,
-  clearModalTriggerElement: () => {
-    modalTriggerElement = null;
-  }
+  updateVisibilityHighlight
 });
 
 const {
@@ -124,9 +148,9 @@ const {
   handleSearchKeyboard,
   debouncedSearch,
   getTeam,
-  repositionActivePopups
+  repositionActivePopups,
+  closeAllSearchPopups
 } = teamSearchManager;
-const { updateEventsUI, addGameEvent, removeEvent, removeLastEvent } = gameEventsManager;
 const { renderClock, setClock, toggleClockVisibility, toggleClock, resetClock, stopTimer } = gameClockManager;
 const { setBadge, handleLogoUpload, confirmLogoUpload } = mediaManager;
 
@@ -158,13 +182,12 @@ function setupSubscriptions() {
   EventBus.on('mode', updateTeamsUI);
   EventBus.on('mode', updateThemeUI);
   EventBus.on('visibilityMode', updateThemeUI);
-
-  // Timeline
-  EventBus.on('events', (val) => updateEventsUI(val));
+  EventBus.on('teamNamesVisible', updateTeamNamesVisibilityUI);
 }
 
 function init() {
   const rawData = Persistence.load();
+  if (typeof rawData.teamNamesVisible !== 'boolean') rawData.teamNamesVisible = true;
 
   // Initialize Subscriptions before the Proxy starts emitting
   setupSubscriptions();
@@ -187,18 +210,18 @@ function cacheElements() {
   ui.ctrlAwayScore = document.getElementById('ctrl-away-score');
 
   const ids = [
-    'clock-display', 'clock-status-text', 'start-btn', 'home-events', 'away-events', 
-    'home-clear-search-btn', 'away-clear-search-btn', 'home-name', 'away-name', 
-    'event-icon', 'event-text', 'home-name-override', 'away-name-override', 
+    'clock-display', 'clock-status-text', 'start-btn',
+    'home-clear-search-btn', 'away-clear-search-btn', 'home-name', 'away-name',
+    'home-name-override', 'away-name-override',
     'home-team-search', 'away-team-search', 'theme-select', 'mode-select', 
-    'tournament-group-display', 'visibility-mode-select', 'add-event-home', 
-    'add-event-away', 'fx-suggestion-icon', 'home-badge', 'home-badge-wrap', 
+    'tournament-group-display', 'visibility-mode-select',
+    'fx-suggestion-icon', 'home-badge', 'home-badge-wrap',
     'mini-home-badge', 'away-badge', 'away-badge-wrap', 'mini-away-badge',
     'new-game-btn', 'home-logo-upload', 'away-logo-upload', 
     'set-clock-btn',
     'reset-clock-btn', 'toggle-clock-btn', 'clock-wrap',
-    'reset-scores-btn', 'reset-teams-btn', 'reset-all-btn', 
-    'confirm-reset-all-btn', 'confirm-start-time-btn', 'remove-last-event-btn', 'clock-min', 'clock-sec',
+    'reset-scores-btn', 'reset-teams-btn', 'reset-all-btn',
+    'toggle-team-names-btn', 'confirm-reset-all-btn', 'confirm-start-time-btn', 'clock-min', 'clock-sec',
     'crop-modal', 'crop-preview-img', 'confirm-crop-btn', 'close-crop-modal-btn', 
     'toggle-contact-btn', 'feedback-link', 'status-btn-not-started',
     'help-fab', 'help-panel', 'help-close-btn',
@@ -242,16 +265,11 @@ function setupListeners() {
   ui.resetScoresBtn?.addEventListener('click', resetScores);
   ui.resetTeamsBtn?.addEventListener('click', resetTeams);
   ui.resetAllBtn?.addEventListener('click', resetAll);
+  ui.toggleTeamNamesBtn?.addEventListener('click', toggleTeamNamesVisibility);
   ui.confirmResetAllBtn?.addEventListener('click', confirmResetAll);
-  
-  // Game Events
-  ui.addEventHome?.addEventListener('click', () => addGameEvent('home'));
-  ui.addEventAway?.addEventListener('click', () => addGameEvent('away'));
-  ui.removeLastEventBtn?.addEventListener('click', removeLastEvent);
 
   // Crop Modal
   ui.confirmCropBtn?.addEventListener('click', confirmLogoUpload);
-  ui.closeCropModalBtn?.addEventListener('click', () => ui.cropModal.classList.remove('active'));
 
   document.querySelectorAll('.btn-plus, .btn-minus').forEach(btn => {
     btn.addEventListener('click', () => changeScore(btn.dataset.side, parseInt(btn.dataset.delta)));
@@ -260,6 +278,13 @@ function setupListeners() {
   // Search & Inputs
   ['home', 'away'].forEach(side => {
     const searchInput = ui[`${side}TeamSearch`];
+    const resultsPopup = document.getElementById(`${side}-team-results`);
+    if (searchInput && resultsPopup) {
+      searchInput.setAttribute('aria-controls', resultsPopup.id);
+      searchInput.setAttribute('aria-expanded', 'false');
+      searchInput.setAttribute('autocomplete', 'off');
+      resultsPopup.setAttribute('aria-hidden', 'true');
+    }
     searchInput?.addEventListener('input', (e) => debouncedSearch(side, e.target.value));
     searchInput?.addEventListener('keydown', (e) => handleSearchKeyboard(e, side));
     searchInput?.addEventListener('focus', (e) => {
@@ -303,9 +328,6 @@ function setupListeners() {
     }
   });
 
-  // Ensure Event Type selector blurs after an option is picked
-  ui.eventIcon?.addEventListener('change', () => ui.eventIcon.blur());
-
   // Modals
   document.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeActiveModal));
 
@@ -316,15 +338,6 @@ function setupListeners() {
     });
   });
 
-  // Events Timeline Delegation (removes need for inline onclick)
-  ['home', 'away'].forEach(side => {
-    ui[`${side}Events`]?.addEventListener('click', (e) => {
-      const icon = e.target.closest('i');
-      if (icon && icon.dataset.index !== undefined) {
-        removeEvent(parseInt(icon.dataset.index));
-      }
-    });
-  });
 }
 
 // UI synchronization and rendering.
@@ -335,7 +348,7 @@ function syncUI() {
   updateTeamsUI();
   updateClockUI();
   updateThemeUI();
-  updateEventsUI();
+  updateTeamNamesVisibilityUI();
   updateVisibilityHighlight();
 }
 
@@ -492,7 +505,6 @@ function fitTeamName(el) {
 
 // Updates all UI elements that display a team's name.
 function syncTeamNameDisplay(side, name) {
-  const sideKey = capitalize(side);
   const nameEl = ui[`${side}Name`];
   if (nameEl) {
     nameEl.textContent = name;
@@ -500,13 +512,23 @@ function syncTeamNameDisplay(side, name) {
     nameEl.setAttribute('aria-label', name);
     fitTeamName(nameEl);
   }
-  
-  const eventBtn = ui[`addEvent${sideKey}`];
-  if (eventBtn) {
-    eventBtn.setAttribute('data-tooltip', name);
-    const textSpan = eventBtn.querySelector('span');
-    if (textSpan) textSpan.textContent = name;
+}
+
+function updateTeamNamesVisibilityUI() {
+  const visible = state.teamNamesVisible !== false;
+  const scoreboard = document.querySelector('.scoreboard-wrap');
+  if (scoreboard) scoreboard.classList.toggle('team-names-hidden', !visible);
+
+  if (ui.toggleTeamNamesBtn) {
+    ui.toggleTeamNamesBtn.setAttribute('aria-pressed', visible ? 'false' : 'true');
+    ui.toggleTeamNamesBtn.innerHTML = visible
+      ? '<i class="fa-solid fa-eye-slash"></i> Hide Team Names'
+      : '<i class="fa-solid fa-eye"></i> Show Team Names';
   }
+}
+
+function toggleTeamNamesVisibility() {
+  state.teamNamesVisible = !(state.teamNamesVisible !== false);
 }
 
 function overrideName(side, val) {
@@ -536,8 +558,7 @@ function resetTeams() {
   const resetAction = () => {
     const wrapper = document.querySelector('.wrapper');
     if (wrapper) wrapper.classList.toggle('teams-selected', false);
-    state.homeTeam = null;
-    state.awayTeam = null;
+    clearSelectedTeams({ clearOverrides: true });
   };
 
   if (document.startViewTransition) {
@@ -552,8 +573,8 @@ function resetTeams() {
 
 function changeMode(mode) {
   const update = () => {
-    state.mode = mode; 
-    state.homeTeam = null; state.awayTeam = null;
+    state.mode = mode;
+    clearSelectedTeams({ clearOverrides: true });
   };
   if (document.startViewTransition) document.startViewTransition(update);
   else update();
@@ -574,6 +595,18 @@ function setStatus(s) {
 
 function toggleContactForm() {
   document.getElementById('contact-form').classList.toggle('active');
+}
+
+function openModal(modal, { initialFocus = null, onClose = null } = {}) {
+  if (!modal) return;
+
+  modalTriggerElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  activeModalCleanup = typeof onClose === 'function' ? onClose : null;
+  modal.classList.add('active');
+  modal.removeAttribute('aria-hidden');
+
+  const targetFocus = initialFocus || modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  targetFocus?.focus();
 }
 
 function isHelpPanelOpen() {
@@ -648,24 +681,16 @@ function syncHeaderMenuViewportState() {
 }
 
 function resetAll() {
-  modalTriggerElement = document.activeElement;
   const modal = document.getElementById('modal-overlay');
-  modal.classList.add('active');
-  modal.removeAttribute('aria-hidden');
-  const confirmBtn = modal.querySelector('#confirm-reset-all-btn');
-  if (confirmBtn) confirmBtn.focus();
+  const confirmBtn = modal?.querySelector('#confirm-reset-all-btn');
+  openModal(modal, { initialFocus: confirmBtn });
 }
 
 function showStartTimeModal() {
-  modalTriggerElement = document.activeElement;
   const modal = document.getElementById('start-time-modal');
-  modal.classList.add('active');
-  modal.removeAttribute('aria-hidden');
   const input = document.getElementById('start-time-input');
-  if (input) {
-    input.value = state.startTime || '';
-    input.focus();
-  }
+  if (input) input.value = state.startTime || '';
+  openModal(modal, { initialFocus: input });
 }
 
 function closeActiveModal() {
@@ -673,6 +698,11 @@ function closeActiveModal() {
   if (active) {
     active.classList.remove('active');
     active.setAttribute('aria-hidden', 'true');
+    if (activeModalCleanup) {
+      const cleanup = activeModalCleanup;
+      activeModalCleanup = null;
+      cleanup();
+    }
     if (modalTriggerElement) {
       modalTriggerElement.focus();
       modalTriggerElement = null;
@@ -710,7 +740,7 @@ document.addEventListener('click', (e) => {
   }
 
   if (!e.target.closest('.search-container')) {
-    document.querySelectorAll('.search-results-popup').forEach(p => p.classList.remove('active'));
+    closeAllSearchPopups();
   }
   const activeEl = document.activeElement;
   const isLocked = activeEl && ['SELECT', 'INPUT', 'TEXTAREA'].includes(activeEl.tagName);
@@ -737,8 +767,6 @@ function getShortcutKey(e) {
       return 'x';
     case 'KeyV':
       return 'v';
-    case 'Backspace':
-      return 'backspace';
   }
 
   switch ((e.key || '').toLowerCase()) {
@@ -749,7 +777,6 @@ function getShortcutKey(e) {
     case 'a':
     case 'x':
     case 'v':
-    case 'backspace':
       return (e.key || '').toLowerCase();
     default:
       return '';
@@ -821,10 +848,6 @@ window.addEventListener('keydown', (e) => {
       break;
     case 'v':
       toggleClockVisibility();
-      break;
-    case 'backspace':
-      e.preventDefault();
-      removeLastEvent();
       break;
   }
 }, true);

@@ -10,7 +10,7 @@
 
 - **Real-time Controls:** Manage scores, game clock, and status (HT, FT, etc.) instantaneously.
 - **Dynamic Team Search:** Quickly find and select teams from a built-in database with league grouping and matched-text highlighting.
-- **Event Timeline:** Track goals, yellow cards, and red cards with a professional visual timeline under the score.
+- **Team Visibility Toggle:** Quickly hide or show team names from the Team Selection panel.
 - **Customization:** 
   - **Theme Engine:** Switch between 8+ professional color palettes (Sky Blue, Emerald, Crimson, Midnight, etc.).
   - **Logo Upload:** Upload custom team badges directly from your local machine.
@@ -28,7 +28,6 @@ For power users, WatchaScore supports global hotkeys to keep your hands on the a
 | `[V]` | Hide / Show clock |
 | `[H]` | Increment Home Team score |
 | `[A]` | Increment Away Team score |
-| `[Backspace]` | Undo/Remove the last game event |
 | `[Shift] + [X]` | Trigger "Reset All" confirmation |
 
 *Note: Shortcuts are disabled while typing in input fields.*

@@ -1,16 +1,13 @@
 export function createMediaManager({
-  getState,
   getUi,
   placeholder,
   allowedLogoTypes,
   canvasSampleSize,
   capitalize,
-  saveState,
+  applyTeamBadge,
+  openModal,
   closeActiveModal,
-  updateVisibilityHighlight,
-  setModalTriggerElement,
-  getModalTriggerElement,
-  clearModalTriggerElement
+  updateVisibilityHighlight
 }) {
   const brightnessCache = new Map();
   const pendingAnalysis = new Map();
@@ -180,11 +177,15 @@ onmessage = function(e) {
       pendingLogoBase64 = e.target.result;
       const ui = getUi();
       ui.cropPreviewImg.src = pendingLogoBase64;
-      setModalTriggerElement(document.activeElement);
-      ui.cropModal.classList.add('active');
-      ui.cropModal.removeAttribute('aria-hidden');
       const applyBtn = ui.cropModal.querySelector('.btn-primary');
-      if (applyBtn) applyBtn.focus();
+      openModal(ui.cropModal, {
+        initialFocus: applyBtn,
+        onClose: () => {
+          pendingLogoSide = null;
+          pendingLogoBase64 = null;
+          ui.cropPreviewImg.removeAttribute('src');
+        }
+      });
       input.value = '';
     };
     reader.onerror = () => {
@@ -195,16 +196,9 @@ onmessage = function(e) {
 
   function confirmLogoUpload() {
     if (!pendingLogoSide || !pendingLogoBase64) return;
-    const state = getState();
-    if (!state[`${pendingLogoSide}Team`]) {
-      state[`${pendingLogoSide}Team`] = {
-        id: `custom-${pendingLogoSide}`,
-        name: pendingLogoSide === 'home' ? 'Home' : 'Away'
-      };
-    }
-    state[`${pendingLogoSide}Team`].badge = pendingLogoBase64;
+
+    applyTeamBadge(pendingLogoSide, pendingLogoBase64);
     setBadge(pendingLogoSide, pendingLogoBase64);
-    saveState();
     closeActiveModal();
   }
 

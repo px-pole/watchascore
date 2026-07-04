@@ -4,6 +4,8 @@ export function createTeamSearchManager({
   levenshteinDistance,
   placeholder,
   searchResultCap,
+  searchDebounceMs,
+  setSelectedTeam,
   tournaments
 }) {
   let allTeams = [];
@@ -55,11 +57,49 @@ export function createTeamSearchManager({
 
   function setTeam(side, id) {
     const t = getTeam(id);
-    const state = getState();
-    state[`${side}Team`] = t || null;
+    setSelectedTeam(side, t || null);
     if (document.activeElement && typeof document.activeElement.blur === 'function') {
       document.activeElement.blur();
     }
+  }
+
+  function clearKeyboardFocus(resultsDiv, searchInput) {
+    resultsDiv.querySelectorAll('.keyboard-focus').forEach((item) => {
+      item.classList.remove('keyboard-focus');
+      if (item.hasAttribute('aria-selected')) item.setAttribute('aria-selected', 'false');
+    });
+    if (searchInput) searchInput.removeAttribute('aria-activedescendant');
+  }
+
+  function setPopupState(resultsDiv, searchInput, open) {
+    if (!resultsDiv || !searchInput) return;
+    resultsDiv.classList.toggle('active', open);
+    resultsDiv.setAttribute('aria-hidden', open ? 'false' : 'true');
+    searchInput.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+    if (!open) {
+      clearKeyboardFocus(resultsDiv, searchInput);
+    }
+  }
+
+  function closeResultsPopup(resultsDiv, searchInput) {
+    setPopupState(resultsDiv, searchInput, false);
+  }
+
+  function renderTeamOption(side, team, resultsDiv, searchInput, highlightedName = team.name) {
+    const item = document.createElement('div');
+    item.className = 'search-results-item';
+    item.setAttribute('role', 'option');
+    item.setAttribute('aria-selected', 'false');
+    item.dataset.teamId = team.id;
+    item.id = `team-option-${side}-${team.id}`;
+    item.innerHTML = `<img src="${team.badge || placeholder}" loading="lazy" alt=""> <span>${highlightedName}</span>`;
+    item.addEventListener('click', () => {
+      setTeam(side, team.id);
+      closeResultsPopup(resultsDiv, searchInput);
+      searchInput.value = '';
+    });
+    return item;
   }
 
   function renderSearchMode(fragment, side, filter, resultsDiv, searchInput) {
@@ -92,24 +132,13 @@ export function createTeamSearchManager({
       fragment.appendChild(header);
 
       teams.forEach((t) => {
-        const item = document.createElement('div');
-        item.className = 'search-results-item';
-        item.setAttribute('role', 'option');
-        item.dataset.teamId = t.id;
-        item.id = `team-option-${side}-${t.id}`;
         const idx = t.nameLower.indexOf(filter);
         const highlightedName =
           idx >= 0
             ? `${t.name.substring(0, idx)}<span class="search-highlight">${t.name.substring(idx, idx + filter.length)}</span>${t.name.substring(idx + filter.length)}`
             : t.name;
 
-        item.innerHTML = `<img src="${t.badge || placeholder}" loading="lazy" alt=""> <span>${highlightedName}</span>`;
-        item.onclick = () => {
-          setTeam(side, t.id);
-          resultsDiv.classList.remove('active');
-          searchInput.value = '';
-        };
-        fragment.appendChild(item);
+        fragment.appendChild(renderTeamOption(side, t, resultsDiv, searchInput, highlightedName));
       });
     });
 
@@ -153,7 +182,7 @@ export function createTeamSearchManager({
         const isOpen = teamContainer.classList.toggle('active');
         header.setAttribute('aria-expanded', isOpen);
       };
-      header.onclick = toggleLeague;
+      header.addEventListener('click', toggleLeague);
       header.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -162,18 +191,7 @@ export function createTeamSearchManager({
       });
 
       teams.forEach((t) => {
-        const item = document.createElement('div');
-        item.className = 'search-results-item';
-        item.setAttribute('role', 'option');
-        item.dataset.teamId = t.id;
-        item.id = `team-option-${side}-${t.id}`;
-        item.innerHTML = `<img src="${t.badge || placeholder}" loading="lazy" alt=""> <span>${t.name}</span>`;
-        item.onclick = () => {
-          setTeam(side, t.id);
-          resultsDiv.classList.remove('active');
-          searchInput.value = '';
-        };
-        teamContainer.appendChild(item);
+        teamContainer.appendChild(renderTeamOption(side, t, resultsDiv, searchInput));
       });
 
       fragment.appendChild(header);
@@ -187,28 +205,31 @@ export function createTeamSearchManager({
     const filter = text.toLowerCase().trim();
     const fragment = document.createDocumentFragment();
 
+    searchInput.setAttribute('aria-autocomplete', 'list');
     resultsDiv.setAttribute('role', 'listbox');
+    resultsDiv.setAttribute('aria-labelledby', searchInput.id);
     if (filter) {
       renderSearchMode(fragment, side, filter, resultsDiv, searchInput);
     } else {
       renderBrowseMode(fragment, side, resultsDiv, searchInput);
     }
 
-    const closeBtn = document.createElement('div');
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
     closeBtn.className = 'search-results-close';
     closeBtn.innerHTML = '<i class="fa-solid fa-times"></i> Close Selection';
-    closeBtn.onclick = (e) => {
+    closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      resultsDiv.classList.remove('active');
-    };
+      closeResultsPopup(resultsDiv, searchInput);
+    });
     fragment.appendChild(closeBtn);
 
     resultsDiv.replaceChildren(fragment);
-    resultsDiv.classList.add('active');
+    setPopupState(resultsDiv, searchInput, true);
     positionSearchPopup(resultsDiv, searchInput);
     searchInput.focus();
     resultsDiv.scrollTop = 0;
-  }, 0);
+  }, searchDebounceMs);
 
   function handleSearchKeyboard(e, side) {
     const resultsDiv = document.getElementById(`${side}-team-results`);
@@ -222,17 +243,29 @@ export function createTeamSearchManager({
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (currentIndex < items.length - 1) {
-        if (currentIndex >= 0) items[currentIndex].classList.remove('keyboard-focus');
+        if (currentIndex >= 0) {
+          items[currentIndex].classList.remove('keyboard-focus');
+          if (items[currentIndex].hasAttribute('aria-selected')) items[currentIndex].setAttribute('aria-selected', 'false');
+        }
         currentIndex++;
         items[currentIndex].classList.add('keyboard-focus');
+        if (items[currentIndex].hasAttribute('aria-selected')) {
+          items[currentIndex].setAttribute('aria-selected', 'true');
+          document.getElementById(`${side}-team-search`)?.setAttribute('aria-activedescendant', items[currentIndex].id);
+        }
         items[currentIndex].scrollIntoView({ block: 'nearest' });
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (currentIndex > 0) {
         items[currentIndex].classList.remove('keyboard-focus');
+        if (items[currentIndex].hasAttribute('aria-selected')) items[currentIndex].setAttribute('aria-selected', 'false');
         currentIndex--;
         items[currentIndex].classList.add('keyboard-focus');
+        if (items[currentIndex].hasAttribute('aria-selected')) {
+          items[currentIndex].setAttribute('aria-selected', 'true');
+          document.getElementById(`${side}-team-search`)?.setAttribute('aria-activedescendant', items[currentIndex].id);
+        }
         items[currentIndex].scrollIntoView({ block: 'nearest' });
       }
     } else if (e.key === 'Enter') {
@@ -241,7 +274,7 @@ export function createTeamSearchManager({
         items[currentIndex].click();
       }
     } else if (e.key === 'Escape') {
-      resultsDiv.classList.remove('active');
+      closeResultsPopup(resultsDiv, document.getElementById(`${side}-team-search`));
     }
   }
 
@@ -256,12 +289,21 @@ export function createTeamSearchManager({
     });
   }
 
+  function closeAllSearchPopups() {
+    ['home', 'away'].forEach((side) => {
+      const resultsDiv = document.getElementById(`${side}-team-results`);
+      const searchInput = document.getElementById(`${side}-team-search`);
+      if (resultsDiv && searchInput) closeResultsPopup(resultsDiv, searchInput);
+    });
+  }
+
   return {
     prepareTeamData,
     handleSearchKeyboard,
     debouncedSearch,
     getTeam,
     setTeam,
-    repositionActivePopups
+    repositionActivePopups,
+    closeAllSearchPopups
   };
 }

@@ -140,23 +140,15 @@ export const TOURNAMENTS = {
   ]
   },
   worldcup: {
-  "Round of 16": [
+  "Quarter-final": [
     { "id": "argentina", "name": "Argentina", "badge": "assets/badges/WorldCup2026/argentina.svg" },
     { "id": "belgium", "name": "Belgium", "badge": "assets/badges/WorldCup2026/belgium.svg" },
-    { "id": "brazil", "name": "Brazil", "badge": "assets/badges/WorldCup2026/brazil.svg" },
-    { "id": "canada", "name": "Canada", "badge": "assets/badges/WorldCup2026/canada.svg" },
-    { "id": "colombia", "name": "Colombia", "badge": "assets/badges/WorldCup2026/colombia.svg" },
-    { "id": "egypt", "name": "Egypt", "badge": "assets/badges/WorldCup2026/egypt.svg" },
     { "id": "england", "name": "England", "badge": "assets/badges/WorldCup2026/england.svg" },
     { "id": "france", "name": "France", "badge": "assets/badges/WorldCup2026/france.svg" },
-    { "id": "mexico", "name": "Mexico", "badge": "assets/badges/WorldCup2026/mexico.svg" },
     { "id": "morocco", "name": "Morocco", "badge": "assets/badges/WorldCup2026/morocco.svg" },
     { "id": "norway", "name": "Norway", "badge": "assets/badges/WorldCup2026/norway.svg" },
-    { "id": "paraguay", "name": "Paraguay", "badge": "assets/badges/WorldCup2026/paraguay.svg" },
-    { "id": "portugal", "name": "Portugal", "badge": "assets/badges/WorldCup2026/portugal.svg" },
     { "id": "spain", "name": "Spain", "badge": "assets/badges/WorldCup2026/spain.svg" },
-    { "id": "switzerland", "name": "Switzerland", "badge": "assets/badges/WorldCup2026/switzerland.svg" },
-    { "id": "usa", "name": "USA", "badge": "assets/badges/WorldCup2026/usa.svg" }
+    { "id": "switzerland", "name": "Switzerland", "badge": "assets/badges/WorldCup2026/switzerland.svg" }
   ]
   }
 };

@@ -50,13 +50,13 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
       el.classList.add('is-compact');
     }
 
-    // If a name wraps to 2 lines, make it compact for better balance.
-    if (measureTeamNameLineCount(el) >= 2) {
-      el.classList.add('is-compact');
-    }
+    // Keep default size for names that fit the 2-line slot.
+    // Only shrink when the text is intrinsically long or actually overflowing.
+    const lineCount = measureTeamNameLineCount(el);
 
     // scrollHeight > clientHeight means content overflows the 2-line slot.
-    if (el.scrollHeight - el.clientHeight > 2) {
+    if (lineCount > 2 || el.scrollHeight - el.clientHeight > 2) {
+      el.classList.add('is-compact');
       el.classList.add('is-long');
       void el.offsetHeight; // Force reflow so reduced font-size is measured before second check
       if (el.scrollHeight - el.clientHeight > 2) el.classList.add('is-xlong');

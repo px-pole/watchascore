@@ -1,0 +1,119 @@
+export function createTeamNamesManager({ getState, getUi, capitalize }) {
+  function measureTeamNameLineCount(el) {
+    if (!el) return 1;
+
+    const container = el.parentElement;
+    if (!container) return 1;
+
+    const probe = el.cloneNode(true);
+    probe.classList.remove('is-compact', 'is-long', 'is-xlong');
+
+    if (el.classList.contains('is-compact')) probe.classList.add('is-compact');
+    if (el.classList.contains('is-long')) probe.classList.add('is-long');
+    if (el.classList.contains('is-xlong')) probe.classList.add('is-xlong');
+
+    probe.style.position = 'absolute';
+    probe.style.visibility = 'hidden';
+    probe.style.pointerEvents = 'none';
+    probe.style.height = 'auto';
+    probe.style.maxHeight = 'none';
+    probe.style.overflow = 'visible';
+    probe.style.left = '0';
+    probe.style.top = '0';
+
+    container.appendChild(probe);
+
+    const probeStyle = window.getComputedStyle(probe);
+    const lineHeightValue = parseFloat(probeStyle.lineHeight);
+    const fontSizeValue = parseFloat(probeStyle.fontSize) || 16;
+    const lineHeight = Number.isFinite(lineHeightValue) ? lineHeightValue : fontSizeValue * 1.2;
+
+    const lineCount = Math.max(1, Math.round(probe.scrollHeight / lineHeight));
+    probe.remove();
+    return lineCount;
+  }
+
+  // Shrinks the font one or two steps if a name can't fit the fixed 2-line slot.
+  function fitTeamName(el) {
+    if (!el) return;
+    el.classList.remove('is-compact', 'is-long', 'is-xlong');
+
+    const rawName = el.textContent?.trim() || '';
+    const words = rawName.split(/\s+/).filter(Boolean);
+    const longestWordLength = words.reduce(
+      (maxLength, word) => Math.max(maxLength, Array.from(word).length),
+      0
+    );
+    const compactLength = Array.from(rawName.replace(/\s+/g, '')).length;
+
+    if (longestWordLength >= 13 || compactLength >= 22) {
+      el.classList.add('is-compact');
+    }
+
+    // If a name wraps to 2 lines, make it compact for better balance.
+    if (measureTeamNameLineCount(el) >= 2) {
+      el.classList.add('is-compact');
+    }
+
+    // scrollHeight > clientHeight means content overflows the 2-line slot.
+    if (el.scrollHeight - el.clientHeight > 2) {
+      el.classList.add('is-long');
+      void el.offsetHeight; // Force reflow so reduced font-size is measured before second check
+      if (el.scrollHeight - el.clientHeight > 2) el.classList.add('is-xlong');
+    }
+  }
+
+  // Updates all UI elements that display a team's name.
+  function syncTeamNameDisplay(side, name) {
+    const ui = getUi();
+    const nameEl = ui[`${side}Name`];
+    if (nameEl) {
+      nameEl.textContent = name;
+      nameEl.setAttribute('title', name);
+      nameEl.setAttribute('aria-label', name);
+      fitTeamName(nameEl);
+    }
+  }
+
+  function updateTeamNamesVisibilityUI() {
+    const state = getState();
+    const ui = getUi();
+    const visible = state.teamNamesVisible !== false;
+    const scoreboard = document.querySelector('.scoreboard-wrap');
+    if (scoreboard) scoreboard.classList.toggle('team-names-hidden', !visible);
+
+    if (ui.toggleTeamNamesBtn) {
+      ui.toggleTeamNamesBtn.setAttribute('aria-pressed', visible ? 'false' : 'true');
+      ui.toggleTeamNamesBtn.innerHTML = visible
+        ? '<i class="fa-solid fa-eye-slash"></i> Hide Team Names'
+        : '<i class="fa-solid fa-eye"></i> Show Team Names';
+    }
+  }
+
+  function toggleTeamNamesVisibility() {
+    const state = getState();
+    state.teamNamesVisible = !(state.teamNamesVisible !== false);
+  }
+
+  function overrideName(side, val) {
+    const state = getState();
+    const normalized = val.trim();
+    state[side + 'NameOverride'] = normalized;
+    const name = normalized || state[side + 'Team']?.name || capitalize(side);
+    syncTeamNameDisplay(side, name);
+  }
+
+  function refitTeamNames() {
+    const ui = getUi();
+    ['home', 'away'].forEach(side => fitTeamName(ui[`${side}Name`]));
+  }
+
+  return {
+    fitTeamName,
+    syncTeamNameDisplay,
+    updateTeamNamesVisibilityUI,
+    toggleTeamNamesVisibility,
+    overrideName,
+    refitTeamNames
+  };
+}

@@ -214,16 +214,6 @@ export function createTeamSearchManager({
       renderBrowseMode(fragment, side, resultsDiv, searchInput);
     }
 
-    const closeBtn = document.createElement('button');
-    closeBtn.type = 'button';
-    closeBtn.className = 'search-results-close';
-    closeBtn.innerHTML = '<i class="fa-solid fa-times"></i> Close Selection';
-    closeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      closeResultsPopup(resultsDiv, searchInput);
-    });
-    fragment.appendChild(closeBtn);
-
     resultsDiv.replaceChildren(fragment);
     setPopupState(resultsDiv, searchInput, true);
     positionSearchPopup(resultsDiv, searchInput);

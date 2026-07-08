@@ -29,3 +29,37 @@ export function debounce(func, wait) {
     timeout = setTimeout(later, wait);
   };
 }
+
+export function isEditableShortcutTarget(target) {
+  if (!(target instanceof Element)) return false;
+  if (target.isContentEditable) return true;
+  return Boolean(target.closest('input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]'));
+}
+
+export function getShortcutKey(e) {
+  switch (e.code) {
+    case 'Space':
+      return 'space';
+    case 'KeyH':
+      return 'h';
+    case 'KeyA':
+      return 'a';
+    case 'KeyX':
+      return 'x';
+    case 'KeyC':
+      return 'c';
+  }
+
+  switch ((e.key || '').toLowerCase()) {
+    case ' ':
+    case 'spacebar':
+      return 'space';
+    case 'h':
+    case 'a':
+    case 'x':
+    case 'c':
+      return (e.key || '').toLowerCase();
+    default:
+      return '';
+  }
+}

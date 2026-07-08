@@ -12,10 +12,18 @@ import {
 } from './js/config/constants.js';
 import { createEventBus } from './js/core/event-bus.js';
 import { createPersistence } from './js/core/persistence.js';
-import { pad, capitalize, levenshteinDistance, debounce } from './js/utils/helpers.js';
+import {
+  pad,
+  capitalize,
+  levenshteinDistance,
+  debounce,
+  isEditableShortcutTarget,
+  getShortcutKey
+} from './js/utils/helpers.js';
 import { createTeamSearchManager } from './js/features/team-search.js';
 import { createGameClockManager } from './js/features/game-clock.js';
 import { createMediaManager } from './js/features/media.js';
+import { createTeamNamesManager } from './js/features/team-names.js';
 import { TOURNAMENTS } from './teams.js';
 
 // Force top-of-page start on reload instead of browser-restored scroll position.
@@ -224,6 +232,15 @@ const {
 } = teamSearchManager;
 const { renderClock, setClock, toggleClockVisibility, toggleClock, resetClock, stopTimer } = gameClockManager;
 const { setBadge, handleLogoUpload, confirmLogoUpload } = mediaManager;
+const teamNamesManager = createTeamNamesManager({ getState, getUi, capitalize });
+const {
+  fitTeamName,
+  syncTeamNameDisplay,
+  updateTeamNamesVisibilityUI,
+  toggleTeamNamesVisibility,
+  overrideName,
+  refitTeamNames
+} = teamNamesManager;
 
 // App initialization and DOM bindings.
 
@@ -567,66 +584,6 @@ function setVisibilityMode(mode) {
   document.activeElement?.blur();
 }
 
-// Shrinks the font one or two steps if a name can't fit the fixed 2-line slot.
-function fitTeamName(el) {
-  if (!el) return;
-  el.classList.remove('is-compact', 'is-long', 'is-xlong');
-
-  const rawName = el.textContent?.trim() || '';
-  const words = rawName.split(/\s+/).filter(Boolean);
-  const longestWordLength = words.reduce(
-    (maxLength, word) => Math.max(maxLength, Array.from(word).length),
-    0
-  );
-  const compactLength = Array.from(rawName.replace(/\s+/g, '')).length;
-
-  if (longestWordLength >= 13 || compactLength >= 22) {
-    el.classList.add('is-compact');
-  }
-
-  // scrollHeight > clientHeight means content overflows the 2-line slot.
-  if (el.scrollHeight - el.clientHeight > 2) {
-    el.classList.add('is-long');
-    void el.offsetHeight; // Force reflow so the reduced font-size is measured before the second check
-    if (el.scrollHeight - el.clientHeight > 2) el.classList.add('is-xlong');
-  }
-}
-
-// Updates all UI elements that display a team's name.
-function syncTeamNameDisplay(side, name) {
-  const nameEl = ui[`${side}Name`];
-  if (nameEl) {
-    nameEl.textContent = name;
-    nameEl.setAttribute('title', name);
-    nameEl.setAttribute('aria-label', name);
-    fitTeamName(nameEl);
-  }
-}
-
-function updateTeamNamesVisibilityUI() {
-  const visible = state.teamNamesVisible !== false;
-  const scoreboard = document.querySelector('.scoreboard-wrap');
-  if (scoreboard) scoreboard.classList.toggle('team-names-hidden', !visible);
-
-  if (ui.toggleTeamNamesBtn) {
-    ui.toggleTeamNamesBtn.setAttribute('aria-pressed', visible ? 'false' : 'true');
-    ui.toggleTeamNamesBtn.innerHTML = visible
-      ? '<i class="fa-solid fa-eye-slash"></i> Hide Team Names'
-      : '<i class="fa-solid fa-eye"></i> Show Team Names';
-  }
-}
-
-function toggleTeamNamesVisibility() {
-  state.teamNamesVisible = !(state.teamNamesVisible !== false);
-}
-
-function overrideName(side, val) {
-  const normalized = val.trim();
-  state[side + 'NameOverride'] = normalized;
-  const name = normalized || state[side + 'Team']?.name || capitalize(side);
-  syncTeamNameDisplay(side, name);
-}
-
 // Increments or decrements score and triggers a visual 'bump' animation.
 function changeScore(side, delta) {
   const key = side + 'Score';
@@ -838,40 +795,6 @@ document.addEventListener('click', (e) => {
   }
 });
 
-function isEditableShortcutTarget(target) {
-  if (!(target instanceof Element)) return false;
-  if (target.isContentEditable) return true;
-  return Boolean(target.closest('input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]'));
-}
-
-function getShortcutKey(e) {
-  switch (e.code) {
-    case 'Space':
-      return 'space';
-    case 'KeyH':
-      return 'h';
-    case 'KeyA':
-      return 'a';
-    case 'KeyX':
-      return 'x';
-    case 'KeyV':
-      return 'v';
-  }
-
-  switch ((e.key || '').toLowerCase()) {
-    case ' ':
-    case 'spacebar':
-      return 'space';
-    case 'h':
-    case 'a':
-    case 'x':
-    case 'v':
-      return (e.key || '').toLowerCase();
-    default:
-      return '';
-  }
-}
-
 window.addEventListener('keydown', (e) => {
   if (isMobileHeaderViewport() && e.key === 'Escape') {
     const header = document.querySelector('header');
@@ -927,15 +850,15 @@ window.addEventListener('keydown', (e) => {
       toggleClock();
       break;
     case 'h':
-      changeScore('home', 1);
+      changeScore('home', e.shiftKey ? -1 : 1);
       break;
     case 'a':
-      changeScore('away', 1);
+      changeScore('away', e.shiftKey ? -1 : 1);
       break;
     case 'x':
       if (e.shiftKey) resetAll();
       break;
-    case 'v':
+    case 'c':
       toggleClockVisibility();
       break;
   }
@@ -944,7 +867,7 @@ window.addEventListener('keydown', (e) => {
 // Re-check name fit on resize (e.g. crossing the mobile breakpoint where the
 // base font-size changes, or an OBS browser source being resized).
 window.addEventListener('resize', debounce(() => {
-  ['home', 'away'].forEach(side => fitTeamName(ui[`${side}Name`]));
+  refitTeamNames();
   repositionActivePopups(() => ui);
   syncHeaderMenuViewportState();
   scheduleObsBackgroundHoleSync();
@@ -954,7 +877,7 @@ window.addEventListener('resize', debounce(() => {
 // first fit decision isn't based on fallback-font metrics.
 if (document.fonts && document.fonts.ready) {
   document.fonts.ready.then(() => {
-    ['home', 'away'].forEach(side => fitTeamName(ui[`${side}Name`]));
+    refitTeamNames();
   });
 }
 

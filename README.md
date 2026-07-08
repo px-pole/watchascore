@@ -25,9 +25,11 @@ For power users, WatchaScore supports global hotkeys to keep your hands on the a
 | Shortcut | Action |
 | :--- | :--- |
 | `[Space]` | Start / Pause the game clock |
-| `[V]` | Hide / Show clock |
+| `[C]` | Hide / Show clock |
 | `[H]` | Increment Home Team score |
+| `[Shift] + [H]` | Decrement Home Team score |
 | `[A]` | Increment Away Team score |
+| `[Shift] + [A]` | Decrement Away Team score |
 | `[Shift] + [X]` | Trigger "Reset All" confirmation |
 
 *Note: Shortcuts are disabled while typing in input fields.*
@@ -37,7 +39,7 @@ For power users, WatchaScore supports global hotkeys to keep your hands on the a
 1. **OBS Integration:** 
    - Copy the websites URL address.
    - In OBS, add a new **Browser Source**.
-   - Paste the URL and set the width and height (**850×620** or higher is recommended).
+   - Paste the URL and set the width and height (**800×600** or higher is recommended).
    - Crop using **Transform** feature.
    - Use the **Interact** feature in OBS to manage the scoreboard during your stream.
 

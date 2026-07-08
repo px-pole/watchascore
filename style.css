@@ -151,6 +151,15 @@
   --badge-stroke: drop-shadow(0 0 0.5px #fff) drop-shadow(0 0 0.5px #fff)
     drop-shadow(0 0 0.5px #fff);
   --badge-bg-opacity: 45%;
+  --scoreboard-frame-stroke: hsl(
+    var(--primary-h) var(--primary-s) var(--secondary-l) / 0.34
+  );
+  --scoreboard-frame-highlight: hsl(
+    var(--primary-h) var(--primary-s) 95% / 0.18
+  );
+  --scoreboard-frame-shadow: hsl(
+    var(--primary-h) var(--primary-s) var(--primary-l) / 0.16
+  );
 
   /* Body background gradient (dynamic components) */
   --bg-gradient-radial-1-alpha: 0.18;
@@ -160,6 +169,10 @@
   --bg-gradient-linear-mid: var(--bg-card);
   --bg-gradient-linear-end: var(--bg-body);
   --bg-texture-intensity: 1;
+  --obs-hole-left: 0px;
+  --obs-hole-top: 0px;
+  --obs-hole-width: 0px;
+  --obs-hole-height: 0px;
   --bg-texture: radial-gradient(
       circle at 2px 2px,
       rgba(255, 255, 255, calc(0.015 * var(--bg-texture-intensity))) 1px,
@@ -457,6 +470,23 @@ body::before {
   transition: background 0.3s ease;
 }
 
+html.obs-source body {
+  background: transparent;
+}
+
+html.obs-source body::before {
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-size: 100% 100%, var(--obs-hole-width) var(--obs-hole-height);
+  -webkit-mask-position: 0 0, var(--obs-hole-left) var(--obs-hole-top);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-composite: xor;
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-size: 100% 100%, var(--obs-hole-width) var(--obs-hole-height);
+  mask-position: 0 0, var(--obs-hole-left) var(--obs-hole-top);
+  mask-repeat: no-repeat;
+  mask-composite: exclude;
+}
+
 .visibility-glow .badge-wrap img,
 .visibility-glow .mini-badge img {
   filter: var(--badge-glow);
@@ -567,6 +597,7 @@ header.menu-open .header-menu-toggle {
   border: 1px solid var(--border-color);
   border-radius: 18px;
   padding: 20px;
+  min-height: 212px;
   box-shadow:
     0 8px 60px rgba(0, 0, 0, 0.5),
     0 0 0 1px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.08);
@@ -581,7 +612,7 @@ header.menu-open .header-menu-toggle {
     opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.scoreboard-wrap *:not(.clock-wrap, .clock-wrap *) {
+.scoreboard-wrap *:not(.clock-wrap, .clock-wrap *, .team-name) {
   cursor: default !important;
   transition: none !important;
   transform: none !important;
@@ -600,11 +631,63 @@ header.menu-open .header-menu-toggle {
     transparent
   );
 }
+
+html.obs-source .scoreboard-wrap {
+  background: transparent;
+  background-color: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+html.obs-source .scoreboard-wrap::after {
+  display: none;
+}
+
+html.obs-source .scoreboard-frame {
+  background: var(--bg-panel);
+}
+
+html.obs-source .wrapper,
+html.obs-source .team-selection-panel,
+html.obs-source .controls-grid .card {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
 .score-row {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
+}
+
+.scoreboard-frame {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: 16px;
+  padding: 14px 18px 8px;
+  background: transparent;
+  border: 1px solid var(--scoreboard-frame-stroke);
+  box-shadow:
+    inset 0 0 0 1px var(--scoreboard-frame-highlight),
+    0 0 30px var(--scoreboard-frame-shadow);
+  isolation: isolate;
+  transition: padding 0.35s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.scoreboard-frame::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border-radius: 11px;
+  border: 1px solid hsl(var(--primary-h) var(--primary-s) 100% / 0.08);
+  pointer-events: none;
 }
 
 .team-block {
@@ -624,7 +707,7 @@ header.menu-open .header-menu-toggle {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: var(--badge-size, 100px);
+  width: max(var(--badge-size, 100px), var(--name-max-width, 120px));
 }
 
 .badge-wrap {
@@ -674,13 +757,24 @@ header.menu-open .header-menu-toggle {
   text-align: center;
   line-height: 1.1;
   display: inline-block;
+  width: 100%;
+  padding-inline: 5px;
+  box-sizing: border-box;
   max-width: var(--name-max-width, 120px);
   white-space: normal;
   overflow-wrap: break-word;
   text-wrap: balance;
   height: var(--name-slot-h, 42px);
+  max-height: var(--name-slot-h, 42px);
   overflow: hidden;
-  transition: opacity 0.2s ease;
+  opacity: 1;
+  transform: translateY(0);
+  transition: none;
+}
+
+.team-name.is-compact {
+  font-size: 16px;
+  letter-spacing: 0.25px;
 }
 
 .team-name.is-long {
@@ -714,6 +808,7 @@ header.menu-open .header-menu-toggle {
   min-height: 120px;
   justify-content: center;
   padding-top: 0;
+  transition: none;
 }
 .score-display {
   display: flex;
@@ -762,6 +857,8 @@ header.menu-open .header-menu-toggle {
   align-items: center;
   gap: 4px;
   visibility: visible;
+  max-height: 56px;
+  overflow: hidden;
   transition:
     opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
     transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -771,6 +868,9 @@ header.menu-open .header-menu-toggle {
   opacity: 0 !important;
   pointer-events: none;
   transform: translateY(-8px) !important;
+  max-height: 0;
+  margin-top: -4px;
+  gap: 0;
 }
 .clock-wrap .clock {
   font-family: var(--font-display);
@@ -825,7 +925,136 @@ header.menu-open .header-menu-toggle {
 
 .scoreboard-wrap.team-names-hidden .team-name {
   opacity: 0;
-  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+  height: 0;
+  max-height: 0;
+  margin-top: -4px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.scoreboard-wrap.team-names-hidden .team-stack {
+  gap: 0;
+}
+
+.scoreboard-wrap.team-names-hidden .score-center {
+  min-height: 94px;
+}
+
+.scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .team-block {
+  position: relative;
+  top: -6px;
+}
+
+.scoreboard-wrap:not(:has(.clock-wrap.is-hidden)) .group-name-display {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  right: 0;
+  width: auto;
+  height: auto;
+  text-align: center;
+}
+
+.scoreboard-wrap:not(:has(.clock-wrap.is-hidden)) .score-display {
+  margin-top: 14px;
+}
+
+.scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .score-display {
+  margin-top: 21px;
+}
+
+.scoreboard-wrap:has(.clock-wrap.is-hidden) .score-center {
+  min-height: 88px;
+}
+
+.scoreboard-wrap:has(.clock-wrap.is-hidden) .score-display {
+  position: relative;
+  margin-top: -16px;
+}
+
+.scoreboard-wrap:not(.team-names-hidden):has(.clock-wrap.is-hidden) .score-display {
+  top: -12px;
+}
+
+.scoreboard-wrap:not(.team-names-hidden):has(.clock-wrap.is-hidden) .score-center {
+  position: relative;
+}
+
+.scoreboard-wrap:not(.team-names-hidden):has(.clock-wrap.is-hidden) .group-name-display {
+  position: absolute;
+  top: -28px;
+  left: 0;
+  right: 0;
+  width: auto;
+  height: auto;
+  text-align: center;
+}
+
+.scoreboard-wrap:has(.clock-wrap.is-hidden) .scoreboard-frame {
+  padding-bottom: 6px;
+}
+
+.scoreboard-wrap:not(:has(.clock-wrap.is-hidden)) .scoreboard-frame {
+  padding-bottom: 6px;
+}
+
+.scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .scoreboard-frame {
+  padding-bottom: 10px;
+}
+
+.scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .clock-wrap .clock-status {
+  padding-bottom: 3px;
+}
+
+.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .score-center {
+  min-height: 76px;
+  gap: 2px;
+}
+
+.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .score-display {
+  position: absolute;
+  top: 36px;
+  left: 0;
+  right: 0;
+  margin-top: 0;
+  justify-content: center;
+  transition: none;
+}
+
+.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .group-name-display {
+  position: absolute;
+  top: 17px;
+  left: 0;
+  right: 0;
+  width: auto;
+  height: auto;
+  text-align: center;
+  transition: none;
+}
+
+.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .team-name {
+  margin-top: 0;
+  transition: none;
+}
+
+.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .team-block {
+  justify-content: center;
+}
+
+.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .scoreboard-frame {
+  padding: 17px 8px;
+  transition: none;
+}
+
+.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .score-center,
+.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .clock-wrap {
+  transition: none;
+}
+
+.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .group-name-display:empty {
+  height: 0;
 }
 
 /* ─── TEAM SELECTION PANEL ─── */
@@ -2116,10 +2345,18 @@ footer {
     opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
     visibility 0.6s;
 }
+
 #preloader.preloader-hidden {
   opacity: 0;
   visibility: hidden;
 }
+
+html.obs-source #preloader {
+  display: none !important;
+  opacity: 0;
+  visibility: hidden;
+}
+
 .preloader-content {
   display: flex;
   flex-direction: column;
@@ -2359,6 +2596,10 @@ footer {
     gap: 8px;
   }
 
+  .scoreboard-frame {
+    padding: 12px 14px 7px;
+  }
+
   .score-center {
     grid-column: auto;
     order: 0;
@@ -2472,6 +2713,11 @@ footer {
   .team-selection-panel,
   .card {
     padding: 14px;
+    border-radius: 12px;
+  }
+
+  .scoreboard-frame {
+    padding: 10px 12px 6px;
     border-radius: 12px;
   }
 

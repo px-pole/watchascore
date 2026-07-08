@@ -17,6 +17,14 @@
         if (prefs.theme && prefs.theme !== 'default') document.documentElement.classList.add('theme-' + prefs.theme);
         if (prefs.visibilityMode && prefs.visibilityMode !== 'none') document.documentElement.classList.add('visibility-' + prefs.visibilityMode);
       }
+      const params = new URLSearchParams(window.location.search);
+      const obsParam = (params.get('obs') || '').toLowerCase();
+      const forceObs = obsParam === '1' || obsParam === 'true';
+      const disableObs = obsParam === '0' || obsParam === 'false';
+      const isObsUa = /\bOBS\b|\bobs-browser\b/i.test(navigator.userAgent || '');
+      if (forceObs || (!disableObs && isObsUa)) {
+        document.documentElement.classList.add('obs-source');
+      }
     } catch (e) {}
   })();
 </script>
@@ -85,44 +93,46 @@
 
   <!-- SCOREBOARD -->
   <div class="scoreboard-wrap">
-    <div class="score-row">
+    <div class="scoreboard-frame">
+      <div class="score-row">
 
-      <!-- HOME -->
-      <div class="team-block home">
-        <div class="team-stack">
-          <div class="badge-wrap home-badge" id="home-badge-wrap">
-            <img id="home-badge" src="" alt="Home Team Badge">
-          </div>
-          <div class="team-name" id="home-name">Home</div>
-        </div>
-      </div>
-
-      <!-- CENTER -->
-      <div class="score-center">
-        <div id="tournament-group-display" class="group-name-display"></div>
-        <div class="score-display" aria-live="polite" aria-atomic="true">
-          <div class="score-num" id="score-home" aria-label="Home score">0</div>
-          <div class="score-divider">-</div>
-          <div class="score-num" id="score-away" aria-label="Away score">0</div>
-        </div>
-          <div class="clock-wrap" id="clock-wrap" aria-live="off">
-            <div class="clock">
-              <span id="clock-display">00:00</span>
+        <!-- HOME -->
+        <div class="team-block home">
+          <div class="team-stack">
+            <div class="badge-wrap home-badge" id="home-badge-wrap">
+              <img id="home-badge" src="" alt="Home Team Badge">
             </div>
-            <div class="clock-status" id="clock-status-text">NOT STARTED</div>
+            <div class="team-name" id="home-name">Home</div>
           </div>
-      </div>
-
-      <!-- AWAY -->
-      <div class="team-block away">
-        <div class="team-stack">
-          <div class="badge-wrap away-badge" id="away-badge-wrap">
-            <img id="away-badge" src="" alt="Away Team Badge">
-          </div>
-          <div class="team-name" id="away-name">Away</div>
         </div>
-      </div>
 
+        <!-- CENTER -->
+        <div class="score-center">
+          <div id="tournament-group-display" class="group-name-display"></div>
+          <div class="score-display" aria-live="polite" aria-atomic="true">
+            <div class="score-num" id="score-home" aria-label="Home score">0</div>
+            <div class="score-divider">-</div>
+            <div class="score-num" id="score-away" aria-label="Away score">0</div>
+          </div>
+            <div class="clock-wrap" id="clock-wrap" aria-live="off">
+              <div class="clock">
+                <span id="clock-display">00:00</span>
+              </div>
+              <div class="clock-status" id="clock-status-text">NOT STARTED</div>
+            </div>
+        </div>
+
+        <!-- AWAY -->
+        <div class="team-block away">
+          <div class="team-stack">
+            <div class="badge-wrap away-badge" id="away-badge-wrap">
+              <img id="away-badge" src="" alt="Away Team Badge">
+            </div>
+            <div class="team-name" id="away-name">Away</div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
   </div>
@@ -310,7 +320,7 @@
       <div class="how-to-title">OBS / Stream</div>
       <div class="help-row">1. Copy this page's <span>URL</span>.</div>
       <div class="help-row">2. Add a <span>Browser Source</span> in OBS.</div>
-      <div class="help-row">3. Set size to <span>950 x 750</span>.</div>
+      <div class="help-row">3. Set size to <span>minimum 850 x 620</span>.</div>
       <div class="help-row">4. Crop using the <span>Transform</span> feature.</div>
       <div class="help-row">5. Use <span>Interact</span> to control live.</div>
     </div>

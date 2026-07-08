@@ -54,6 +54,8 @@ let state = null;
 let ui = {}; // DOM Cache
 let modalTriggerElement = null; // Element that had focus before opening a modal
 let activeModalCleanup = null;
+let obsHoleResizeObserver = null;
+let obsHoleRafId = 0;
 
 const stateHandler = {
   set(target, prop, value) {
@@ -67,6 +69,75 @@ const stateHandler = {
 
 const createState = (initialData) => new Proxy(initialData, stateHandler);
 const saveState = () => Persistence.save(state);
+
+function isObsSourceContext() {
+  const obsParam = (urlParams.get('obs') || '').toLowerCase();
+  if (obsParam === '1' || obsParam === 'true') return true;
+  if (obsParam === '0' || obsParam === 'false') return false;
+  return /\bOBS\b|\bobs-browser\b/i.test(navigator.userAgent || '');
+}
+
+function syncObsSourceModeClass() {
+  document.documentElement.classList.toggle('obs-source', isObsSourceContext());
+}
+
+function updateObsBackgroundHoleVars() {
+  if (!document.documentElement.classList.contains('obs-source')) return;
+  const scoreboardWrap = document.querySelector('.scoreboard-wrap');
+  if (!scoreboardWrap) return;
+
+  const rect = scoreboardWrap.getBoundingClientRect();
+  const left = Math.max(0, Math.round(rect.left));
+  const top = Math.max(0, Math.round(rect.top));
+  const width = Math.max(0, Math.round(rect.width));
+  const height = Math.max(0, Math.round(rect.height));
+  const root = document.documentElement;
+
+  root.style.setProperty('--obs-hole-left', `${left}px`);
+  root.style.setProperty('--obs-hole-top', `${top}px`);
+  root.style.setProperty('--obs-hole-width', `${width}px`);
+  root.style.setProperty('--obs-hole-height', `${height}px`);
+}
+
+function scheduleObsBackgroundHoleSync() {
+  if (!document.documentElement.classList.contains('obs-source')) return;
+  if (obsHoleRafId) cancelAnimationFrame(obsHoleRafId);
+  obsHoleRafId = requestAnimationFrame(() => {
+    obsHoleRafId = 0;
+    updateObsBackgroundHoleVars();
+  });
+}
+
+function setupObsBackgroundHoleSync() {
+  if (!isObsSourceContext()) return;
+  const scoreboardWrap = document.querySelector('.scoreboard-wrap');
+  if (!scoreboardWrap) return;
+
+  if ('ResizeObserver' in window) {
+    obsHoleResizeObserver?.disconnect();
+    obsHoleResizeObserver = new ResizeObserver(() => scheduleObsBackgroundHoleSync());
+    obsHoleResizeObserver.observe(scoreboardWrap);
+  }
+
+  window.addEventListener('scroll', scheduleObsBackgroundHoleSync, { passive: true });
+  scheduleObsBackgroundHoleSync();
+}
+
+function finalizeLoadedState({ instant = false } = {}) {
+  document.body.classList.add('content-loaded');
+  if (instant) {
+    document.body.classList.add('entrance-finished');
+    return;
+  }
+  setTimeout(() => document.body.classList.add('entrance-finished'), 1500);
+}
+
+function bypassPreloaderForObs() {
+  if (!isObsSourceContext()) return;
+  const preloader = document.getElementById('preloader');
+  if (preloader) preloader.remove();
+  finalizeLoadedState({ instant: true });
+}
 
 function setStateValues(updates) {
   Object.entries(updates).forEach(([key, value]) => {
@@ -189,6 +260,9 @@ function init() {
   const rawData = Persistence.load();
   if (typeof rawData.teamNamesVisible !== 'boolean') rawData.teamNamesVisible = true;
 
+  syncObsSourceModeClass();
+  bypassPreloaderForObs();
+
   // Initialize Subscriptions before the Proxy starts emitting
   setupSubscriptions();
 
@@ -196,6 +270,7 @@ function init() {
   state = createState(rawData);
 
   cacheElements();
+  setupObsBackgroundHoleSync();
   prepareTeamData();
   syncUI(); // Initial full render
 
@@ -350,6 +425,7 @@ function syncUI() {
   updateThemeUI();
   updateTeamNamesVisibilityUI();
   updateVisibilityHighlight();
+  scheduleObsBackgroundHoleSync();
 }
 
 function checkWrapperState() {
@@ -494,7 +570,20 @@ function setVisibilityMode(mode) {
 // Shrinks the font one or two steps if a name can't fit the fixed 2-line slot.
 function fitTeamName(el) {
   if (!el) return;
-  el.classList.remove('is-long', 'is-xlong');
+  el.classList.remove('is-compact', 'is-long', 'is-xlong');
+
+  const rawName = el.textContent?.trim() || '';
+  const words = rawName.split(/\s+/).filter(Boolean);
+  const longestWordLength = words.reduce(
+    (maxLength, word) => Math.max(maxLength, Array.from(word).length),
+    0
+  );
+  const compactLength = Array.from(rawName.replace(/\s+/g, '')).length;
+
+  if (longestWordLength >= 13 || compactLength >= 22) {
+    el.classList.add('is-compact');
+  }
+
   // scrollHeight > clientHeight means content overflows the 2-line slot.
   if (el.scrollHeight - el.clientHeight > 2) {
     el.classList.add('is-long');
@@ -858,6 +947,7 @@ window.addEventListener('resize', debounce(() => {
   ['home', 'away'].forEach(side => fitTeamName(ui[`${side}Name`]));
   repositionActivePopups(() => ui);
   syncHeaderMenuViewportState();
+  scheduleObsBackgroundHoleSync();
 }, 150));
 
 // The display font loads asynchronously; re-measure once it's ready so the
@@ -871,15 +961,18 @@ if (document.fonts && document.fonts.ready) {
 // Hides the preloader once all assets (images, fonts, scripts) are fully loaded.
 window.addEventListener('load', () => {
   ensureTopScrollPositionWithFallback();
+  const isObsMode = isObsSourceContext();
   const preloader = document.getElementById('preloader');
-  if (preloader) {
+  if (preloader && !isObsMode) {
     preloader.classList.add('preloader-hidden');
-    document.body.classList.add('content-loaded');
-
-    // Remove delays after the entrance animation (approx 1.5s) is done
-    setTimeout(() => document.body.classList.add('entrance-finished'), 1500);
+    finalizeLoadedState();
     setTimeout(() => preloader.remove(), 700);
+    setTimeout(() => scheduleObsBackgroundHoleSync(), 750);
+  } else {
+    if (preloader) preloader.remove();
+    finalizeLoadedState({ instant: isObsMode });
   }
+  scheduleObsBackgroundHoleSync();
 });
 
 init();

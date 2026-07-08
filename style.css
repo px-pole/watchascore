@@ -961,6 +961,10 @@ html.obs-source .controls-grid .card {
   margin-top: 14px;
 }
 
+.scoreboard-wrap:not(:has(.clock-wrap.is-hidden)) .scoreboard-frame {
+  min-height: calc(var(--badge-size, 100px) + 6px + var(--name-slot-h, 42px) + 22px);
+}
+
 .scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .score-display {
   margin-top: 21px;
 }
@@ -1001,11 +1005,11 @@ html.obs-source .controls-grid .card {
 }
 
 .scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .scoreboard-frame {
-  padding-bottom: 10px;
+  padding-bottom: 6px;
 }
 
 .scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .clock-wrap .clock-status {
-  padding-bottom: 3px;
+  padding-bottom: 0;
 }
 
 .scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .score-center {

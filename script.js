@@ -64,6 +64,9 @@ let modalTriggerElement = null; // Element that had focus before opening a modal
 let activeModalCleanup = null;
 let obsHoleResizeObserver = null;
 let obsHoleRafId = 0;
+let themeTransitionResetTimer = 0;
+
+const THEME_CHANGE_TRANSITION_MS = 300;
 
 const stateHandler = {
   set(target, prop, value) {
@@ -627,10 +630,23 @@ function changeMode(mode) {
   if (document.activeElement?.blur) document.activeElement.blur();
 }
 
+function syncThemeChangeTransition() {
+  const root = document.documentElement;
+  root.classList.add('theme-changing');
+
+  if (themeTransitionResetTimer) {
+    clearTimeout(themeTransitionResetTimer);
+  }
+
+  themeTransitionResetTimer = setTimeout(() => {
+    root.classList.remove('theme-changing');
+    themeTransitionResetTimer = 0;
+  }, THEME_CHANGE_TRANSITION_MS + 40);
+}
+
 function setTheme(themeName) {
-  const update = () => state.theme = themeName;
-  if (document.startViewTransition) document.startViewTransition(update);
-  else update();
+  syncThemeChangeTransition();
+  state.theme = themeName;
   if (document.activeElement?.blur) document.activeElement.blur();
 }
 

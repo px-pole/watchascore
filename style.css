@@ -179,6 +179,10 @@
       transparent 0
     )
     0 0 / 32px 32px;
+
+  /* Theme switch timing */
+  --theme-transition-duration: 0.3s;
+  --theme-transition-easing: ease;
 }
 
 /* ─── THEMES ─── */
@@ -409,6 +413,25 @@ body {
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+}
+
+html.theme-changing *,
+html.theme-changing *::before,
+html.theme-changing *::after {
+  transition-property:
+    background,
+    background-color,
+    color,
+    border-color,
+    box-shadow,
+    text-shadow,
+    fill,
+    stroke,
+    filter,
+    outline-color !important;
+  transition-duration: var(--theme-transition-duration) !important;
+  transition-timing-function: var(--theme-transition-easing) !important;
+  transition-delay: 0s !important;
 }
 
 /* === LAYOUT === */

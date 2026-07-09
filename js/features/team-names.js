@@ -53,13 +53,14 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
     // Keep default size for names that fit the 2-line slot.
     // Only shrink when the text is intrinsically long or actually overflowing.
     const lineCount = measureTeamNameLineCount(el);
+    const canMeasureOverflow = el.clientHeight > 0;
 
     // scrollHeight > clientHeight means content overflows the 2-line slot.
-    if (lineCount > 2 || el.scrollHeight - el.clientHeight > 2) {
+    if (lineCount > 2 || (canMeasureOverflow && el.scrollHeight - el.clientHeight > 2)) {
       el.classList.add('is-compact');
       el.classList.add('is-long');
       void el.offsetHeight; // Force reflow so reduced font-size is measured before second check
-      if (el.scrollHeight - el.clientHeight > 2) el.classList.add('is-xlong');
+      if (canMeasureOverflow && el.scrollHeight - el.clientHeight > 2) el.classList.add('is-xlong');
     }
   }
 
@@ -81,6 +82,11 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
     const visible = state.teamNamesVisible !== false;
     const scoreboard = document.querySelector('.scoreboard-wrap');
     if (scoreboard) scoreboard.classList.toggle('team-names-hidden', !visible);
+
+    if (visible) {
+      // Name slots can be collapsed while hidden; re-fit once visible to avoid stale compact classes.
+      requestAnimationFrame(refitTeamNames);
+    }
 
     if (ui.toggleTeamNamesBtn) {
       ui.toggleTeamNamesBtn.setAttribute('aria-pressed', visible ? 'false' : 'true');

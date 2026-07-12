@@ -250,7 +250,13 @@ const {
   closeAllSearchPopups
 } = teamSearchManager;
 const { renderClock, setClock, toggleClockVisibility, toggleClock, resetClock, stopTimer } = gameClockManager;
-const { setBadge, handleLogoUpload, confirmLogoUpload } = mediaManager;
+const {
+  setBadge,
+  handleLogoUpload,
+  confirmLogoUpload,
+  resetCropControls,
+  updateCropPreviewFromControls
+} = mediaManager;
 const teamNamesManager = createTeamNamesManager({ getState, getUi, capitalize });
 const {
   fitTeamName,
@@ -336,7 +342,9 @@ function cacheElements() {
     'reset-clock-btn', 'toggle-clock-btn', 'clock-wrap',
     'reset-scores-btn', 'reset-teams-btn', 'reset-all-btn',
     'toggle-team-names-btn', 'confirm-reset-all-btn', 'confirm-start-time-btn', 'clock-min', 'clock-sec',
-    'crop-modal', 'crop-preview-img', 'confirm-crop-btn', 'close-crop-modal-btn', 
+    'crop-modal', 'crop-preview-canvas', 'crop-zoom', 'crop-top', 'crop-right', 'crop-bottom', 'crop-left',
+    'crop-zoom-value', 'crop-top-value', 'crop-right-value', 'crop-bottom-value', 'crop-left-value', 'crop-reset-btn',
+    'confirm-crop-btn', 'close-crop-modal-btn', 
     'toggle-contact-btn', 'feedback-link', 'status-btn-not-started',
     'help-fab', 'help-panel', 'help-close-btn',
     'header-menu-toggle', 'header-controls',
@@ -388,6 +396,12 @@ function setupListeners() {
 
   // Crop Modal
   ui.confirmCropBtn?.addEventListener('click', confirmLogoUpload);
+  ui.cropZoom?.addEventListener('input', updateCropPreviewFromControls);
+  ui.cropTop?.addEventListener('input', updateCropPreviewFromControls);
+  ui.cropRight?.addEventListener('input', updateCropPreviewFromControls);
+  ui.cropBottom?.addEventListener('input', updateCropPreviewFromControls);
+  ui.cropLeft?.addEventListener('input', updateCropPreviewFromControls);
+  ui.cropResetBtn?.addEventListener('click', resetCropControls);
 
   document.querySelectorAll('.btn-plus, .btn-minus').forEach(btn => {
     btn.addEventListener('click', () => changeScore(btn.dataset.side, parseInt(btn.dataset.delta)));

@@ -12,7 +12,8 @@ export function createMediaManager({
   const brightnessCache = new Map();
   const pendingAnalysis = new Map();
   let pendingLogoSide = null;
-  let pendingLogoBase64 = null;
+  let pendingLogoSource = null;
+  let pendingLogoImage = null;
 
   // Worker script that classifies badge brightness as light or dark.
   const workerCode = `
@@ -42,6 +43,118 @@ onmessage = function(e) {
   const analysisCtx = analysisCanvas.getContext('2d', { willReadFrequently: true });
   analysisCanvas.width = canvasSampleSize;
   analysisCanvas.height = canvasSampleSize;
+
+  // Clears staged upload data after finishing or cancelling crop.
+  function clearPendingLogoState() {
+    pendingLogoSide = null;
+    pendingLogoSource = null;
+    pendingLogoImage = null;
+  }
+
+  // Clamps a number to the provided range.
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  // Returns crop settings from modal controls with safe defaults.
+  function getCropSettings() {
+    const ui = getUi();
+    const zoomPercent = clamp(parseFloat(ui.cropZoom?.value || '100'), 100, 300);
+    const topPercent = clamp(parseFloat(ui.cropTop?.value || '0'), 0, 45);
+    const rightPercent = clamp(parseFloat(ui.cropRight?.value || '0'), 0, 45);
+    const bottomPercent = clamp(parseFloat(ui.cropBottom?.value || '0'), 0, 45);
+    const leftPercent = clamp(parseFloat(ui.cropLeft?.value || '0'), 0, 45);
+    return {
+      zoom: zoomPercent / 100,
+      topPercent,
+      rightPercent,
+      bottomPercent,
+      leftPercent,
+      zoomPercent
+    };
+  }
+
+  // Updates visible value labels beside crop sliders.
+  function syncCropControlLabels() {
+    const ui = getUi();
+    const { zoomPercent, topPercent, rightPercent, bottomPercent, leftPercent } = getCropSettings();
+    if (ui.cropZoomValue) ui.cropZoomValue.textContent = `${Math.round(zoomPercent)}%`;
+    if (ui.cropTopValue) ui.cropTopValue.textContent = `${Math.round(topPercent)}%`;
+    if (ui.cropRightValue) ui.cropRightValue.textContent = `${Math.round(rightPercent)}%`;
+    if (ui.cropBottomValue) ui.cropBottomValue.textContent = `${Math.round(bottomPercent)}%`;
+    if (ui.cropLeftValue) ui.cropLeftValue.textContent = `${Math.round(leftPercent)}%`;
+  }
+
+  // Calculates a crop rectangle in source-image coordinates.
+  function getCropRect(img, zoom, topPercent, rightPercent, bottomPercent, leftPercent) {
+    const width = img.naturalWidth || img.width;
+    const height = img.naturalHeight || img.height;
+    const insetX = width * (leftPercent / 100);
+    const insetY = height * (topPercent / 100);
+    const trimmedWidth = Math.max(1, width * (1 - (leftPercent + rightPercent) / 100));
+    const trimmedHeight = Math.max(1, height * (1 - (topPercent + bottomPercent) / 100));
+
+    const cropWidth = clamp(trimmedWidth / zoom, 1, trimmedWidth);
+    const cropHeight = clamp(trimmedHeight / zoom, 1, trimmedHeight);
+    const srcX = insetX + (trimmedWidth - cropWidth) / 2;
+    const srcY = insetY + (trimmedHeight - cropHeight) / 2;
+
+    return { srcX, srcY, cropWidth, cropHeight };
+  }
+
+  // Draws a crop region onto a square canvas while preserving image aspect ratio.
+  function drawCropToCanvas(ctx, canvas, img, srcX, srcY, srcW, srcH) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const scale = Math.min(canvas.width / srcW, canvas.height / srcH);
+    const drawW = srcW * scale;
+    const drawH = srcH * scale;
+    const destX = (canvas.width - drawW) / 2;
+    const destY = (canvas.height - drawH) / 2;
+
+    ctx.drawImage(img, srcX, srcY, srcW, srcH, destX, destY, drawW, drawH);
+  }
+
+  // Renders the current crop selection into the modal preview canvas.
+  function renderCropPreview() {
+    const ui = getUi();
+    const previewCanvas = ui.cropPreviewCanvas;
+    if (!previewCanvas) return;
+
+    const previewCtx = previewCanvas.getContext('2d');
+    if (!previewCtx) return;
+
+    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+    if (!pendingLogoImage) return;
+
+    const { zoom, topPercent, rightPercent, bottomPercent, leftPercent } = getCropSettings();
+    const { srcX, srcY, cropWidth, cropHeight } = getCropRect(
+      pendingLogoImage,
+      zoom,
+      topPercent,
+      rightPercent,
+      bottomPercent,
+      leftPercent
+    );
+    drawCropToCanvas(previewCtx, previewCanvas, pendingLogoImage, srcX, srcY, cropWidth, cropHeight);
+  }
+
+  // Restores crop controls to centered defaults for a new upload.
+  function resetCropControls() {
+    const ui = getUi();
+    if (ui.cropZoom) ui.cropZoom.value = '100';
+    if (ui.cropTop) ui.cropTop.value = '0';
+    if (ui.cropRight) ui.cropRight.value = '0';
+    if (ui.cropBottom) ui.cropBottom.value = '0';
+    if (ui.cropLeft) ui.cropLeft.value = '0';
+    syncCropControlLabels();
+    renderCropPreview();
+  }
+
+  // Applies control changes to both labels and the crop preview.
+  function updateCropPreviewFromControls() {
+    syncCropControlLabels();
+    renderCropPreview();
+  }
 
   // Receives worker results and applies brightness classes to queued images.
   brightnessWorker.onmessage = function (e) {
@@ -180,18 +293,33 @@ onmessage = function(e) {
     reader.onload = (e) => {
       if (label) label.classList.remove('uploading');
       pendingLogoSide = side;
-      pendingLogoBase64 = e.target.result;
-      const ui = getUi();
-      ui.cropPreviewImg.src = pendingLogoBase64;
-      const applyBtn = ui.cropModal.querySelector('.btn-primary');
-      openModal(ui.cropModal, {
-        initialFocus: applyBtn,
-        onClose: () => {
-          pendingLogoSide = null;
-          pendingLogoBase64 = null;
-          ui.cropPreviewImg.removeAttribute('src');
-        }
-      });
+      pendingLogoSource = e.target.result;
+
+      const sourceImg = new Image();
+      sourceImg.onload = () => {
+        pendingLogoImage = sourceImg;
+        resetCropControls();
+
+        const ui = getUi();
+        const applyBtn = ui.cropModal.querySelector('.btn-primary');
+        openModal(ui.cropModal, {
+          initialFocus: applyBtn,
+          onClose: () => {
+            clearPendingLogoState();
+            const previewCtx = ui.cropPreviewCanvas?.getContext('2d');
+            if (previewCtx && ui.cropPreviewCanvas) {
+              previewCtx.clearRect(0, 0, ui.cropPreviewCanvas.width, ui.cropPreviewCanvas.height);
+            }
+          }
+        });
+      };
+
+      sourceImg.onerror = () => {
+        alert('Could not load this image for cropping. Please try another file.');
+        clearPendingLogoState();
+      };
+
+      sourceImg.src = pendingLogoSource;
       input.value = '';
     };
     reader.onerror = () => {
@@ -202,16 +330,38 @@ onmessage = function(e) {
 
   // Applies the staged cropped logo as the selected badge image.
   function confirmLogoUpload() {
-    if (!pendingLogoSide || !pendingLogoBase64) return;
+    if (!pendingLogoSide || !pendingLogoImage) return;
 
-    applyTeamBadge(pendingLogoSide, pendingLogoBase64);
-    setBadge(pendingLogoSide, pendingLogoBase64);
+    const { zoom, topPercent, rightPercent, bottomPercent, leftPercent } = getCropSettings();
+    const { srcX, srcY, cropWidth, cropHeight } = getCropRect(
+      pendingLogoImage,
+      zoom,
+      topPercent,
+      rightPercent,
+      bottomPercent,
+      leftPercent
+    );
+
+    const outputCanvas = document.createElement('canvas');
+    outputCanvas.width = 512;
+    outputCanvas.height = 512;
+    const outputCtx = outputCanvas.getContext('2d');
+    if (!outputCtx) return;
+
+    drawCropToCanvas(outputCtx, outputCanvas, pendingLogoImage, srcX, srcY, cropWidth, cropHeight);
+
+    const croppedLogo = outputCanvas.toDataURL('image/png');
+
+    applyTeamBadge(pendingLogoSide, croppedLogo);
+    setBadge(pendingLogoSide, croppedLogo);
     closeActiveModal();
   }
 
   return {
     setBadge,
     handleLogoUpload,
-    confirmLogoUpload
+    confirmLogoUpload,
+    resetCropControls,
+    updateCropPreviewFromControls
   };
 }

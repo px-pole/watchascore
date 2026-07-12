@@ -357,12 +357,25 @@
 <!-- LOGO PREVIEW MODAL -->
 <div id="crop-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Preview Logo" aria-hidden="true">
   <div class="modal-card">
-    <div class="card-title">Preview Logo</div>
-    <p class="footer-text mb-3">Ensure your logo looks correct before applying.</p>
+    <div class="card-title">Crop Logo</div>
+    <p class="footer-text mb-3">Adjust the crop so your badge is centered before applying.</p>
     <div class="crop-preview-area mb-3">
-      <div class="badge-wrap" style="width: 120px; height: 120px; margin: 0 auto;">
-         <img id="crop-preview-img" src="" alt="Logo Preview">
+      <div class="crop-preview-frame">
+        <canvas id="crop-preview-canvas" width="220" height="220" aria-label="Crop preview"></canvas>
       </div>
+    </div>
+    <div class="crop-controls mb-3">
+      <label for="crop-zoom">Zoom <span id="crop-zoom-value">100%</span></label>
+      <input id="crop-zoom" type="range" min="100" max="300" step="1" value="100">
+      <label for="crop-top">Top <span id="crop-top-value">0%</span></label>
+      <input id="crop-top" type="range" min="0" max="45" step="1" value="0">
+      <label for="crop-right">Right <span id="crop-right-value">0%</span></label>
+      <input id="crop-right" type="range" min="0" max="45" step="1" value="0">
+      <label for="crop-bottom">Bottom <span id="crop-bottom-value">0%</span></label>
+      <input id="crop-bottom" type="range" min="0" max="45" step="1" value="0">
+      <label for="crop-left">Left <span id="crop-left-value">0%</span></label>
+      <input id="crop-left" type="range" min="0" max="45" step="1" value="0">
+      <button id="crop-reset-btn" class="btn btn-secondary btn-small" type="button">Reset Crop</button>
     </div>
     <div class="btn-row">
       <button id="confirm-crop-btn" class="btn btn-primary">Apply Logo</button>

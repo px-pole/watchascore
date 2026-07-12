@@ -184,8 +184,7 @@ export const TOURNAMENTS = {
     { "id": "argentina", "name": "Argentina", "badge": "assets/badges/WorldCup2026/argentina.svg" },
     { "id": "england", "name": "England", "badge": "assets/badges/WorldCup2026/england.svg" },
     { "id": "france", "name": "France", "badge": "assets/badges/WorldCup2026/france.svg" },
-    { "id": "spain", "name": "Spain", "badge": "assets/badges/WorldCup2026/spain.svg" },
-    { "id": "switzerland", "name": "Switzerland", "badge": "assets/badges/WorldCup2026/switzerland.svg" }
+    { "id": "spain", "name": "Spain", "badge": "assets/badges/WorldCup2026/spain.svg" }
   ],
   }
 };

@@ -84,6 +84,46 @@ export const TOURNAMENTS = {
     { "id": "udinese", "name": "Udinese", "badge": "assets/badges/Italy-SerieA/udinese.svg" },
     { "id": "venezia", "name": "Venezia", "badge": "assets/badges/Italy-SerieA/venezia.svg" }
   ],
+  "Netherlands - Eredivisie": [
+    { "id": "ajax", "name": "Ajax", "badge": "assets/badges/Netherlands-Eredivisie/ajax.svg" },
+    { "id": "az", "name": "AZ Alkmaar", "badge": "assets/badges/Netherlands-Eredivisie/az.svg" },
+    { "id": "cambuur", "name": "SC Cambuur", "badge": "assets/badges/Netherlands-Eredivisie/cambuur.svg" },
+    { "id": "denhaag", "name": "ADO Den Haag", "badge": "assets/badges/Netherlands-Eredivisie/denhaag.svg" },
+    { "id": "excelsior", "name": "Excelsior", "badge": "assets/badges/Netherlands-Eredivisie/excelsior.svg" },
+    { "id": "feyenoord", "name": "Feyenoord", "badge": "assets/badges/Netherlands-Eredivisie/feyenoord.svg" },
+    { "id": "fortuna", "name": "Fortuna Sittard", "badge": "assets/badges/Netherlands-Eredivisie/fortuna.svg" },
+    { "id": "goahead", "name": "Go Ahead Eagles", "badge": "assets/badges/Netherlands-Eredivisie/goahead.svg" },
+    { "id": "groningen", "name": "FC Groningen", "badge": "assets/badges/Netherlands-Eredivisie/groningen.svg" },
+    { "id": "heerenveen", "name": "SC Heerenveen", "badge": "assets/badges/Netherlands-Eredivisie/heerenveen.svg" },
+    { "id": "nijmegen", "name": "NEC Nijmegen", "badge": "assets/badges/Netherlands-Eredivisie/nijmegen.svg" },
+    { "id": "psv", "name": "PSV Eindhoven", "badge": "assets/badges/Netherlands-Eredivisie/psv.svg" },
+    { "id": "sparta", "name": "Sparta Rotterdam", "badge": "assets/badges/Netherlands-Eredivisie/sparta.svg" },
+    { "id": "telstar", "name": "SC Telstar", "badge": "assets/badges/Netherlands-Eredivisie/telstar.svg" },
+    { "id": "twente", "name": "FC Twente", "badge": "assets/badges/Netherlands-Eredivisie/twente.svg" },
+    { "id": "utrecht", "name": "FC Utrecht", "badge": "assets/badges/Netherlands-Eredivisie/utrecht.svg" },
+    { "id": "willem", "name": "Willem II", "badge": "assets/badges/Netherlands-Eredivisie/willem.svg" },
+    { "id": "zwolle", "name": "PEC Zwolle", "badge": "assets/badges/Netherlands-Eredivisie/zwolle.svg" }
+  ],
+  "Portugal - Primeira Liga": [
+    { "id": "alverca", "name": "FC Alverca", "badge": "assets/badges/Portugal-PrimeiraLiga/alverca.svg" },
+    { "id": "academico", "name": "Académico de Viseu FC", "badge": "assets/badges/Portugal-PrimeiraLiga/academico.svg" },
+    { "id": "arouca", "name": "FC Arouca", "badge": "assets/badges/Portugal-PrimeiraLiga/arouca.svg" },
+    { "id": "benfica", "name": "SL Benfica", "badge": "assets/badges/Portugal-PrimeiraLiga/benfica.svg" },
+    { "id": "braga", "name": "SC Braga", "badge": "assets/badges/Portugal-PrimeiraLiga/braga.svg" },
+    { "id": "casapia", "name": "Casa Pia AC", "badge": "assets/badges/Portugal-PrimeiraLiga/casapia.svg" },
+    { "id": "estrela", "name": "Estrela da Amadora", "badge": "assets/badges/Portugal-PrimeiraLiga/estrela.svg" },
+    { "id": "estoril", "name": "Estoril Praia", "badge": "assets/badges/Portugal-PrimeiraLiga/estoril.svg" },
+    { "id": "famalicao", "name": "FC Famalicão", "badge": "assets/badges/Portugal-PrimeiraLiga/famalicao.svg" },
+    { "id": "gilvicente", "name": "Gil Vicente FC", "badge": "assets/badges/Portugal-PrimeiraLiga/gilvicente.svg" },
+    { "id": "maritimo", "name": "CS Marítimo", "badge": "assets/badges/Portugal-PrimeiraLiga/maritimo.svg" },
+    { "id": "moreirense", "name": "Moreirense FC", "badge": "assets/badges/Portugal-PrimeiraLiga/moreirense.svg" },
+    { "id": "nacional", "name": "CD Nacional", "badge": "assets/badges/Portugal-PrimeiraLiga/nacional.svg" },
+    { "id": "porto", "name": "FC Porto", "badge": "assets/badges/Portugal-PrimeiraLiga/porto.svg" },
+    { "id": "rioave", "name": "Rio Ave FC", "badge": "assets/badges/Portugal-PrimeiraLiga/rioave.svg" },
+    { "id": "santaclara", "name": "Santa Clara", "badge": "assets/badges/Portugal-PrimeiraLiga/santaclara.svg" },
+    { "id": "sporting", "name": "Sporting CP", "badge": "assets/badges/Portugal-PrimeiraLiga/sporting.svg" },
+    { "id": "vitoria", "name": "Vitória SC", "badge": "assets/badges/Portugal-PrimeiraLiga/vitoria.svg" }
+  ],
   "Spain - La Liga": [
     { "id": "alaves", "name": "Alavés", "badge": "assets/badges/Spain-LaLiga/alaves.svg" },
     { "id": "athletic", "name": "Athletic Club", "badge": "assets/badges/Spain-LaLiga/athletic.svg" },
@@ -140,15 +180,12 @@ export const TOURNAMENTS = {
   ]
   },
   worldcup: {
-  "Quarter-final": [
+    "Semi-final": [
     { "id": "argentina", "name": "Argentina", "badge": "assets/badges/WorldCup2026/argentina.svg" },
-    { "id": "belgium", "name": "Belgium", "badge": "assets/badges/WorldCup2026/belgium.svg" },
     { "id": "england", "name": "England", "badge": "assets/badges/WorldCup2026/england.svg" },
     { "id": "france", "name": "France", "badge": "assets/badges/WorldCup2026/france.svg" },
-    { "id": "morocco", "name": "Morocco", "badge": "assets/badges/WorldCup2026/morocco.svg" },
-    { "id": "norway", "name": "Norway", "badge": "assets/badges/WorldCup2026/norway.svg" },
     { "id": "spain", "name": "Spain", "badge": "assets/badges/WorldCup2026/spain.svg" },
     { "id": "switzerland", "name": "Switzerland", "badge": "assets/badges/WorldCup2026/switzerland.svg" }
-  ]
+  ],
   }
 };

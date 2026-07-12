@@ -31,10 +31,12 @@ if ('scrollRestoration' in history) {
   history.scrollRestoration = 'manual';
 }
 
+// Scrolls the viewport back to the top.
 const ensureTopScrollPosition = () => {
   window.scrollTo(0, 0);
 };
 
+// Re-applies the top scroll position after late layout shifts.
 const ensureTopScrollPositionWithFallback = () => {
   ensureTopScrollPosition();
 
@@ -78,9 +80,12 @@ const stateHandler = {
   }
 };
 
+// Wraps the initial state object in a persistence-aware proxy.
 const createState = (initialData) => new Proxy(initialData, stateHandler);
+// Persists the current state snapshot.
 const saveState = () => Persistence.save(state);
 
+// Detects whether the app is running inside an OBS browser source.
 function isObsSourceContext() {
   const obsParam = (urlParams.get('obs') || '').toLowerCase();
   if (obsParam === '1' || obsParam === 'true') return true;
@@ -88,10 +93,12 @@ function isObsSourceContext() {
   return /\bOBS\b|\bobs-browser\b/i.test(navigator.userAgent || '');
 }
 
+// Toggles the OBS-specific root class based on the current context.
 function syncObsSourceModeClass() {
   document.documentElement.classList.toggle('obs-source', isObsSourceContext());
 }
 
+// Updates CSS custom properties used to punch a hole in the OBS background.
 function updateObsBackgroundHoleVars() {
   if (!document.documentElement.classList.contains('obs-source')) return;
   const scoreboardWrap = document.querySelector('.scoreboard-wrap');
@@ -110,6 +117,7 @@ function updateObsBackgroundHoleVars() {
   root.style.setProperty('--obs-hole-height', `${height}px`);
 }
 
+// Schedules a single animation-frame refresh for the OBS hole geometry.
 function scheduleObsBackgroundHoleSync() {
   if (!document.documentElement.classList.contains('obs-source')) return;
   if (obsHoleRafId) cancelAnimationFrame(obsHoleRafId);
@@ -119,6 +127,7 @@ function scheduleObsBackgroundHoleSync() {
   });
 }
 
+// Sets up resize and scroll tracking for the OBS background cutout.
 function setupObsBackgroundHoleSync() {
   if (!isObsSourceContext()) return;
   const scoreboardWrap = document.querySelector('.scoreboard-wrap');
@@ -134,6 +143,7 @@ function setupObsBackgroundHoleSync() {
   scheduleObsBackgroundHoleSync();
 }
 
+// Marks the app as loaded and optionally skips the entrance animation.
 function finalizeLoadedState({ instant = false } = {}) {
   document.body.classList.add('content-loaded');
   if (instant) {
@@ -143,6 +153,7 @@ function finalizeLoadedState({ instant = false } = {}) {
   setTimeout(() => document.body.classList.add('entrance-finished'), 1500);
 }
 
+// Removes the preloader immediately when the app is running in OBS.
 function bypassPreloaderForObs() {
   if (!isObsSourceContext()) return;
   const preloader = document.getElementById('preloader');
@@ -150,16 +161,19 @@ function bypassPreloaderForObs() {
   finalizeLoadedState({ instant: true });
 }
 
+// Applies multiple state updates without triggering separate call sites.
 function setStateValues(updates) {
   Object.entries(updates).forEach(([key, value]) => {
     state[key] = value;
   });
 }
 
+// Stores the selected team object for one side.
 function setSelectedTeam(side, team) {
   state[`${side}Team`] = team ? { ...team } : null;
 }
 
+// Clears both selected teams and optionally resets name overrides.
 function clearSelectedTeams({ clearOverrides = false } = {}) {
   const updates = {
     homeTeam: null,
@@ -174,6 +188,7 @@ function clearSelectedTeams({ clearOverrides = false } = {}) {
   setStateValues(updates);
 }
 
+// Copies a badge image onto the selected team's record.
 function applyTeamBadge(side, badge) {
   const existingTeam = state[`${side}Team`];
   const teamName = existingTeam?.name || capitalize(side);
@@ -247,6 +262,7 @@ const {
 
 // App initialization and DOM bindings.
 
+// Connects state events to the UI update functions.
 function setupSubscriptions() {
   // Scores
   EventBus.on('homeScore', (val) => updateScoreUI('home', val));
@@ -276,6 +292,7 @@ function setupSubscriptions() {
   EventBus.on('teamNamesVisible', updateTeamNamesVisibilityUI);
 }
 
+// Boots the app from persisted data and performs the initial render.
 function init() {
   const rawData = Persistence.load();
   if (typeof rawData.teamNamesVisible !== 'boolean') rawData.teamNamesVisible = true;
@@ -298,6 +315,7 @@ function init() {
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 }
 
+// Resolves and caches DOM nodes used across the app.
 function cacheElements() {
   ui.scoreHome = document.getElementById('score-home');
   ui.scoreAway = document.getElementById('score-away');
@@ -338,6 +356,7 @@ function cacheElements() {
   setupListeners();
 }
 
+// Wires the UI controls to their corresponding state and action handlers.
 function setupListeners() {
   // Theme, Mode, FX
   ui.themeSelect?.addEventListener('change', (e) => setTheme(e.target.value));
@@ -437,6 +456,7 @@ function setupListeners() {
 
 // UI synchronization and rendering.
 
+// Renders the full UI from the current state snapshot.
 function syncUI() {
   checkWrapperState();
   updateScoreUI();
@@ -448,6 +468,7 @@ function syncUI() {
   scheduleObsBackgroundHoleSync();
 }
 
+// Toggles the wrapper class that reflects whether both teams are selected.
 function checkWrapperState() {
   const wrapper = document.querySelector('.wrapper');
   const bothTeamsPicked = !!(state.homeTeam && state.awayTeam);
@@ -461,6 +482,7 @@ function checkWrapperState() {
   }
 }
 
+// Updates the scoreboard and control panel scores for one or both sides.
 function updateScoreUI(side, value) {
   const sides = side ? [side] : ['home', 'away'];
   sides.forEach(s => {
@@ -471,6 +493,7 @@ function updateScoreUI(side, value) {
   });
 }
 
+// Syncs selected teams, overrides, badges, and tournament group text.
 function updateTeamsUI() {
   ['home', 'away'].forEach(side => {
     const team = state[`${side}Team`];
@@ -506,6 +529,7 @@ function updateTeamsUI() {
   }
 }
 
+// Updates the clock controls and status text to match current timer state.
 function updateClockUI() {
   if (ui.startBtn) {
     ui.startBtn.textContent = state.running ? '⏸ Pause' : '▶ Start';
@@ -523,6 +547,7 @@ function updateClockUI() {
   renderStatusUI(state.status);
 }
 
+// Renders the textual match status label.
 function renderStatusUI(s) {
   let label = STATUS_LABELS[s] || s;
   if (s === 'NOT STARTED' && state.startTime) {
@@ -536,6 +561,7 @@ function renderStatusUI(s) {
   });
 }
 
+// Applies theme, mode, and visibility classes to the document root.
 function updateThemeUI() {
   if (ui.themeSelect) ui.themeSelect.value = state.theme;
   if (ui.modeSelect) ui.modeSelect.value = state.mode;
@@ -553,15 +579,14 @@ function updateThemeUI() {
 }
 
 // Score, team display, and visibility behavior.
-
-// Highlights the Visibility FX dropdown if a selected badge would benefit from FX
-// but "No FX" is currently selected.
+// Shows or hides the visibility enhancement indicator.
 function updateVisibilityHighlight() {
   if (!ui.visibilityModeSelect) return;
   
   const isNone = state.visibilityMode === 'none';
   const isLightTheme = state.theme === 'light';
   
+  // Checks whether a badge needs the visibility enhancement icon.
   const needsFx = (imgEl) => {
     // Ignore if element is missing or it's just the placeholder SVG
     if (!imgEl || (imgEl.src && imgEl.src.includes('PHN2Zy'))) return false;
@@ -580,14 +605,14 @@ function updateVisibilityHighlight() {
   }
 }
 
-// Manually updates the visibility enhancement mode (None, Glow, or Contrast).
+// Manually updates the visibility enhancement mode.
 function setVisibilityMode(mode) {
   state.visibilityMode = mode;
   updateVisibilityHighlight();
   document.activeElement?.blur();
 }
 
-// Increments or decrements score and triggers a visual 'bump' animation.
+// Adjusts one side's score and briefly animates the updated value.
 function changeScore(side, delta) {
   const key = side + 'Score';
   state[key] = Math.max(0, state[key] + delta);
@@ -598,12 +623,15 @@ function changeScore(side, delta) {
   }
 }
 
+// Resets both scores back to zero.
 function resetScores() {
   state.homeScore = 0;
   state.awayScore = 0;
 }
 
+// Clears the selected teams and removes the selected-state styling.
 function resetTeams() {
+  // Clears the selected-team wrapper state.
   const resetAction = () => {
     const wrapper = document.querySelector('.wrapper');
     if (wrapper) wrapper.classList.toggle('teams-selected', false);
@@ -620,7 +648,9 @@ function resetTeams() {
 }
 // Settings, help panel, and modal actions.
 
+// Switches the scoreboard mode and clears team picks for the new dataset.
 function changeMode(mode) {
+  // Applies the mode update inside the optional view transition.
   const update = () => {
     state.mode = mode;
     clearSelectedTeams({ clearOverrides: true });
@@ -630,6 +660,7 @@ function changeMode(mode) {
   if (document.activeElement?.blur) document.activeElement.blur();
 }
 
+// Restarts the theme transition class so visual changes animate cleanly.
 function syncThemeChangeTransition() {
   const root = document.documentElement;
   root.classList.add('theme-changing');
@@ -644,21 +675,25 @@ function syncThemeChangeTransition() {
   }, THEME_CHANGE_TRANSITION_MS + 40);
 }
 
+// Applies a new theme name and closes the active control focus.
 function setTheme(themeName) {
   syncThemeChangeTransition();
   state.theme = themeName;
   if (document.activeElement?.blur) document.activeElement.blur();
 }
 
+// Updates the match status and refreshes the status UI.
 function setStatus(s) {
   state.status = s;
   renderStatusUI(s);
 }
 
+// Toggles the contact form visibility.
 function toggleContactForm() {
   document.getElementById('contact-form').classList.toggle('active');
 }
 
+// Opens a modal and focuses the requested initial control.
 function openModal(modal, { initialFocus = null, onClose = null } = {}) {
   if (!modal) return;
 
@@ -671,10 +706,12 @@ function openModal(modal, { initialFocus = null, onClose = null } = {}) {
   targetFocus?.focus();
 }
 
+// Returns whether the help panel is currently open.
 function isHelpPanelOpen() {
   return Boolean(ui.helpPanel?.classList.contains('active'));
 }
 
+// Highlights the help button until the panel has been seen once.
 function initHelpAttentionHint() {
   if (!ui.helpFab) return;
 
@@ -682,6 +719,7 @@ function initHelpAttentionHint() {
   if (!seen) ui.helpFab.classList.add('attention');
 }
 
+// Opens or closes the help panel and updates its ARIA state.
 function setHelpPanel(open) {
   if (!ui.helpPanel || !ui.helpFab) return;
 
@@ -701,14 +739,17 @@ function setHelpPanel(open) {
   }
 }
 
+// Toggles the help panel open state.
 function toggleHelpPanel() {
   setHelpPanel(!isHelpPanelOpen());
 }
 
+// Checks whether the header is in its mobile layout breakpoint.
 function isMobileHeaderViewport() {
   return window.matchMedia('(max-width: 820px)').matches;
 }
 
+// Opens or closes the compact header menu on mobile.
 function setHeaderMenu(open) {
   const header = document.querySelector('header');
   if (!header || !ui.headerMenuToggle || !ui.headerControls) return;
@@ -719,12 +760,14 @@ function setHeaderMenu(open) {
   ui.headerControls.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
 }
 
+// Toggles the mobile header menu when the viewport allows it.
 function toggleHeaderMenu() {
   const header = document.querySelector('header');
   if (!header || !isMobileHeaderViewport()) return;
   setHeaderMenu(!header.classList.contains('menu-open'));
 }
 
+// Keeps the header menu state aligned with viewport changes.
 function syncHeaderMenuViewportState() {
   if (!ui.headerControls || !ui.headerMenuToggle) return;
 
@@ -742,12 +785,14 @@ function syncHeaderMenuViewportState() {
   ui.headerMenuToggle.setAttribute('aria-expanded', 'false');
 }
 
+// Opens the reset confirmation modal.
 function resetAll() {
   const modal = document.getElementById('modal-overlay');
   const confirmBtn = modal?.querySelector('#confirm-reset-all-btn');
   openModal(modal, { initialFocus: confirmBtn });
 }
 
+// Opens the start-time modal with the current value prefilled.
 function showStartTimeModal() {
   const modal = document.getElementById('start-time-modal');
   const input = document.getElementById('start-time-input');
@@ -755,6 +800,7 @@ function showStartTimeModal() {
   openModal(modal, { initialFocus: input });
 }
 
+// Closes the currently active modal and restores focus.
 function closeActiveModal() {
   const active = document.querySelector('.modal-overlay.active');
   if (active) {
@@ -772,12 +818,14 @@ function closeActiveModal() {
   }
 }
 
+// Saves the start time and marks the match as not started.
 function confirmStartTime() {
   state.startTime = document.getElementById('start-time-input').value || null;
   setStatus('NOT STARTED');
   closeActiveModal();
 }
 
+// Restores the scoreboard to its initial state after confirmation.
 function confirmResetAll() {
   closeActiveModal();
   stopTimer();
@@ -795,10 +843,6 @@ document.addEventListener('click', (e) => {
     if (header?.classList.contains('menu-open') && !e.target.closest('header')) {
       setHeaderMenu(false);
     }
-  }
-
-  if (isHelpPanelOpen() && !e.target.closest('.floating-help')) {
-    setHelpPanel(false);
   }
 
   if (!e.target.closest('.search-container')) {
@@ -819,11 +863,6 @@ window.addEventListener('keydown', (e) => {
       ui.headerMenuToggle?.focus();
       return;
     }
-  }
-
-  if (isHelpPanelOpen() && e.key === 'Escape') {
-    setHelpPanel(false);
-    return;
   }
 
   const activeModal = document.querySelector('.modal-overlay.active');

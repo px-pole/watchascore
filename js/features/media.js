@@ -14,6 +14,7 @@ export function createMediaManager({
   let pendingLogoSide = null;
   let pendingLogoBase64 = null;
 
+  // Worker script that classifies badge brightness as light or dark.
   const workerCode = `
 onmessage = function(e) {
   const { imageData, src } = e.data;
@@ -32,6 +33,7 @@ onmessage = function(e) {
 
   const blob = new Blob([workerCode], { type: 'application/javascript' });
   const brightnessWorker = new Worker(URL.createObjectURL(blob));
+  // Logs worker errors that prevent brightness analysis from completing.
   brightnessWorker.onerror = (e) => {
     console.warn('WatchaScore: Brightness Worker error:', e.message);
   };
@@ -41,6 +43,7 @@ onmessage = function(e) {
   analysisCanvas.width = canvasSampleSize;
   analysisCanvas.height = canvasSampleSize;
 
+  // Receives worker results and applies brightness classes to queued images.
   brightnessWorker.onmessage = function (e) {
     const { src, result } = e.data;
     brightnessCache.set(src, result);
@@ -57,6 +60,7 @@ onmessage = function(e) {
     }
   };
 
+  // Samples an image to determine whether its badge should be treated as light or dark.
   function analyzeBrightness(img) {
     const src = img.src;
     if (!img?.complete || img.naturalWidth === 0 || src.includes('data:image/svg+xml')) {
@@ -88,6 +92,7 @@ onmessage = function(e) {
     pendingAnalysis.get(src).add(img);
   }
 
+  // Updates the visible badge image for a side and triggers loading state UI.
   function setBadge(side, src) {
     const ui = getUi();
     const sideKey = capitalize(side);
@@ -154,6 +159,7 @@ onmessage = function(e) {
     });
   }
 
+  // Validates and stages an uploaded logo before the crop modal opens.
   function handleLogoUpload(side, input) {
     const file = input.files[0];
     if (!file) return;
@@ -194,6 +200,7 @@ onmessage = function(e) {
     reader.readAsDataURL(file);
   }
 
+  // Applies the staged cropped logo as the selected badge image.
   function confirmLogoUpload() {
     if (!pendingLogoSide || !pendingLogoBase64) return;
 

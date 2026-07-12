@@ -1,4 +1,5 @@
 export function createTeamNamesManager({ getState, getUi, capitalize }) {
+  // Measures how many visual lines a team name currently occupies.
   function measureTeamNameLineCount(el) {
     if (!el) return 1;
 
@@ -33,7 +34,7 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
     return lineCount;
   }
 
-  // Shrinks the font one or two steps if a name can't fit the fixed 2-line slot.
+  // Shrinks the font when a team name cannot fit in the fixed two-line slot.
   function fitTeamName(el) {
     if (!el) return;
     el.classList.remove('is-compact', 'is-long', 'is-xlong');
@@ -64,7 +65,7 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
     }
   }
 
-  // Updates all UI elements that display a team's name.
+  // Syncs every visible name field for the selected side.
   function syncTeamNameDisplay(side, name) {
     const ui = getUi();
     const nameEl = ui[`${side}Name`];
@@ -76,6 +77,7 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
     }
   }
 
+  // Shows or hides the team-name visibility controls in the UI.
   function updateTeamNamesVisibilityUI() {
     const state = getState();
     const ui = getUi();
@@ -96,11 +98,13 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
     }
   }
 
+  // Toggles the persisted team-name visibility flag.
   function toggleTeamNamesVisibility() {
     const state = getState();
     state.teamNamesVisible = !(state.teamNamesVisible !== false);
   }
 
+  // Overrides the displayed team name for a side.
   function overrideName(side, val) {
     const state = getState();
     const normalized = val.trim();
@@ -109,6 +113,7 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
     syncTeamNameDisplay(side, name);
   }
 
+  // Re-applies font fitting to both displayed team names.
   function refitTeamNames() {
     const ui = getUi();
     ['home', 'away'].forEach(side => fitTeamName(ui[`${side}Name`]));

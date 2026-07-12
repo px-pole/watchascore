@@ -1,5 +1,6 @@
 export function createPersistence({ storageKey, prefsKey, initialState }) {
   return {
+    // Saves the current state and compact preference data to localStorage.
     save(data) {
       try {
         localStorage.setItem(storageKey, JSON.stringify(data));
@@ -14,6 +15,7 @@ export function createPersistence({ storageKey, prefsKey, initialState }) {
       }
     },
 
+    // Loads state from localStorage and falls back to defaults when needed.
     load() {
       const savedState = localStorage.getItem(storageKey);
       const savedPrefs = localStorage.getItem(prefsKey);

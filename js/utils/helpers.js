@@ -1,6 +1,9 @@
+// Formats a value as a two-digit string.
 export const pad = (n) => String(n).padStart(2, '0');
+// Formats a string with an initial capital letter.
 export const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
+// Computes the edit distance between two strings.
 export const levenshteinDistance = (s1, s2) => {
   if (s1.length < s2.length) [s1, s2] = [s2, s1];
   if (s2.length === 0) return s1.length;
@@ -18,6 +21,7 @@ export const levenshteinDistance = (s1, s2) => {
   return prevRow[s2.length];
 };
 
+// Debounces repeated calls until the input has been idle for the wait period.
 export function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -30,12 +34,14 @@ export function debounce(func, wait) {
   };
 }
 
+// Checks whether shortcut handling should be ignored for the target element.
 export function isEditableShortcutTarget(target) {
   if (!(target instanceof Element)) return false;
   if (target.isContentEditable) return true;
   return Boolean(target.closest('input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]'));
 }
 
+// Normalizes keyboard events to the app's supported shortcut keys.
 export function getShortcutKey(e) {
   switch (e.code) {
     case 'Space':

@@ -1,6 +1,7 @@
 export function createGameClockManager({ getState, getUi, pad, clockMaxMinutes, setStatus, updateClockUI }) {
   let timerInterval = null;
 
+  // Renders the current clock value in mm:ss format.
   function renderClock(seconds) {
     const state = getState();
     const ui = getUi();
@@ -10,6 +11,7 @@ export function createGameClockManager({ getState, getUi, pad, clockMaxMinutes, 
     ui.clockDisplay.textContent = `${pad(m)}:${pad(s)}`;
   }
 
+  // Reads the clock inputs and stores the requested starting time.
   function setClock() {
     const state = getState();
     const ui = getUi();
@@ -19,12 +21,14 @@ export function createGameClockManager({ getState, getUi, pad, clockMaxMinutes, 
     renderClock();
   }
 
+  // Toggles clock visibility in the UI.
   function toggleClockVisibility() {
     const state = getState();
     state.clockVisible = !state.clockVisible;
     updateClockUI();
   }
 
+  // Starts or pauses the match timer and applies period markers when stopping.
   function toggleClock() {
     const state = getState();
     if (state.running) {
@@ -66,6 +70,7 @@ export function createGameClockManager({ getState, getUi, pad, clockMaxMinutes, 
     }
   }
 
+  // Stops the clock and clears the current time back to zero.
   function resetClock() {
     const state = getState();
     const ui = getUi();
@@ -80,6 +85,7 @@ export function createGameClockManager({ getState, getUi, pad, clockMaxMinutes, 
     ui.clockSec.value = 0;
   }
 
+  // Clears the active interval without changing the displayed time.
   function stopTimer() {
     if (timerInterval) {
       clearInterval(timerInterval);

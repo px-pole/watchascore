@@ -11,10 +11,12 @@ export function createTeamSearchManager({
   let allTeams = [];
   const teamMap = new Map();
 
+  // Returns the active tournament source for the current mode.
   function getActiveSource() {
     return tournaments[getState().mode];
   }
 
+  // Flattens the current tournament data into searchable team records.
   function prepareTeamData() {
     allTeams = [];
     teamMap.clear();
@@ -37,6 +39,7 @@ export function createTeamSearchManager({
       });
   }
 
+  // Positions the search popup so it stays within the visible viewport.
   function positionSearchPopup(resultsDiv, searchInput) {
     if (!resultsDiv || !searchInput) return;
 
@@ -55,6 +58,7 @@ export function createTeamSearchManager({
     resultsDiv.style.maxHeight = `${maxPopupHeight}px`;
   }
 
+  // Stores the selected team and clears focus from the active element.
   function setTeam(side, id) {
     const t = getTeam(id);
     setSelectedTeam(side, t || null);
@@ -63,6 +67,7 @@ export function createTeamSearchManager({
     }
   }
 
+  // Clears keyboard focus styling from popup options.
   function clearKeyboardFocus(resultsDiv, searchInput) {
     resultsDiv.querySelectorAll('.keyboard-focus').forEach((item) => {
       item.classList.remove('keyboard-focus');
@@ -71,6 +76,7 @@ export function createTeamSearchManager({
     if (searchInput) searchInput.removeAttribute('aria-activedescendant');
   }
 
+  // Updates ARIA state for the popup open or closed state.
   function setPopupState(resultsDiv, searchInput, open) {
     if (!resultsDiv || !searchInput) return;
     resultsDiv.classList.toggle('active', open);
@@ -82,10 +88,12 @@ export function createTeamSearchManager({
     }
   }
 
+  // Closes the search popup and clears its active selection.
   function closeResultsPopup(resultsDiv, searchInput) {
     setPopupState(resultsDiv, searchInput, false);
   }
 
+  // Renders one team option entry for the search popup.
   function renderTeamOption(side, team, resultsDiv, searchInput, highlightedName = team.name) {
     const item = document.createElement('div');
     item.className = 'search-results-item';
@@ -102,6 +110,7 @@ export function createTeamSearchManager({
     return item;
   }
 
+  // Renders filtered search results grouped by league.
   function renderSearchMode(fragment, side, filter, resultsDiv, searchInput) {
     const filteredByLeague = new Map();
     let foundCount = 0;
@@ -157,6 +166,7 @@ export function createTeamSearchManager({
     }
   }
 
+  // Renders the browse view with collapsible league groups.
   function renderBrowseMode(fragment, side, resultsDiv, searchInput) {
     const leagues = new Map();
     allTeams.forEach((t) => {
@@ -199,6 +209,7 @@ export function createTeamSearchManager({
     });
   }
 
+  // Debounced entry point that opens the popup and fills it with results.
   const debouncedSearch = debounce((side, text) => {
     const resultsDiv = document.getElementById(`${side}-team-results`);
     const searchInput = document.getElementById(`${side}-team-search`);
@@ -221,6 +232,7 @@ export function createTeamSearchManager({
     resultsDiv.scrollTop = 0;
   }, searchDebounceMs);
 
+  // Handles keyboard navigation inside the active results popup.
   function handleSearchKeyboard(e, side) {
     const resultsDiv = document.getElementById(`${side}-team-results`);
     if (!resultsDiv.classList.contains('active')) return;
@@ -268,10 +280,12 @@ export function createTeamSearchManager({
     }
   }
 
+  // Looks up a team by its identifier.
   function getTeam(id) {
     return teamMap.get(id);
   }
 
+  // Repositions any open search popups after layout changes.
   function repositionActivePopups(getUi) {
     document.querySelectorAll('.search-results-popup.active').forEach((popup) => {
       const side = popup.id.startsWith('home-') ? 'home' : 'away';
@@ -279,6 +293,7 @@ export function createTeamSearchManager({
     });
   }
 
+  // Closes both search popups at once.
   function closeAllSearchPopups() {
     ['home', 'away'].forEach((side) => {
       const resultsDiv = document.getElementById(`${side}-team-results`);

@@ -1557,7 +1557,7 @@ body.entrance-finished .card {
   right: 0;
   bottom: calc(100% + 12px);
   width: min(360px, calc(100vw - 28px));
-  max-height: min(72vh, 560px);
+  max-height: min(84vh, 680px);
   overflow-y: auto;
   border: 1px solid color-mix(in srgb, var(--border-color), transparent 25%);
   background: color-mix(in srgb, var(--bg-panel), transparent 8%);

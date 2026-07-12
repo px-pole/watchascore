@@ -961,6 +961,10 @@ html.obs-source .controls-grid .card {
   gap: 0;
 }
 
+.scoreboard-wrap.team-names-single-line:not(.team-names-hidden) .badge-wrap {
+  margin-top: 12px;
+}
+
 .scoreboard-wrap.team-names-hidden .score-center {
   min-height: 94px;
 }
@@ -1290,10 +1294,11 @@ html.obs-source .controls-grid .card {
   font-size: 12px;
   text-transform: uppercase;
   color: var(--text-muted);
-  background: color-mix(in srgb, var(--bg-search-header), transparent 10%);
+  background: var(--bg-search-header);
   font-weight: 700;
   position: sticky;
   top: 0;
+  z-index: 2;
 }
 .search-results-header.collapsible {
   cursor: pointer;
@@ -1342,6 +1347,8 @@ html.obs-source .controls-grid .card {
     color-mix(in srgb, var(--border-search-item), transparent 40%);
   font-size: 13px;
   outline: none;
+  position: relative;
+  z-index: 0;
 }
 .search-results-item:last-child {
   border-bottom: none;

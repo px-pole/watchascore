@@ -65,6 +65,26 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
     }
   }
 
+  // Applies a scoreboard class when both visible team names fit on a single line.
+  function syncSingleLineNameLayoutClass() {
+    const state = getState();
+    const ui = getUi();
+    const scoreboard = document.querySelector('.scoreboard-wrap');
+    if (!scoreboard) return;
+
+    const visible = state.teamNamesVisible !== false;
+    const homeNameEl = ui.homeName;
+    const awayNameEl = ui.awayName;
+
+    const bothSingleLine =
+      !!homeNameEl &&
+      !!awayNameEl &&
+      measureTeamNameLineCount(homeNameEl) === 1 &&
+      measureTeamNameLineCount(awayNameEl) === 1;
+
+    scoreboard.classList.toggle('team-names-single-line', visible && bothSingleLine);
+  }
+
   // Syncs every visible name field for the selected side.
   function syncTeamNameDisplay(side, name) {
     const ui = getUi();
@@ -74,6 +94,7 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
       nameEl.setAttribute('title', name);
       nameEl.setAttribute('aria-label', name);
       fitTeamName(nameEl);
+      syncSingleLineNameLayoutClass();
     }
   }
 
@@ -88,6 +109,8 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
     if (visible) {
       // Name slots can be collapsed while hidden; re-fit once visible to avoid stale compact classes.
       requestAnimationFrame(refitTeamNames);
+    } else {
+      syncSingleLineNameLayoutClass();
     }
 
     if (ui.toggleTeamNamesBtn) {
@@ -117,6 +140,7 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
   function refitTeamNames() {
     const ui = getUi();
     ['home', 'away'].forEach(side => fitTeamName(ui[`${side}Name`]));
+    syncSingleLineNameLayoutClass();
   }
 
   return {

@@ -1232,6 +1232,7 @@ html.obs-source .controls-grid .card {
   border-radius: 8px;
   max-height: 60vh;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   scroll-behavior: smooth;
   z-index: 3000;
   display: none;

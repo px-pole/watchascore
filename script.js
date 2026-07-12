@@ -416,6 +416,7 @@ function setupListeners() {
       searchInput.setAttribute('aria-expanded', 'false');
       searchInput.setAttribute('autocomplete', 'off');
       resultsPopup.setAttribute('aria-hidden', 'true');
+      preventPopupScrollChaining(resultsPopup);
     }
     searchInput?.addEventListener('input', (e) => debouncedSearch(side, e.target.value));
     searchInput?.addEventListener('keydown', (e) => handleSearchKeyboard(e, side));
@@ -470,6 +471,38 @@ function setupListeners() {
     });
   });
 
+}
+
+// Stops wheel/touch scroll chaining from an open popup into the page.
+function preventPopupScrollChaining(popup) {
+  if (!popup) return;
+
+  let lastTouchY = 0;
+
+  const isScrollable = () => popup.scrollHeight > popup.clientHeight;
+  const atTop = () => popup.scrollTop <= 0;
+  const atBottom = () => popup.scrollTop + popup.clientHeight >= popup.scrollHeight - 1;
+
+  const shouldBlock = (deltaY) => {
+    if (!isScrollable()) return false;
+    return (deltaY < 0 && atTop()) || (deltaY > 0 && atBottom());
+  };
+
+  popup.addEventListener('wheel', (e) => {
+    if (shouldBlock(e.deltaY)) e.preventDefault();
+  }, { passive: false });
+
+  popup.addEventListener('touchstart', (e) => {
+    if (e.touches.length > 0) lastTouchY = e.touches[0].clientY;
+  }, { passive: true });
+
+  popup.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 0) return;
+    const currentTouchY = e.touches[0].clientY;
+    const deltaY = lastTouchY - currentTouchY;
+    lastTouchY = currentTouchY;
+    if (shouldBlock(deltaY)) e.preventDefault();
+  }, { passive: false });
 }
 
 // UI synchronization and rendering.

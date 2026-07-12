@@ -58,6 +58,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const GAME_ID = urlParams.get('id') || 'default';
 const STORAGE_KEY = `scoreboard_state_${GAME_ID}`;
 const PREFS_KEY = 'scoreboard_prefs'; // Global key for user preferences (Theme, Mode, etc.)
+const MOBILE_WARNING_DISMISSED_KEY = 'scoreboard_mobile_warning_dismissed';
 const Persistence = createPersistence({ storageKey: STORAGE_KEY, prefsKey: PREFS_KEY, initialState: INITIAL_STATE });
 
 let state = null;
@@ -338,7 +339,8 @@ function cacheElements() {
     'crop-modal', 'crop-preview-img', 'confirm-crop-btn', 'close-crop-modal-btn', 
     'toggle-contact-btn', 'feedback-link', 'status-btn-not-started',
     'help-fab', 'help-panel', 'help-close-btn',
-    'header-menu-toggle', 'header-controls'
+    'header-menu-toggle', 'header-controls',
+    'mobile-warning-modal', 'mobile-warning-dismiss-btn', 'mobile-warning-help-btn'
   ];
 
   ids.forEach(id => {
@@ -373,6 +375,8 @@ function setupListeners() {
   ui.helpFab?.addEventListener('click', toggleHelpPanel);
   ui.helpCloseBtn?.addEventListener('click', () => setHelpPanel(false));
   ui.headerMenuToggle?.addEventListener('click', toggleHeaderMenu);
+  ui.mobileWarningDismissBtn?.addEventListener('click', dismissMobileWarning);
+  ui.mobileWarningHelpBtn?.addEventListener('click', openMobileWarningHelp);
   initHelpAttentionHint();
 
   // Score & Teams
@@ -448,7 +452,7 @@ function setupListeners() {
   // Overlay click to close when clicking outside modal-card
   document.querySelectorAll('.modal-overlay').forEach(ov => {
     ov.addEventListener('click', (e) => {
-      if (e.target === ov) closeActiveModal();
+      if (e.target === ov && ov.id !== 'mobile-warning-modal') closeActiveModal();
     });
   });
 
@@ -749,6 +753,57 @@ function isMobileHeaderViewport() {
   return window.matchMedia('(max-width: 820px)').matches;
 }
 
+// Checks whether the app is currently in a phone-sized viewport.
+function isMobileViewport() {
+  return window.matchMedia('(max-width: 820px)').matches;
+}
+
+// Returns whether the desktop warning should be shown on this device.
+function shouldShowMobileWarning() {
+  if (isObsSourceContext()) return false;
+  if (!isMobileViewport()) return false;
+  return localStorage.getItem(MOBILE_WARNING_DISMISSED_KEY) !== '1';
+}
+
+// Opens or closes the desktop-recommended warning based on viewport and preference.
+function syncMobileWarningModal() {
+  const modal = ui.mobileWarningModal;
+  if (!modal) return;
+
+  const activeModal = document.querySelector('.modal-overlay.active');
+  const warningIsActive = modal.classList.contains('active');
+  const shouldOpen = shouldShowMobileWarning();
+
+  if (!shouldOpen && warningIsActive) {
+    closeActiveModal();
+    return;
+  }
+
+  if (!shouldOpen) return;
+  if (activeModal && activeModal !== modal) return;
+  if (warningIsActive) return;
+
+  openModal(modal, {
+    initialFocus: ui.mobileWarningDismissBtn,
+    onClose: () => {
+      document.body.classList.remove('mobile-warning-active');
+    }
+  });
+  document.body.classList.add('mobile-warning-active');
+}
+
+// Stores dismissal of the desktop recommendation notice for mobile viewports.
+function dismissMobileWarning() {
+  localStorage.setItem(MOBILE_WARNING_DISMISSED_KEY, '1');
+  closeActiveModal();
+}
+
+// Dismisses the mobile warning and opens the quick help panel.
+function openMobileWarningHelp() {
+  dismissMobileWarning();
+  setHelpPanel(true);
+}
+
 // Opens or closes the compact header menu on mobile.
 function setHeaderMenu(open) {
   const header = document.querySelector('header');
@@ -869,6 +924,10 @@ window.addEventListener('keydown', (e) => {
 
   if (activeModal) {
     if (e.key === 'Escape') {
+      if (activeModal.id === 'mobile-warning-modal') {
+        e.preventDefault();
+        return;
+      }
       closeActiveModal();
       return;
     }
@@ -925,6 +984,7 @@ window.addEventListener('resize', debounce(() => {
   refitTeamNames();
   repositionActivePopups(() => ui);
   syncHeaderMenuViewportState();
+  syncMobileWarningModal();
   scheduleObsBackgroundHoleSync();
 }, 150));
 
@@ -955,3 +1015,4 @@ window.addEventListener('load', () => {
 
 init();
 syncHeaderMenuViewportState();
+syncMobileWarningModal();

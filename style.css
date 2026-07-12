@@ -415,6 +415,10 @@ body {
     color 0.3s ease;
 }
 
+body.mobile-warning-active {
+  overflow: hidden;
+}
+
 html.theme-changing *,
 html.theme-changing *::before,
 html.theme-changing *::after {
@@ -2282,6 +2286,24 @@ footer {
 .modal-card .card-title {
   justify-content: center;
   font-size: 16px;
+}
+
+.mobile-warning-card {
+  max-width: 520px;
+  text-align: left;
+}
+
+.mobile-warning-card .card-title {
+  justify-content: flex-start;
+}
+
+.mobile-warning-hint {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.mobile-warning-card .btn-row {
+  margin-top: 6px;
 }
 
 .modal-body-text {

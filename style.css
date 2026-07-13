@@ -544,7 +544,7 @@ header.menu-open .header-menu-toggle {
   border: 1px solid var(--border-color);
   border-radius: 18px;
   padding: 20px;
-  min-height: calc(var(--badge-size, 100px) + var(--name-slot-h, 42px) + 106px);
+  min-height: calc(var(--badge-size, 100px) + var(--name-slot-h, 42px) + 84px);
   box-shadow:
     0 8px 60px rgba(0, 0, 0, 0.5),
     0 0 0 1px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.08);
@@ -815,15 +815,12 @@ html.obs-source .controls-grid .card {
   visibility: visible;
   max-height: 56px;
   overflow: hidden;
-  transition:
-    opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity, transform;
+  transition: none;
 }
 .clock-wrap.is-hidden {
   opacity: 0 !important;
   pointer-events: none;
-  transform: translateY(-8px) !important;
+  transform: none !important;
   max-height: 0;
   margin-top: -4px;
   gap: 0;

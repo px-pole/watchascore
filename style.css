@@ -91,6 +91,8 @@
   --badge-size: 100px;
   --name-max-width: 140px;
   --name-slot-h: 42px;
+  --team-stack-gap: 6px;
+  --single-line-badge-offset: 12px;
 
   /* Borders & Dividers */
   --border-color: #1e3a6e;
@@ -624,7 +626,7 @@ header.menu-open .header-menu-toggle {
   border: 1px solid var(--border-color);
   border-radius: 18px;
   padding: 20px;
-  min-height: 212px;
+  min-height: calc(var(--badge-size, 100px) + var(--name-slot-h, 42px) + 106px);
   box-shadow:
     0 8px 60px rgba(0, 0, 0, 0.5),
     0 0 0 1px hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.08);
@@ -733,8 +735,17 @@ html.obs-source .controls-grid .card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: var(--team-stack-gap, 6px);
   width: max(var(--badge-size, 100px), var(--name-max-width, 120px));
+}
+
+.scoreboard-wrap:not(.team-names-hidden) .team-stack {
+  min-height: calc(
+    var(--badge-size, 100px) +
+      var(--name-slot-h, 42px) +
+      var(--team-stack-gap, 6px) +
+      var(--single-line-badge-offset, 12px)
+  );
 }
 
 .badge-wrap {
@@ -963,10 +974,11 @@ html.obs-source .controls-grid .card {
 
 .scoreboard-wrap.team-names-hidden .team-stack {
   gap: 0;
+  min-height: var(--badge-size, 100px);
 }
 
 .scoreboard-wrap.team-names-single-line:not(.team-names-hidden) .badge-wrap {
-  margin-top: 12px;
+  margin-top: var(--single-line-badge-offset, 12px);
 }
 
 .scoreboard-wrap.team-names-hidden .score-center {

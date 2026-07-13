@@ -12,7 +12,7 @@
 - **Dynamic Team Search:** Quickly find and select teams from a built-in database with league grouping and matched-text highlighting.
 - **Team Visibility Toggle:** Quickly hide or show team names from the Team Selection panel.
 - **Customization:** 
-  - **Theme Engine:** Switch between 8+ professional color palettes (Sky Blue, Emerald, Crimson, Midnight, etc.).
+  - **Theme Engine:** Switch between 5 professional color palettes (Sky Blue, Light, Midnight, Crimson, Forest).
   - **Logo Upload:** Upload custom team badges directly from your local machine.
   - **Name Overrides:** Set custom display names for any team.
 - **Persistence:** Automatically saves the game state to local storage so you don't lose data on page refresh.

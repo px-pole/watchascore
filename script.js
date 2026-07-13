@@ -303,6 +303,7 @@ function setupSubscriptions() {
 function init() {
   const rawData = Persistence.load();
   if (typeof rawData.teamNamesVisible !== 'boolean') rawData.teamNamesVisible = true;
+  if (rawData.theme !== 'default' && !THEMES.includes(rawData.theme)) rawData.theme = 'default';
 
   syncObsSourceModeClass();
   bypassPreloaderForObs();
@@ -728,6 +729,7 @@ function syncThemeChangeTransition() {
 
 // Applies a new theme name and closes the active control focus.
 function setTheme(themeName) {
+  if (themeName !== 'default' && !THEMES.includes(themeName)) themeName = 'default';
   syncThemeChangeTransition();
   state.theme = themeName;
   if (document.activeElement?.blur) document.activeElement.blur();

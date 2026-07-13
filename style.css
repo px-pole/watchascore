@@ -188,44 +188,6 @@
 }
 
 /* ─── THEMES ─── */
-.theme-emerald {
-  --primary-h: 158;
-  --primary-s: 64%;
-  --primary-l: 52%;
-  --secondary-l: 67%;
-  --bg-body: #061f1a;
-  --bg-panel: #0d2b24;
-  --bg-card: #143b31;
-  --border-color: #143b31;
-  --scoreboard-gradient-start: #0d2b24;
-  --bg-gradient-radial-2-hsl: 173 80% 40%;
-  --bg-gradient-radial-1-alpha: 0.15;
-  --bg-gradient-radial-2-alpha: 0.25;
-  --bg-texture:
-    linear-gradient(
-        135deg,
-        rgba(255, 255, 255, calc(0.02 * var(--bg-texture-intensity))) 25%,
-        transparent 25%
-      ) -20px
-      0,
-    linear-gradient(
-        225deg,
-        rgba(255, 255, 255, calc(0.02 * var(--bg-texture-intensity))) 25%,
-        transparent 25%
-      ) -20px
-      0,
-    linear-gradient(
-      45deg,
-      rgba(255, 255, 255, calc(0.02 * var(--bg-texture-intensity))) 25%,
-      transparent 25%
-    ),
-    linear-gradient(
-        315deg,
-        rgba(255, 255, 255, calc(0.02 * var(--bg-texture-intensity))) 25%,
-        transparent 25%
-      )
-      0 0 / 40px 40px;
-}
 
 .theme-crimson {
   --primary-h: 352;
@@ -276,26 +238,6 @@
       0 0 / 24px 24px;
 }
 
-.theme-ocean {
-  --primary-h: 199;
-  --primary-s: 95%;
-  --primary-l: 60%;
-  --secondary-l: 74%;
-  --bg-body: #082f49;
-  --bg-panel: #0c4a6e;
-  --bg-card: #075985;
-  --border-color: #0369a1;
-  --scoreboard-gradient-start: #0c4a6e;
-  --bg-gradient-radial-2-hsl: 202 80% 24%;
-  --bg-gradient-radial-1-alpha: 0.15;
-  --bg-gradient-radial-2-alpha: 0.15;
-  --bg-texture: radial-gradient(
-      circle at 50% 100%,
-      rgba(255, 255, 255, calc(0.03 * var(--bg-texture-intensity))) 15%,
-      transparent 20%
-    )
-    0 0 / 120px 60px;
-}
 
 .theme-light {
   --primary-h: 199;
@@ -372,30 +314,6 @@
         transparent 0
       )
       40px 40px / 120px 120px;
-}
-
-.theme-amethyst {
-  --primary-h: 270;
-  --primary-s: 95%;
-  --primary-l: 76%;
-  --secondary-l: 84%;
-  --bg-body: #2e1065;
-  --bg-panel: #3b0764;
-  --bg-card: #4c1d95;
-  --border-color: #7e22ce;
-  --scoreboard-gradient-start: #3b0764;
-  --bg-gradient-radial-2-hsl: 274 87% 21%;
-  --bg-gradient-radial-1-alpha: 0.15;
-  --bg-gradient-radial-2-alpha: 0.15;
-  --bg-texture: linear-gradient(
-      30deg,
-      rgba(255, 255, 255, calc(0.025 * var(--bg-texture-intensity))) 12%,
-      transparent 12.5%,
-      transparent 87%,
-      rgba(255, 255, 255, calc(0.025 * var(--bg-texture-intensity))) 87.5%,
-      rgba(255, 255, 255, calc(0.025 * var(--bg-texture-intensity)))
-    )
-    0 0 / 60px 100px;
 }
 
 /* ─── RESET & BODY ─── */

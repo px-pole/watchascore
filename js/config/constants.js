@@ -7,7 +7,7 @@ export const STATUS_LABELS = {
   'HT ET': 'HALF-TIME (ET)'
 };
 
-export const THEMES = ['emerald', 'crimson', 'forest', 'ocean', 'light', 'midnight', 'amethyst'];
+export const THEMES = ['crimson', 'forest', 'light', 'midnight'];
 
 export const SEARCH_RESULT_CAP = 50;
 export const SEARCH_DEBOUNCE_MS = 80;

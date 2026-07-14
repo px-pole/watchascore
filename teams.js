@@ -152,6 +152,26 @@ export const TOURNAMENTS = {
     { "id": "udinese", "name": "Udinese", "badge": "assets/badges/Italy-SerieA/udinese.svg" },
     { "id": "venezia", "name": "Venezia", "badge": "assets/badges/Italy-SerieA/venezia.svg" }
   ],
+  "Mexico - Liga MX": [
+    { "id": "america", "name": "Club América", "badge": "assets/badges/Mexico-LigaMX/america.svg" },
+    { "id": "atlante", "name": "Atlante FC", "badge": "assets/badges/Mexico-LigaMX/atlante.svg" },
+    { "id": "atlas", "name": "Atlas FC", "badge": "assets/badges/Mexico-LigaMX/atlas.svg" },
+    { "id": "atletico", "name": "Atlético de San Luis", "badge": "assets/badges/Mexico-LigaMX/atletico.svg" },
+    { "id": "cruzazul", "name": "Cruz Azul", "badge": "assets/badges/Mexico-LigaMX/cruzazul.svg" },
+    { "id": "guadalajara", "name": "CD Guadalajara", "badge": "assets/badges/Mexico-LigaMX/guadalajara.svg" },
+    { "id": "juarez", "name": "FC Juárez", "badge": "assets/badges/Mexico-LigaMX/juarez.svg" },
+    { "id": "leon", "name": "León", "badge": "assets/badges/Mexico-LigaMX/leon.svg" },
+    { "id": "monterrey", "name": "CF Monterrey", "badge": "assets/badges/Mexico-LigaMX/monterrey.svg" },
+    { "id": "necaxa", "name": "Club Necaxa", "badge": "assets/badges/Mexico-LigaMX/necaxa.svg" },
+    { "id": "pachuca", "name": "CF Pachuca", "badge": "assets/badges/Mexico-LigaMX/pachuca.svg" },
+    { "id": "puebla", "name": "Club Puebla", "badge": "assets/badges/Mexico-LigaMX/puebla.svg" },
+    { "id": "pumas", "name": "Pumas", "badge": "assets/badges/Mexico-LigaMX/pumas.svg" },
+    { "id": "queretaro", "name": "Querétaro FC", "badge": "assets/badges/Mexico-LigaMX/queretaro.svg" },
+    { "id": "santos", "name": "Santos Laguna", "badge": "assets/badges/Mexico-LigaMX/santos.svg" },
+    { "id": "tigres", "name": "Tigres UANL", "badge": "assets/badges/Mexico-LigaMX/tigres.svg" },
+    { "id": "tijuana", "name": "Club Tijuana", "badge": "assets/badges/Mexico-LigaMX/tijuana.svg" },
+    { "id": "toluca", "name": "Toluca FC", "badge": "assets/badges/Mexico-LigaMX/toluca.svg" }
+  ],
   "Netherlands - Eredivisie": [
     { "id": "ajax", "name": "Ajax", "badge": "assets/badges/Netherlands-Eredivisie/ajax.svg" },
     { "id": "az", "name": "AZ Alkmaar", "badge": "assets/badges/Netherlands-Eredivisie/az.svg" },

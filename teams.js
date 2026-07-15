@@ -308,11 +308,13 @@ export const TOURNAMENTS = {
   ]
   },
   worldcup: {
-    "Semi-final": [
-    { "id": "argentina", "name": "Argentina", "badge": "assets/badges/WorldCup2026/argentina.svg" },
+  "Bronze-final": [
     { "id": "england", "name": "England", "badge": "assets/badges/WorldCup2026/england.svg" },
-    { "id": "france", "name": "France", "badge": "assets/badges/WorldCup2026/france.svg" },
-    { "id": "spain", "name": "Spain", "badge": "assets/badges/WorldCup2026/spain.svg" }
+    { "id": "france", "name": "France", "badge": "assets/badges/WorldCup2026/france.svg" }
+  ],
+  "Final": [
+  { "id": "argentina", "name": "Argentina", "badge": "assets/badges/WorldCup2026/argentina.svg" },
+  { "id": "spain", "name": "Spain", "badge": "assets/badges/WorldCup2026/spain.svg" }
   ]
   }
 };

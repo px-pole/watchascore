@@ -8,6 +8,7 @@ export function createTeamSearchManager({
   setSelectedTeam,
   tournaments
 }) {
+  const searchVisibleItemLimit = 10;
   let allTeams = [];
   const teamMap = new Map();
 
@@ -52,7 +53,16 @@ export function createTeamSearchManager({
     const spaceAbove = inputRect.top - edgeGap;
     const openUp = spaceBelow < minUsefulHeight && spaceAbove > spaceBelow;
     const availableSpace = openUp ? spaceAbove : spaceBelow;
-    const maxPopupHeight = Math.floor(Math.max(140, Math.min(availableSpace, viewportHeight * 0.75)));
+    const visibleRows = Array.from(
+      resultsDiv.querySelectorAll('.search-results-item, .search-results-header, .search-results-none')
+    ).filter((row) => row.getBoundingClientRect().height > 0);
+    const estimatedRowHeight = visibleRows.length
+      ? Math.max(...visibleRows.slice(0, 3).map((row) => Math.ceil(row.getBoundingClientRect().height)))
+      : 34;
+    const rowLimitedHeight = estimatedRowHeight * searchVisibleItemLimit + 2;
+    const maxPopupHeight = Math.floor(
+      Math.max(140, Math.min(availableSpace, viewportHeight * 0.75, rowLimitedHeight))
+    );
 
     resultsDiv.classList.toggle('open-up', openUp);
     resultsDiv.style.maxHeight = `${maxPopupHeight}px`;

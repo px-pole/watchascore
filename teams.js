@@ -35,7 +35,7 @@ export const TOURNAMENTS = {
     { "id": "internacional", "name": "Internacional", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/internacional.svg" },
     { "id": "mirassol", "name": "Mirassol", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/mirassol.svg" },
     { "id": "palmeiras", "name": "Palmeiras", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/palmeiras.svg" },
-    { "id": "rbbragantino", "name": "RB Bragantino", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/rbbragantino.svg" },
+    { "id": "rbbragantino", "name": "RB Bragantino", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/bragantino.svg" },
     { "id": "remo", "name": "Remo", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/remo.svg" },
     { "id": "santos", "name": "Santos", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/santos.svg" },
     { "id": "sao paulo", "name": "São Paulo", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/saopaulo.svg" },

@@ -27,7 +27,7 @@ export const INITIAL_STATE = {
   theme: 'default',
   homeNameOverride: '',
   awayNameOverride: '',
-  mode: 'worldcup',
+  mode: 'leagues',
   visibilityMode: 'none',
   startTime: null,
   clockVisible: true,

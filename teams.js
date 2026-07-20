@@ -1,6 +1,6 @@
 export const TOURNAMENTS = {
   leagues: {
-  "Belgium - Pro League": [
+    "Belgium - Pro League": [
     { "id": "anderlecht", "name": "RSC Anderlecht", "badge": "assets/badges/Belgium-ProLeague/anderlecht.svg" },
     { "id": "antwerp", "name": "Royal Antwerp", "badge": "assets/badges/Belgium-ProLeague/antwerp.svg" },
     { "id": "beveren", "name": "SK Beveren", "badge": "assets/badges/Belgium-ProLeague/beveren.svg" },
@@ -19,8 +19,8 @@ export const TOURNAMENTS = {
     { "id": "union-saint-gilloise", "name": "Union Saint-Gilloise", "badge": "assets/badges/Belgium-ProLeague/usg.svg" },
     { "id": "westerlo", "name": "Westerlo", "badge": "assets/badges/Belgium-ProLeague/westerlo.svg" },
     { "id": "zulte-waregem", "name": "Zulte Waregem", "badge": "assets/badges/Belgium-ProLeague/zulte.svg" }
-  ],
-  "Brazil - Campeonato Brasileiro Série A": [
+    ],
+    "Brazil - Campeonato Brasileiro Série A": [
     { "id": "atletico-mg", "name": "Atlético-MG", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/atleticomg.svg" },
     { "id": "bahia", "name": "Bahia", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/bahia.svg" },
     { "id": "botafogo", "name": "Botafogo FR", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/botafogo.svg" },
@@ -41,8 +41,8 @@ export const TOURNAMENTS = {
     { "id": "sao paulo", "name": "São Paulo", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/saopaulo.svg" },
     { "id": "vascodagama", "name": "Vasco da Gama", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/vascodagama.svg" },
     { "id": "vitoria", "name": "Vitória", "badge": "assets/badges/Brazil-CampeonatoBrasileiroSerieA/vitoria.svg" }
-  ],
-  "England - Premier League": [
+    ],
+    "England - Premier League": [
     { "id": "arsenal", "name": "Arsenal", "badge": "assets/badges/England-PremierLeague/arsenal.svg" },
     { "id": "astonvilla", "name": "Aston Villa", "badge": "assets/badges/England-PremierLeague/astonvilla.svg" },
     { "id": "bournemouth", "name": "Bournemouth", "badge": "assets/badges/England-PremierLeague/bournemouth.svg" },
@@ -63,8 +63,8 @@ export const TOURNAMENTS = {
     { "id": "forest", "name": "Nottingham Forest", "badge": "assets/badges/England-PremierLeague/forest.svg" },
     { "id": "sunderland", "name": "Sunderland", "badge": "assets/badges/England-PremierLeague/sunderland.svg" },
     { "id": "spurs", "name": "Tottenham Hotspur", "badge": "assets/badges/England-PremierLeague/spurs.svg" }
-  ],
-  "England - EFL Championship": [
+    ],
+    "England - EFL Championship": [
     { "id": "birmingham", "name": "Birmingham City", "badge": "assets/badges/England-Championship/birmingham.svg" },
     { "id": "blackburn", "name": "Blackburn Rovers", "badge": "assets/badges/England-Championship/blackburn.svg" },
     { "id": "bolton", "name": "Bolton Wanderers", "badge": "assets/badges/England-Championship/bolton.svg" },
@@ -89,8 +89,8 @@ export const TOURNAMENTS = {
     { "id": "westham", "name": "West Ham United", "badge": "assets/badges/England-Championship/westham.svg" },
     { "id": "wolves", "name": "Wolverhampton Wanderers", "badge": "assets/badges/England-Championship/wolves.svg" },
     { "id": "wrexham", "name": "Wrexham", "badge": "assets/badges/England-Championship/wrexham.svg" }
-  ],
-  "France - Ligue 1": [
+    ],
+    "France - Ligue 1": [
     { "id": "angers", "name": "Angers SCO", "badge": "assets/badges/France-Ligue1/angers.svg" },
     { "id": "auxerre", "name": "AJ Auxerre", "badge": "assets/badges/France-Ligue1/auxerre.svg" },
     { "id": "brest", "name": "Stade Brestois", "badge": "assets/badges/France-Ligue1/brest.svg" },
@@ -109,8 +109,8 @@ export const TOURNAMENTS = {
     { "id": "strasbourg", "name": "RC Strasbourg", "badge": "assets/badges/France-Ligue1/strasbourg.svg" },
     { "id": "toulouse", "name": "Toulouse FC", "badge": "assets/badges/France-Ligue1/toulouse.svg" },
     { "id": "troyes", "name": "Troyes", "badge": "assets/badges/France-Ligue1/troyes.svg" }
-  ],
-  "Germany - Bundesliga": [
+    ],
+    "Germany - Bundesliga": [
     { "id": "augsburg", "name": "FC Augsburg", "badge": "assets/badges/Germany-Bundesliga/augsburg.svg" },
     { "id": "bayern", "name": "Bayern Munich", "badge": "assets/badges/Germany-Bundesliga/bayern.svg" },
     { "id": "bremen", "name": "Werder Bremen", "badge": "assets/badges/Germany-Bundesliga/bremen.svg" },
@@ -129,8 +129,8 @@ export const TOURNAMENTS = {
     { "id": "schalke", "name": "Schalke 04", "badge": "assets/badges/Germany-Bundesliga/schalke.svg" },
     { "id": "stuttgart", "name": "VfB Stuttgart", "badge": "assets/badges/Germany-Bundesliga/stuttgart.svg" },
     { "id": "unionberlin", "name": "Union Berlin", "badge": "assets/badges/Germany-Bundesliga/unionberlin.svg" }
-  ],
-  "Italy - Serie A": [
+    ],
+    "Italy - Serie A": [
     { "id": "milan", "name": "AC Milan", "badge": "assets/badges/Italy-SerieA/milan.svg" },
     { "id": "atalanta", "name": "Atalanta", "badge": "assets/badges/Italy-SerieA/atalanta.svg" },
     { "id": "bologna", "name": "Bologna", "badge": "assets/badges/Italy-SerieA/bologna.svg" },
@@ -151,8 +151,8 @@ export const TOURNAMENTS = {
     { "id": "torino", "name": "Torino FC", "badge": "assets/badges/Italy-SerieA/torino.svg" },
     { "id": "udinese", "name": "Udinese", "badge": "assets/badges/Italy-SerieA/udinese.svg" },
     { "id": "venezia", "name": "Venezia", "badge": "assets/badges/Italy-SerieA/venezia.svg" }
-  ],
-  "Mexico - Liga MX": [
+    ],
+    "Mexico - Liga MX": [
     { "id": "america", "name": "Club América", "badge": "assets/badges/Mexico-LigaMX/america.svg" },
     { "id": "atlante", "name": "Atlante FC", "badge": "assets/badges/Mexico-LigaMX/atlante.svg" },
     { "id": "atlas", "name": "Atlas FC", "badge": "assets/badges/Mexico-LigaMX/atlas.svg" },
@@ -171,8 +171,8 @@ export const TOURNAMENTS = {
     { "id": "tigres", "name": "Tigres UANL", "badge": "assets/badges/Mexico-LigaMX/tigres.svg" },
     { "id": "tijuana", "name": "Club Tijuana", "badge": "assets/badges/Mexico-LigaMX/tijuana.svg" },
     { "id": "toluca", "name": "Toluca FC", "badge": "assets/badges/Mexico-LigaMX/toluca.svg" }
-  ],
-  "Netherlands - Eredivisie": [
+    ],
+    "Netherlands - Eredivisie": [
     { "id": "ajax", "name": "Ajax", "badge": "assets/badges/Netherlands-Eredivisie/ajax.svg" },
     { "id": "az", "name": "AZ Alkmaar", "badge": "assets/badges/Netherlands-Eredivisie/az.svg" },
     { "id": "cambuur", "name": "SC Cambuur", "badge": "assets/badges/Netherlands-Eredivisie/cambuur.svg" },
@@ -191,8 +191,8 @@ export const TOURNAMENTS = {
     { "id": "utrecht", "name": "FC Utrecht", "badge": "assets/badges/Netherlands-Eredivisie/utrecht.svg" },
     { "id": "willem", "name": "Willem II", "badge": "assets/badges/Netherlands-Eredivisie/willem.svg" },
     { "id": "zwolle", "name": "PEC Zwolle", "badge": "assets/badges/Netherlands-Eredivisie/zwolle.svg" }
-  ],
-  "Poland - Ekstraklasa": [
+    ],
+    "Poland - Ekstraklasa": [
     { "id": "cracovia", "name": "Cracovia", "badge": "assets/badges/Poland-Ekstraklasa/cracovia.svg" },
     { "id": "gks", "name": "GKS Katowice", "badge": "assets/badges/Poland-Ekstraklasa/gks.svg" },
     { "id": "gornik", "name": "Górnik Zabrze", "badge": "assets/badges/Poland-Ekstraklasa/gornik.svg" },
@@ -211,8 +211,8 @@ export const TOURNAMENTS = {
     { "id": "wislak", "name": "Wisła Kraków", "badge": "assets/badges/Poland-Ekstraklasa/wislak.svg" },
     { "id": "wislap", "name": "Wisła Płock", "badge": "assets/badges/Poland-Ekstraklasa/wislap.svg" },
     { "id": "zaglebie", "name": "Zagłębie Lubin", "badge": "assets/badges/Poland-Ekstraklasa/zaglebie.svg" }
-  ],
-  "Portugal - Primeira Liga": [
+    ],
+    "Portugal - Primeira Liga": [
     { "id": "alverca", "name": "FC Alverca", "badge": "assets/badges/Portugal-PrimeiraLiga/alverca.svg" },
     { "id": "academico", "name": "Académico de Viseu FC", "badge": "assets/badges/Portugal-PrimeiraLiga/academico.svg" },
     { "id": "arouca", "name": "FC Arouca", "badge": "assets/badges/Portugal-PrimeiraLiga/arouca.svg" },
@@ -231,8 +231,8 @@ export const TOURNAMENTS = {
     { "id": "santaclara", "name": "Santa Clara", "badge": "assets/badges/Portugal-PrimeiraLiga/santaclara.svg" },
     { "id": "sporting", "name": "Sporting CP", "badge": "assets/badges/Portugal-PrimeiraLiga/sporting.svg" },
     { "id": "vitoria", "name": "Vitória SC", "badge": "assets/badges/Portugal-PrimeiraLiga/vitoria.svg" }
-  ],
-  "Spain - La Liga": [
+    ],
+    "Spain - La Liga": [
     { "id": "alaves", "name": "Alavés", "badge": "assets/badges/Spain-LaLiga/alaves.svg" },
     { "id": "athletic", "name": "Athletic Club", "badge": "assets/badges/Spain-LaLiga/athletic.svg" },
     { "id": "atletico", "name": "Atlético Madrid", "badge": "assets/badges/Spain-LaLiga/atletico.svg" },
@@ -253,8 +253,8 @@ export const TOURNAMENTS = {
     { "id": "sociedad", "name": "Real Sociedad", "badge": "assets/badges/Spain-LaLiga/sociedad.svg" },
     { "id": "valencia", "name": "Valencia CF", "badge": "assets/badges/Spain-LaLiga/valencia.svg" },
     { "id": "villarreal", "name": "Villarreal CF", "badge": "assets/badges/Spain-LaLiga/villarreal.svg" }
-  ],
-  "Türkiye - Süper Lig": [
+    ],
+    "Türkiye - Süper Lig": [
     { "id": "alanyaspor", "name": "Alanyaspor", "badge": "assets/badges/Turkiye-SuperLig/alanyaspor.svg" },
     { "id": "amed", "name": "Amedspor", "badge": "assets/badges/Turkiye-SuperLig/amed.svg" },
     { "id": "basaksehir", "name": "Başakşehir", "badge": "assets/badges/Turkiye-SuperLig/basaksehir.svg" },
@@ -273,8 +273,8 @@ export const TOURNAMENTS = {
     { "id": "rizespor", "name": "Çaykur Rizespor", "badge": "assets/badges/Turkiye-SuperLig/rizespor.svg" },
     { "id": "samsunspor", "name": "Samsunspor", "badge": "assets/badges/Turkiye-SuperLig/samsunspor.svg" },
     { "id": "trabzonspor", "name": "Trabzonspor", "badge": "assets/badges/Turkiye-SuperLig/trabzonspor.svg" }
-  ],
-  "USA - Major League Soccer": [
+    ],
+    "USA - Major League Soccer": [
     { "id": "atlanta", "name": "Atlanta United FC", "badge": "assets/badges/USA-MajorLeagueSoccer/atlanta.svg" },
     { "id": "austin", "name": "Austin FC", "badge": "assets/badges/USA-MajorLeagueSoccer/austin.svg" },
     { "id": "charlotte", "name": "Charlotte FC", "badge": "assets/badges/USA-MajorLeagueSoccer/charlotte.svg" },
@@ -305,12 +305,6 @@ export const TOURNAMENTS = {
     { "id": "stlouis", "name": "St. Louis City SC", "badge": "assets/badges/USA-MajorLeagueSoccer/stlouis.svg" },
     { "id": "toronto", "name": "Toronto FC", "badge": "assets/badges/USA-MajorLeagueSoccer/toronto.svg" },
     { "id": "vancouver", "name": "Vancouver Whitecaps FC", "badge": "assets/badges/USA-MajorLeagueSoccer/vancouver.svg" }
-  ]
-  },
-  worldcup: {
-  "Final": [
-  { "id": "argentina", "name": "Argentina", "badge": "assets/badges/WorldCup2026/argentina.svg" },
-  { "id": "spain", "name": "Spain", "badge": "assets/badges/WorldCup2026/spain.svg" }
-  ]
+    ]
   }
 };

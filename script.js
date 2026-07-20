@@ -371,7 +371,7 @@ function cacheElements() {
 function setupListeners() {
   // Theme, Mode, FX
   ui.themeSelect?.addEventListener('change', (e) => setTheme(e.target.value));
-  ui.modeSelect?.addEventListener('change', (e) => changeMode(e.target.value));
+  // ui.modeSelect?.addEventListener('change', (e) => changeMode(e.target.value));
   ui.visibilityModeSelect?.addEventListener('change', (e) => setVisibilityMode(e.target.value));
   
   // OBS and Utils

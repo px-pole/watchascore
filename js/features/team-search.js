@@ -9,6 +9,9 @@ export function createTeamSearchManager({
   tournaments
 }) {
   const searchVisibleItemLimit = 10;
+  const searchPopupBadgeOverrides = new Map([
+    ['sevilla', 'assets/badges/Spain-LaLiga/sevilla.png']
+  ]);
   let allTeams = [];
   const teamMap = new Map();
 
@@ -111,7 +114,8 @@ export function createTeamSearchManager({
     item.setAttribute('aria-selected', 'false');
     item.dataset.teamId = team.id;
     item.id = `team-option-${side}-${team.id}`;
-    item.innerHTML = `<img src="${team.badge || placeholder}" loading="lazy" alt=""> <span>${highlightedName}</span>`;
+    const badgeSrc = searchPopupBadgeOverrides.get(team.id) || team.badge || placeholder;
+    item.innerHTML = `<img src="${badgeSrc}" loading="lazy" alt=""> <span>${highlightedName}</span>`;
     item.addEventListener('click', () => {
       setTeam(side, team.id);
       closeResultsPopup(resultsDiv, searchInput);

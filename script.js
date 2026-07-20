@@ -57,37 +57,15 @@ window.addEventListener('pageshow', ensureTopScrollPosition);
 const urlParams = new URLSearchParams(window.location.search);
 const GAME_ID = urlParams.get('id') || 'default';
 const STORAGE_KEY = `scoreboard_state_${GAME_ID}`;
+const STATE_KEY_PREFIX = 'scoreboard_state_';
 const PREFS_KEY = 'scoreboard_prefs'; // Global key for user preferences (Theme, Mode, etc.)
 const MOBILE_WARNING_DISMISSED_KEY = 'scoreboard_mobile_warning_dismissed';
-
-// Migrates legacy saved mode values to the current default across all game slots.
-function migrateLegacyModeInLocalStorage() {
-  const fallbackMode = INITIAL_STATE.mode;
-
-  const migrateKey = (key) => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== 'object') return;
-      if (parsed.mode !== 'worldcup') return;
-      localStorage.setItem(key, JSON.stringify({ ...parsed, mode: fallbackMode }));
-    } catch (e) {
-      // Ignore malformed entries and continue migrating remaining keys.
-    }
-  };
-
-  migrateKey(PREFS_KEY);
-
-  for (let i = 0; i < localStorage.length; i += 1) {
-    const key = localStorage.key(i);
-    if (!key || !key.startsWith('scoreboard_state_')) continue;
-    migrateKey(key);
-  }
-}
-
-migrateLegacyModeInLocalStorage();
-const Persistence = createPersistence({ storageKey: STORAGE_KEY, prefsKey: PREFS_KEY, initialState: INITIAL_STATE });
+const Persistence = createPersistence({
+  storageKey: STORAGE_KEY,
+  prefsKey: PREFS_KEY,
+  initialState: INITIAL_STATE,
+  stateKeyPrefix: STATE_KEY_PREFIX
+});
 
 let state = null;
 let ui = {}; // DOM Cache
@@ -212,6 +190,7 @@ function clearSelectedTeams({ clearOverrides = false } = {}) {
   if (clearOverrides) {
     updates.homeNameOverride = '';
     updates.awayNameOverride = '';
+    updates.tournamentTitleOverride = '';
   }
 
   setStateValues(updates);
@@ -322,6 +301,7 @@ function setupSubscriptions() {
   EventBus.on('theme', updateThemeUI);
   EventBus.on('mode', prepareTeamData);
   EventBus.on('mode', updateTeamsUI);
+  EventBus.on('tournamentTitleOverride', updateTeamsUI);
   EventBus.on('mode', updateThemeUI);
   EventBus.on('visibilityMode', updateThemeUI);
   EventBus.on('teamNamesVisible', updateTeamNamesVisibilityUI);
@@ -363,14 +343,14 @@ function cacheElements() {
     'home-clear-search-btn', 'away-clear-search-btn', 'home-name', 'away-name',
     'home-name-override', 'away-name-override',
     'home-team-search', 'away-team-search', 'theme-select', 'mode-select', 
-    'tournament-group-display', 'visibility-mode-select',
+    'tournament-group-display', 'tournament-title-override', 'visibility-mode-select',
     'fx-suggestion-icon', 'home-badge', 'home-badge-wrap',
     'mini-home-badge', 'away-badge', 'away-badge-wrap', 'mini-away-badge',
     'new-game-btn', 'home-logo-upload', 'away-logo-upload', 
     'set-clock-btn',
     'reset-clock-btn', 'toggle-clock-btn', 'clock-wrap',
     'reset-scores-btn', 'reset-teams-btn', 'reset-all-btn',
-    'toggle-team-names-btn', 'confirm-reset-all-btn', 'confirm-start-time-btn', 'clock-min', 'clock-sec',
+    'toggle-team-names-btn', 'clear-title-override-btn', 'confirm-reset-all-btn', 'confirm-start-time-btn', 'clock-min', 'clock-sec',
     'crop-modal', 'crop-preview-canvas', 'crop-zoom', 'crop-top', 'crop-right', 'crop-bottom', 'crop-left',
     'crop-zoom-value', 'crop-top-value', 'crop-right-value', 'crop-bottom-value', 'crop-left-value', 'crop-reset-btn',
     'confirm-crop-btn', 'close-crop-modal-btn', 
@@ -455,6 +435,14 @@ function setupListeners() {
     ui[`${side}ClearSearchBtn`]?.addEventListener('click', () => { searchInput.value = ''; debouncedSearch(side, ''); });
     ui[`${side}NameOverride`]?.addEventListener('input', (e) => overrideName(side, e.target.value));
     ui[`${side}LogoUpload`]?.addEventListener('change', (e) => handleLogoUpload(side, e.target));
+  });
+
+  ui.tournamentTitleOverride?.addEventListener('input', (e) => {
+    state.tournamentTitleOverride = e.target.value;
+  });
+  ui.clearTitleOverrideBtn?.addEventListener('click', () => {
+    state.tournamentTitleOverride = '';
+    ui.tournamentTitleOverride?.focus();
   });
 
   // Clock
@@ -592,13 +580,27 @@ function updateTeamsUI() {
   });
 
   if (ui.tournamentGroupDisplay) {
+    if (ui.tournamentTitleOverride) {
+      ui.tournamentTitleOverride.value = state.tournamentTitleOverride || '';
+    }
+
     let groupInfo = '';
-    if (state.mode === 'worldcup') {
-      const hGroup = state.homeTeam?.league;
-      const aGroup = state.awayTeam?.league;
+    const titleOverride = (state.tournamentTitleOverride || '').trim();
+
+    if (titleOverride) {
+      groupInfo = titleOverride;
+    } else {
+      const formatLeagueTitle = (label = '') => {
+        const separatorIndex = label.indexOf('- ');
+        return separatorIndex >= 0 ? label.slice(separatorIndex + 2).trim() : label;
+      };
+
+      const hGroup = formatLeagueTitle(state.homeTeam?.league || '');
+      const aGroup = formatLeagueTitle(state.awayTeam?.league || '');
       if (hGroup && aGroup) groupInfo = (hGroup === aGroup) ? hGroup : `${hGroup} / ${aGroup}`;
       else groupInfo = hGroup || aGroup || '';
     }
+
     const displayElement = ui.tournamentGroupDisplay;
     displayElement.textContent = groupInfo.toUpperCase();
     if (groupInfo) {

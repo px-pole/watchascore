@@ -250,7 +250,11 @@
     <!-- ADDITIONAL CONTROLS -->
     <div class="card">
       <div class="card-title">Additional Controls</div>
-      <button id="toggle-team-names-btn" class="btn btn-secondary btn-full" aria-pressed="false">
+      <div class="name-input-row title-override-row">
+        <input type="text" id="tournament-title-override" placeholder="Custom title override..." aria-label="Custom center title">
+        <button id="clear-title-override-btn" type="button" class="btn btn-secondary btn-small" aria-label="Clear title override">Clear</button>
+      </div>
+      <button id="toggle-team-names-btn" class="btn btn-secondary btn-full mt-2" aria-pressed="false">
         <i class="fa-solid fa-eye-slash"></i> Hide Team Names
       </button>
       <button id="reset-teams-btn" class="btn btn-danger btn-full mt-2">Reset Teams</button>

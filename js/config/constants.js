@@ -29,6 +29,7 @@ export const INITIAL_STATE = {
   awayNameOverride: '',
   mode: 'leagues',
   visibilityMode: 'none',
+  tournamentTitleOverride: '',
   startTime: null,
   clockVisible: true,
   teamNamesVisible: true

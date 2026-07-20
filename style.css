@@ -1088,6 +1088,15 @@ html.obs-source .controls-grid .card {
   text-transform: uppercase;
   margin-bottom: 6px;
 }
+.control-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
 .selector-inner {
   display: flex;
   align-items: center;
@@ -2112,6 +2121,10 @@ header .header-btn {
 }
 .name-input-row input {
   flex: 1;
+}
+.title-override-row .btn {
+  flex: 0 0 auto;
+  min-width: 56px;
 }
 
 footer {

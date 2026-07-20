@@ -1,4 +1,34 @@
-export function createPersistence({ storageKey, prefsKey, initialState }) {
+export function createPersistence({ storageKey, prefsKey, initialState, stateKeyPrefix = null }) {
+  // Migrates legacy mode values before normal load/save operations begin.
+  const migrateLegacyMode = () => {
+    const fallbackMode = initialState.mode;
+
+    const migrateKey = (key) => {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return;
+        if (parsed.mode !== 'worldcup') return;
+        localStorage.setItem(key, JSON.stringify({ ...parsed, mode: fallbackMode }));
+      } catch (e) {
+        // Ignore malformed entries and continue with remaining keys.
+      }
+    };
+
+    migrateKey(prefsKey);
+
+    if (!stateKeyPrefix) return;
+
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(stateKeyPrefix)) continue;
+      migrateKey(key);
+    }
+  };
+
+  migrateLegacyMode();
+
   return {
     // Saves the current state and compact preference data to localStorage.
     save(data) {

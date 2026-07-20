@@ -1,13 +1,4 @@
 export function createPersistence({ storageKey, prefsKey, initialState }) {
-  // Keeps old persisted defaults aligned with the current app default.
-  const normalizeMode = (data) => {
-    if (!data || typeof data !== 'object') return data;
-    if (data.mode === 'worldcup') {
-      return { ...data, mode: initialState.mode };
-    }
-    return data;
-  };
-
   return {
     // Saves the current state and compact preference data to localStorage.
     save(data) {
@@ -32,13 +23,10 @@ export function createPersistence({ storageKey, prefsKey, initialState }) {
 
       try {
         if (savedPrefs) {
-          prefs = normalizeMode(JSON.parse(savedPrefs));
-          localStorage.setItem(prefsKey, JSON.stringify(prefs));
+          prefs = JSON.parse(savedPrefs);
         }
         if (savedState) {
-          const loadedState = normalizeMode({ ...initialState, ...JSON.parse(savedState), running: false });
-          localStorage.setItem(storageKey, JSON.stringify(loadedState));
-          return loadedState;
+          return { ...initialState, ...JSON.parse(savedState), running: false };
         }
       } catch (e) {
         console.error('Persistence: Error parsing data', e);

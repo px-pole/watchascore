@@ -59,6 +59,34 @@ const GAME_ID = urlParams.get('id') || 'default';
 const STORAGE_KEY = `scoreboard_state_${GAME_ID}`;
 const PREFS_KEY = 'scoreboard_prefs'; // Global key for user preferences (Theme, Mode, etc.)
 const MOBILE_WARNING_DISMISSED_KEY = 'scoreboard_mobile_warning_dismissed';
+
+// Migrates legacy saved mode values to the current default across all game slots.
+function migrateLegacyModeInLocalStorage() {
+  const fallbackMode = INITIAL_STATE.mode;
+
+  const migrateKey = (key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return;
+      if (parsed.mode !== 'worldcup') return;
+      localStorage.setItem(key, JSON.stringify({ ...parsed, mode: fallbackMode }));
+    } catch (e) {
+      // Ignore malformed entries and continue migrating remaining keys.
+    }
+  };
+
+  migrateKey(PREFS_KEY);
+
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith('scoreboard_state_')) continue;
+    migrateKey(key);
+  }
+}
+
+migrateLegacyModeInLocalStorage();
 const Persistence = createPersistence({ storageKey: STORAGE_KEY, prefsKey: PREFS_KEY, initialState: INITIAL_STATE });
 
 let state = null;

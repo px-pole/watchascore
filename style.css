@@ -905,7 +905,7 @@ html.obs-source .controls-grid .card {
   top: -6px;
 }
 
-.scoreboard-wrap:not(:has(.clock-wrap.is-hidden)) .group-name-display {
+.scoreboard-wrap .group-name-display {
   position: absolute;
   top: 16px;
   left: 0;
@@ -941,17 +941,7 @@ html.obs-source .controls-grid .card {
 }
 
 .scoreboard-wrap:not(.team-names-hidden):has(.clock-wrap.is-hidden) .score-center {
-  position: relative;
-}
-
-.scoreboard-wrap:not(.team-names-hidden):has(.clock-wrap.is-hidden) .group-name-display {
-  position: absolute;
-  top: -28px;
-  left: 0;
-  right: 0;
-  width: auto;
-  height: auto;
-  text-align: center;
+  min-height: 120px;
 }
 
 .scoreboard-wrap:has(.clock-wrap.is-hidden) .scoreboard-frame {
@@ -1237,9 +1227,6 @@ html.obs-source .controls-grid .card {
   color: var(--text-muted);
   background: var(--bg-search-header);
   font-weight: 700;
-  position: sticky;
-  top: 0;
-  z-index: 2;
 }
 .search-results-header.collapsible {
   cursor: pointer;
@@ -2653,10 +2640,6 @@ html.obs-source #preloader {
   .clock-wrap .clock-status {
     font-size: 10px;
     letter-spacing: 1px;
-  }
-
-  .scoreboard-wrap:not(.team-names-hidden):has(.clock-wrap.is-hidden) .group-name-display {
-    top: -14px;
   }
 
   .btn-row {

@@ -203,7 +203,16 @@ export function createTeamSearchManager({
       teamContainer.id = containerId;
       const toggleLeague = (e) => {
         e.stopPropagation();
-        const isOpen = teamContainer.classList.toggle('active');
+        const wasOpen = teamContainer.classList.contains('active');
+        resultsDiv.querySelectorAll('.league-items-container.active').forEach((container) => {
+          container.classList.remove('active');
+        });
+        resultsDiv.querySelectorAll('.search-results-header.collapsible[aria-expanded="true"]').forEach((openHeader) => {
+          openHeader.setAttribute('aria-expanded', 'false');
+        });
+
+        const isOpen = !wasOpen;
+        if (isOpen) teamContainer.classList.add('active');
         header.setAttribute('aria-expanded', isOpen);
       };
       header.addEventListener('click', toggleLeague);

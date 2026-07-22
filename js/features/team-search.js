@@ -72,9 +72,8 @@ export function createTeamSearchManager({
   }
 
   // Stores the selected team and clears focus from the active element.
-  function setTeam(side, id) {
-    const t = getTeam(id);
-    setSelectedTeam(side, t || null);
+  function setTeam(side, team) {
+    setSelectedTeam(side, team || null);
     if (document.activeElement && typeof document.activeElement.blur === 'function') {
       document.activeElement.blur();
     }
@@ -117,7 +116,7 @@ export function createTeamSearchManager({
     const badgeSrc = searchPopupBadgeOverrides.get(team.id) || team.badge || placeholder;
     item.innerHTML = `<img src="${badgeSrc}" loading="lazy" alt=""> <span>${highlightedName}</span>`;
     item.addEventListener('click', () => {
-      setTeam(side, team.id);
+      setTeam(side, team);
       closeResultsPopup(resultsDiv, searchInput);
       searchInput.value = '';
     });

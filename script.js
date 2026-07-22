@@ -252,7 +252,6 @@ const {
   prepareTeamData,
   handleSearchKeyboard,
   debouncedSearch,
-  getTeam,
   repositionActivePopups,
   closeAllSearchPopups
 } = teamSearchManager;
@@ -573,8 +572,7 @@ function updateTeamsUI() {
 
     let badgeSrc = PLACEHOLDER;
     if (team) {
-      const freshTeamData = getTeam(team.id);
-      badgeSrc = (team.badge?.startsWith('data:')) ? team.badge : (freshTeamData?.badge || PLACEHOLDER);
+      badgeSrc = team.badge?.startsWith('data:') ? team.badge : (team.badge || PLACEHOLDER);
     }
     setBadge(side, badgeSrc);
   });

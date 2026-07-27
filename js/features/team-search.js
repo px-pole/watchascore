@@ -10,7 +10,7 @@ export function createTeamSearchManager({
 }) {
   const searchVisibleItemLimit = 10;
   const searchPopupBadgeOverrides = new Map([
-    ['sevilla', 'assets/badges/Spain-LaLiga/sevilla.png']
+    ['Sevilla-FC', 'assets/badges/Spain-La-Liga/Sevilla-FC.png']
   ]);
   let allTeams = [];
   const teamMap = new Map();

@@ -41,6 +41,38 @@ export function isEditableShortcutTarget(target) {
   return Boolean(target.closest('input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]'));
 }
 
+// Prevents scroll events in a popup from chaining to the page.
+export function preventPopupScrollChaining(popup) {
+  if (!popup) return;
+
+  let lastTouchY = 0;
+
+  const isScrollable = () => popup.scrollHeight > popup.clientHeight;
+  const atTop = () => popup.scrollTop <= 0;
+  const atBottom = () => popup.scrollTop + popup.clientHeight >= popup.scrollHeight - 1;
+
+  const shouldBlock = (deltaY) => {
+    if (!isScrollable()) return false;
+    return (deltaY < 0 && atTop()) || (deltaY > 0 && atBottom());
+  };
+
+  popup.addEventListener('wheel', (e) => {
+    if (shouldBlock(e.deltaY)) e.preventDefault();
+  }, { passive: false });
+
+  popup.addEventListener('touchstart', (e) => {
+    if (e.touches.length > 0) lastTouchY = e.touches[0].clientY;
+  }, { passive: true });
+
+  popup.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 0) return;
+    const currentTouchY = e.touches[0].clientY;
+    const deltaY = lastTouchY - currentTouchY;
+    lastTouchY = currentTouchY;
+    if (shouldBlock(deltaY)) e.preventDefault();
+  }, { passive: false });
+}
+
 // Normalizes keyboard events to the app's supported shortcut keys.
 export function getShortcutKey(e) {
   switch (e.code) {

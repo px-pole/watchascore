@@ -330,7 +330,6 @@ export function createTeamSearchManager({
     handleSearchKeyboard,
     debouncedSearch,
     getTeam,
-    setTeam,
     repositionActivePopups,
     closeAllSearchPopups
   };

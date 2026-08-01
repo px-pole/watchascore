@@ -1761,9 +1761,16 @@ select optgroup {
 }
 
 header #theme-select,
+header #visibility-mode-select,
 header .header-btn {
   min-width: 120px;
   width: 120px;
+}
+
+header .custom-select.theme-select {
+  width: 120px !important;
+  min-width: 120px !important;
+  flex-shrink: 0;
 }
 
 header .header-btn {
@@ -1787,6 +1794,87 @@ header .header-btn {
   text-shadow: 0 0 8px rgba(var(--warning-rgb), 0.6);
   z-index: 20;
   display: none;
+}
+
+/* ─── CUSTOM SELECT ─── */
+.custom-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+
+.custom-select:focus-visible {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px var(--focus-shadow);
+}
+
+.custom-select-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-arrow {
+  font-size: 10px;
+  opacity: 0.65;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.custom-select[aria-expanded="true"] .custom-select-arrow {
+  transform: rotate(180deg);
+}
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 100%;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 4px;
+  z-index: 200;
+  list-style: none;
+  margin: 0;
+  display: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+.custom-select[aria-expanded="true"] .custom-select-menu {
+  display: block;
+}
+
+.custom-select-option {
+  padding: 7px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  list-style: none;
+}
+
+.custom-select-option:hover,
+.custom-select-option.focused {
+  background: var(--secondary-btn-hover-bg);
+}
+
+.custom-select-option[aria-selected="true"] {
+  color: var(--primary-color);
 }
 
 /* ─── SCORE CONTROLS ─── */
@@ -1881,7 +1969,8 @@ header .header-btn {
 .btn-green:hover {
   background: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.25);
 }
-.btn-plus {
+.btn-plus,
+.btn-minus {
   font-size: 18px;
   padding: 6px 12px;
 }
@@ -1895,10 +1984,7 @@ header .header-btn {
 .btn-danger:hover {
   background: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.22);
 }
-.btn-minus {
-  font-size: 18px;
-  padding: 6px 12px;
-}
+
 .btn-primary {
   background: var(--primary-color);
   color: var(--text-on-primary);
@@ -2510,6 +2596,7 @@ html.obs-source #preloader {
     pointer-events: auto;
     transform: translateY(0);
     padding-top: 2px;
+    overflow: visible;
   }
 
   .settings-control-wrapper {

@@ -44,12 +44,15 @@
   <!-- HEADER -->
   <header>
     <div class="header-side-left">
-      <h1>Watcha<span>Score</span></h1>
-      <!--
-      <select id="mode-select" class="theme-select">
-        <option value="leagues">Club Leagues</option>
-        <option value="worldcup">World Cup 2026</option>
-      </select> -->
+      <h1>Watcha<span>Score</span></h1>     
+      <!-- <div class="custom-select theme-select" id="mode-select" data-value="leagues" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-label="Mode" tabindex="0">
+        <span class="custom-select-label">Club Leagues</span>
+        <i class="fa-solid fa-chevron-down custom-select-arrow" aria-hidden="true"></i>
+        <ul class="custom-select-menu" role="listbox" aria-label="Mode">
+          <li class="custom-select-option" role="option" data-value="leagues" aria-selected="true">Club Leagues</li>
+          <li class="custom-select-option" role="option" data-value="uefa">UEFA</li>
+        </ul>
+      </div> -->
     </div>
 
     <button
@@ -67,22 +70,28 @@
 
     <div class="header-side-right" id="header-controls">
       <div class="settings-control-wrapper">
-        <select id="visibility-mode-select" class="theme-select">
-          <option disabled>— Visibility FX —</option>
-          <option value="none" selected>No FX</option>
-          <option value="glow">Glow FX</option>
-          <option value="contrast">High Contrast</option>
-        </select>
+        <div class="custom-select theme-select" id="visibility-mode-select" data-value="none" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-label="Visibility FX" tabindex="0">
+          <span class="custom-select-label">No FX</span>
+          <i class="fa-solid fa-chevron-down custom-select-arrow" aria-hidden="true"></i>
+          <ul class="custom-select-menu" role="listbox" aria-label="Visibility FX">
+            <li class="custom-select-option" role="option" data-value="none" aria-selected="true">No FX</li>
+            <li class="custom-select-option" role="option" data-value="glow">Glow FX</li>
+            <li class="custom-select-option" role="option" data-value="contrast">High Contrast</li>
+          </ul>
+        </div>
         <i class="fa-solid fa-circle-exclamation fx-indicator" id="fx-suggestion-icon" title="Visibility FX suggested for current badges"></i>
       </div>
-      <select id="theme-select" class="theme-select">
-        <option disabled>— Theme —</option>
-        <option value="default">Sky Blue</option>
-        <option value="light">Light</option>
-        <option value="midnight">Midnight</option>
-        <option value="crimson">Crimson</option>
-        <option value="forest">Forest</option>
-      </select>
+      <div class="custom-select theme-select" id="theme-select" data-value="default" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-label="Theme" tabindex="0">
+        <span class="custom-select-label">Sky Blue</span>
+        <i class="fa-solid fa-chevron-down custom-select-arrow" aria-hidden="true"></i>
+        <ul class="custom-select-menu" role="listbox" aria-label="Theme">
+          <li class="custom-select-option" role="option" data-value="default" aria-selected="true">Sky Blue</li>
+          <li class="custom-select-option" role="option" data-value="light">Light</li>
+          <li class="custom-select-option" role="option" data-value="midnight">Midnight</li>
+          <li class="custom-select-option" role="option" data-value="crimson">Crimson</li>
+          <li class="custom-select-option" role="option" data-value="forest">Forest</li>
+        </ul>
+      </div>
       <button id="new-game-btn" class="btn btn-primary header-btn" title="Open a new independent game instance">
         <i class="fa-solid fa-plus"></i> New Game
       </button>

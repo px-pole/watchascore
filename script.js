@@ -18,7 +18,8 @@ import {
   levenshteinDistance,
   debounce,
   isEditableShortcutTarget,
-  getShortcutKey
+  getShortcutKey,
+  preventPopupScrollChaining
 } from './js/utils/helpers.js';
 import { createTeamSearchManager } from './js/features/team-search.js';
 import { createGameClockManager } from './js/features/game-clock.js';
@@ -236,7 +237,6 @@ const gameClockManager = createGameClockManager({
 });
 
 const mediaManager = createMediaManager({
-  getState,
   getUi,
   placeholder: PLACEHOLDER,
   allowedLogoTypes: ALLOWED_LOGO_TYPES,
@@ -378,9 +378,7 @@ function cacheElements() {
 // Wires the UI controls to their corresponding state and action handlers.
 function setupListeners() {
   // Theme, Mode, FX
-  ui.themeSelect?.addEventListener('change', (e) => setTheme(e.target.value));
-  // ui.modeSelect?.addEventListener('change', (e) => changeMode(e.target.value));
-  ui.visibilityModeSelect?.addEventListener('change', (e) => setVisibilityMode(e.target.value));
+  document.querySelectorAll('.custom-select').forEach(sel => setupCustomSelect(sel));
   
   // OBS and Utils
   ui.newGameBtn?.addEventListener('click', () => {
@@ -459,7 +457,7 @@ function setupListeners() {
     input.addEventListener('keydown', (e) => {
       if (['e', 'E', '-', '+', '.'].includes(e.key)) e.preventDefault();
       if (e.key === 'Enter') {
-        if (input.id === 'clock-min' || input.id === 'clock-sec') setClock();
+        setClock();
         input.blur();
       }
     });
@@ -488,38 +486,6 @@ function setupListeners() {
     });
   });
 
-}
-
-// Stops wheel/touch scroll chaining from an open popup into the page.
-function preventPopupScrollChaining(popup) {
-  if (!popup) return;
-
-  let lastTouchY = 0;
-
-  const isScrollable = () => popup.scrollHeight > popup.clientHeight;
-  const atTop = () => popup.scrollTop <= 0;
-  const atBottom = () => popup.scrollTop + popup.clientHeight >= popup.scrollHeight - 1;
-
-  const shouldBlock = (deltaY) => {
-    if (!isScrollable()) return false;
-    return (deltaY < 0 && atTop()) || (deltaY > 0 && atBottom());
-  };
-
-  popup.addEventListener('wheel', (e) => {
-    if (shouldBlock(e.deltaY)) e.preventDefault();
-  }, { passive: false });
-
-  popup.addEventListener('touchstart', (e) => {
-    if (e.touches.length > 0) lastTouchY = e.touches[0].clientY;
-  }, { passive: true });
-
-  popup.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 0) return;
-    const currentTouchY = e.touches[0].clientY;
-    const deltaY = lastTouchY - currentTouchY;
-    lastTouchY = currentTouchY;
-    if (shouldBlock(deltaY)) e.preventDefault();
-  }, { passive: false });
 }
 
 // UI synchronization and rendering.
@@ -603,11 +569,7 @@ function updateTeamsUI() {
 
     const displayElement = ui.tournamentGroupDisplay;
     displayElement.textContent = groupInfo.toUpperCase();
-    if (groupInfo) {
-      displayElement.style.opacity = '1';
-    } else {
-      displayElement.style.opacity = '0';
-    }
+    displayElement.style.opacity = groupInfo ? '1' : '0';
   }
 }
 
@@ -635,7 +597,7 @@ function renderStatusUI(s) {
   if (s === 'NOT STARTED' && state.startTime) {
     label = `KICK OFF ${state.startTime}`;
   }
-  ui.clockStatusText.textContent = label;
+  if (ui.clockStatusText) ui.clockStatusText.textContent = label;
   ui.statusBtns.forEach(b => {
     const isActive = b.dataset.status === s;
     b.classList.toggle('active', isActive);
@@ -645,11 +607,11 @@ function renderStatusUI(s) {
 
 // Applies theme, mode, and visibility classes to the document root.
 function updateThemeUI() {
-  if (ui.themeSelect) ui.themeSelect.value = state.theme;
-  if (ui.modeSelect) ui.modeSelect.value = state.mode;
-  
+  syncCustomSelect(ui.themeSelect, state.theme);
+  syncCustomSelect(ui.modeSelect, state.mode);
+
   const visMode = state.visibilityMode || 'none';
-  if (ui.visibilityModeSelect) ui.visibilityModeSelect.value = visMode;
+  syncCustomSelect(ui.visibilityModeSelect, visMode);
   
   document.documentElement.classList.remove('visibility-none', 'visibility-glow', 'visibility-contrast');
   document.documentElement.classList.add(`visibility-${visMode}`);
@@ -827,20 +789,15 @@ function toggleHelpPanel() {
   setHelpPanel(!isHelpPanelOpen());
 }
 
-// Checks whether the header is in its mobile layout breakpoint.
+// Checks whether the app is in its mobile layout breakpoint.
 function isMobileHeaderViewport() {
-  return window.matchMedia('(max-width: 820px)').matches;
-}
-
-// Checks whether the app is currently in a phone-sized viewport.
-function isMobileViewport() {
   return window.matchMedia('(max-width: 820px)').matches;
 }
 
 // Returns whether the desktop warning should be shown on this device.
 function shouldShowMobileWarning() {
   if (isObsSourceContext()) return false;
-  if (!isMobileViewport()) return false;
+  if (!isMobileHeaderViewport()) return false;
   return localStorage.getItem(MOBILE_WARNING_DISMISSED_KEY) !== '1';
 }
 
@@ -969,6 +926,85 @@ function confirmResetAll() {
   saveState();
 }
 
+// Custom select dropdown helpers.
+
+function setupCustomSelect(sel) {
+  sel.addEventListener('click', (e) => {
+    const option = e.target.closest('.custom-select-option');
+    if (option) { applyCustomSelectOption(sel, option.dataset.value); return; }
+    if (!e.target.closest('.custom-select-menu')) {
+      const isOpen = sel.getAttribute('aria-expanded') === 'true';
+      closeAllCustomSelects();
+      if (!isOpen) openCustomSelect(sel);
+    }
+  });
+
+  sel.addEventListener('keydown', (e) => {
+    const isOpen = sel.getAttribute('aria-expanded') === 'true';
+    const options = [...sel.querySelectorAll('.custom-select-option')];
+    if (!options.length) return;
+    const focusedIdx = options.findIndex(o => o.classList.contains('focused'));
+
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (!isOpen) { openCustomSelect(sel); return; }
+      if (focusedIdx >= 0) applyCustomSelectOption(sel, options[focusedIdx].dataset.value);
+    } else if (e.key === 'Escape') {
+      closeAllCustomSelects();
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!isOpen) { openCustomSelect(sel); return; }
+      const next = e.key === 'ArrowDown'
+        ? (focusedIdx < options.length - 1 ? focusedIdx + 1 : 0)
+        : (focusedIdx > 0 ? focusedIdx - 1 : options.length - 1);
+      options.forEach(o => o.classList.remove('focused'));
+      options[next].classList.add('focused');
+    }
+  });
+}
+
+function openCustomSelect(sel) {
+  sel.setAttribute('aria-expanded', 'true');
+  sel.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('focused'));
+  const selected = sel.querySelector('[aria-selected="true"]');
+  if (selected) selected.classList.add('focused');
+}
+
+function closeAllCustomSelects() {
+  document.querySelectorAll('.custom-select[aria-expanded="true"]').forEach(s => {
+    s.setAttribute('aria-expanded', 'false');
+    s.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('focused'));
+  });
+}
+
+function applyCustomSelectOption(sel, value) {
+  const option = [...sel.querySelectorAll('.custom-select-option')].find(o => o.dataset.value === value);
+  if (!option) return;
+  sel.querySelectorAll('.custom-select-option').forEach(o => {
+    o.setAttribute('aria-selected', 'false');
+    o.classList.remove('focused');
+  });
+  option.setAttribute('aria-selected', 'true');
+  const label = sel.querySelector('.custom-select-label');
+  if (label) label.textContent = option.textContent.trim();
+  sel.dataset.value = value;
+  sel.setAttribute('aria-expanded', 'false');
+  if (sel.id === 'theme-select') setTheme(value);
+  else if (sel.id === 'visibility-mode-select') setVisibilityMode(value);
+  else if (sel.id === 'mode-select') changeMode(value);
+}
+
+function syncCustomSelect(sel, value) {
+  if (!sel) return;
+  const option = [...sel.querySelectorAll('.custom-select-option')].find(o => o.dataset.value === value);
+  if (!option) return;
+  sel.querySelectorAll('.custom-select-option').forEach(o => o.setAttribute('aria-selected', 'false'));
+  option.setAttribute('aria-selected', 'true');
+  const label = sel.querySelector('.custom-select-label');
+  if (label) label.textContent = option.textContent.trim();
+  sel.dataset.value = value;
+}
+
 // Global document and window handlers.
 
 document.addEventListener('click', (e) => {
@@ -978,6 +1014,8 @@ document.addEventListener('click', (e) => {
       setHeaderMenu(false);
     }
   }
+
+  if (!e.target.closest('.custom-select')) closeAllCustomSelects();
 
   if (!e.target.closest('.search-container')) {
     closeAllSearchPopups();

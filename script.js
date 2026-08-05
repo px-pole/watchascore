@@ -1,6 +1,6 @@
 import {
-  PLACEHOLDER,
   STATUS_LABELS,
+  PLACEHOLDER,
   THEMES,
   SEARCH_RESULT_CAP,
   SEARCH_DEBOUNCE_MS,
@@ -11,7 +11,16 @@ import {
   INITIAL_STATE
 } from './js/config/constants.js';
 import { createEventBus } from './js/core/event-bus.js';
+import {
+  syncCustomSelectValue,
+  setupCustomSelect,
+  closeAllCustomSelects
+} from './js/core/custom-select.js';
+import { createObsSourceManager } from './js/core/obs-source.js';
+import { createModalStateManager } from './js/core/modal-state.js';
 import { createPersistence } from './js/core/persistence.js';
+import { createShellUiManager } from './js/core/shell-ui.js';
+import { createStateBatchManager } from './js/core/state-batch.js';
 import {
   pad,
   capitalize,
@@ -24,34 +33,22 @@ import {
 import { createTeamSearchManager } from './js/features/team-search.js';
 import { createGameClockManager } from './js/features/game-clock.js';
 import { createMediaManager } from './js/features/media.js';
+import { createScoreboardUiManager } from './js/features/scoreboard-ui.js';
 import { createTeamNamesManager } from './js/features/team-names.js';
+import {
+  buildPenaltyMarkSlots,
+  getPenaltyScore,
+  buildPenaltyAttemptUpdate,
+  buildUndoPenaltyUpdate,
+  buildUndoLastPenaltyUpdate
+} from './js/features/penalties.js';
+import { createNotificationManager } from './js/core/notifications.js';
 import { TOURNAMENTS } from './teams.js';
 
 // Force top-of-page start on reload instead of browser-restored scroll position.
 if ('scrollRestoration' in history) {
   history.scrollRestoration = 'manual';
 }
-
-// Scrolls the viewport back to the top.
-const ensureTopScrollPosition = () => {
-  window.scrollTo(0, 0);
-};
-
-// Re-applies the top scroll position after late layout shifts.
-const ensureTopScrollPositionWithFallback = () => {
-  ensureTopScrollPosition();
-
-  // Handle late layout shifts (fonts/images/transitions) after load.
-  requestAnimationFrame(() => {
-    ensureTopScrollPosition();
-    requestAnimationFrame(ensureTopScrollPosition);
-  });
-
-  setTimeout(ensureTopScrollPosition, 120);
-};
-
-document.addEventListener('DOMContentLoaded', ensureTopScrollPosition);
-window.addEventListener('pageshow', ensureTopScrollPosition);
 
 // App-level state, storage keys, and reactive state proxy.
 
@@ -70,110 +67,53 @@ const Persistence = createPersistence({
 
 let state = null;
 let ui = {}; // DOM Cache
-let modalTriggerElement = null; // Element that had focus before opening a modal
-let activeModalCleanup = null;
-let obsHoleResizeObserver = null;
-let obsHoleRafId = 0;
 let themeTransitionResetTimer = 0;
 
 const THEME_CHANGE_TRANSITION_MS = 300;
+
+const modalStateManager = createModalStateManager();
+const getUi = () => ui;
+const obsSourceManager = createObsSourceManager({ getUi, urlParams });
+obsSourceManager.bindTopScrollHandlers();
+const shellUiManager = createShellUiManager({
+  getUi,
+  helpFabSeenKey: HELP_FAB_SEEN_KEY
+});
+
+const stateBatchManager = createStateBatchManager({
+  save: (snapshot) => Persistence.save(snapshot),
+  emit: (prop, value) => EventBus.emit(prop, value)
+});
 
 const stateHandler = {
   set(target, prop, value) {
     if (target[prop] === value) return true;
     target[prop] = value;
-    Persistence.save(target);
-    EventBus.emit(prop, value);
+
+    stateBatchManager.recordChange(target, prop, value);
     return true;
   }
 };
 
 // Wraps the initial state object in a persistence-aware proxy.
 const createState = (initialData) => new Proxy(initialData, stateHandler);
-// Persists the current state snapshot.
-const saveState = () => Persistence.save(state);
 
-// Detects whether the app is running inside an OBS browser source.
-function isObsSourceContext() {
-  const obsParam = (urlParams.get('obs') || '').toLowerCase();
-  if (obsParam === '1' || obsParam === 'true') return true;
-  if (obsParam === '0' || obsParam === 'false') return false;
-  return /\bOBS\b|\bobs-browser\b/i.test(navigator.userAgent || '');
-}
-
-// Toggles the OBS-specific root class based on the current context.
-function syncObsSourceModeClass() {
-  document.documentElement.classList.toggle('obs-source', isObsSourceContext());
-}
-
-// Updates CSS custom properties used to punch a hole in the OBS background.
-function updateObsBackgroundHoleVars() {
-  if (!document.documentElement.classList.contains('obs-source')) return;
-  const scoreboardWrap = document.querySelector('.scoreboard-wrap');
-  if (!scoreboardWrap) return;
-
-  const rect = scoreboardWrap.getBoundingClientRect();
-  const left = Math.max(0, Math.round(rect.left));
-  const top = Math.max(0, Math.round(rect.top));
-  const width = Math.max(0, Math.round(rect.width));
-  const height = Math.max(0, Math.round(rect.height));
-  const root = document.documentElement;
-
-  root.style.setProperty('--obs-hole-left', `${left}px`);
-  root.style.setProperty('--obs-hole-top', `${top}px`);
-  root.style.setProperty('--obs-hole-width', `${width}px`);
-  root.style.setProperty('--obs-hole-height', `${height}px`);
-}
-
-// Schedules a single animation-frame refresh for the OBS hole geometry.
-function scheduleObsBackgroundHoleSync() {
-  if (!document.documentElement.classList.contains('obs-source')) return;
-  if (obsHoleRafId) cancelAnimationFrame(obsHoleRafId);
-  obsHoleRafId = requestAnimationFrame(() => {
-    obsHoleRafId = 0;
-    updateObsBackgroundHoleVars();
-  });
-}
-
-// Sets up resize and scroll tracking for the OBS background cutout.
-function setupObsBackgroundHoleSync() {
-  if (!isObsSourceContext()) return;
-  const scoreboardWrap = document.querySelector('.scoreboard-wrap');
-  if (!scoreboardWrap) return;
-
-  if ('ResizeObserver' in window) {
-    obsHoleResizeObserver?.disconnect();
-    obsHoleResizeObserver = new ResizeObserver(() => scheduleObsBackgroundHoleSync());
-    obsHoleResizeObserver.observe(scoreboardWrap);
-  }
-
-  window.addEventListener('scroll', scheduleObsBackgroundHoleSync, { passive: true });
-  scheduleObsBackgroundHoleSync();
-}
-
-// Marks the app as loaded and optionally skips the entrance animation.
-function finalizeLoadedState({ instant = false } = {}) {
-  document.body.classList.add('content-loaded');
-  if (instant) {
-    document.body.classList.add('entrance-finished');
+// Runs a DOM update inside a view transition when the API is available.
+function runWithViewTransition(update) {
+  if (document.startViewTransition) {
+    document.startViewTransition(update);
     return;
   }
-  setTimeout(() => document.body.classList.add('entrance-finished'), 1500);
+  update();
 }
 
-// Removes the preloader immediately when the app is running in OBS.
-function bypassPreloaderForObs() {
-  if (!isObsSourceContext()) return;
-  const preloader = document.getElementById('preloader');
-  if (preloader) preloader.remove();
-  finalizeLoadedState({ instant: true });
-}
-
-// Applies multiple state updates without triggering separate call sites.
+// Applies multiple state updates while persisting once and emitting once per changed key.
 function setStateValues(updates) {
-  Object.entries(updates).forEach(([key, value]) => {
-    state[key] = value;
-  });
+  stateBatchManager.applyBatch(() => {
+    Object.entries(updates).forEach(([key, value]) => {
+      state[key] = value;
+    });
+  }, state);
 }
 
 // Stores the selected team object for one side.
@@ -214,7 +154,7 @@ function applyTeamBadge(side, badge) {
 
 const EventBus = createEventBus();
 const getState = () => state;
-const getUi = () => ui;
+const notifications = createNotificationManager();
 
 const teamSearchManager = createTeamSearchManager({
   getState,
@@ -266,13 +206,31 @@ const {
 } = mediaManager;
 const teamNamesManager = createTeamNamesManager({ getState, getUi, capitalize });
 const {
-  fitTeamName,
   syncTeamNameDisplay,
   updateTeamNamesVisibilityUI,
   toggleTeamNamesVisibility,
   overrideName,
   refitTeamNames
 } = teamNamesManager;
+
+const scoreboardUiManager = createScoreboardUiManager({
+  getState,
+  getUi,
+  capitalize,
+  placeholder: PLACEHOLDER,
+  themes: THEMES,
+  statusLabels: STATUS_LABELS,
+  syncCustomSelectValue,
+  getTeam,
+  setBadge,
+  syncTeamNameDisplay,
+  getPenaltyScore,
+  buildPenaltyMarkSlots,
+  renderClock,
+  runWithViewTransition,
+  updateTeamNamesVisibilityUI,
+  scheduleObsBackgroundHoleSync: () => obsSourceManager.scheduleObsBackgroundHoleSync()
+});
 
 // App initialization and DOM bindings.
 
@@ -281,12 +239,13 @@ function setupSubscriptions() {
   // Scores
   EventBus.on('homeScore', (val) => updateScoreUI('home', val));
   EventBus.on('awayScore', (val) => updateScoreUI('away', val));
+  EventBus.on('penaltyMode', updatePenaltyUI);
+  EventBus.on('homePenalties', updatePenaltyUI);
+  EventBus.on('awayPenalties', updatePenaltyUI);
 
   // Teams & Names
   EventBus.on('homeTeam', updateTeamsUI);
-  EventBus.on('homeTeam', checkWrapperState);
   EventBus.on('awayTeam', updateTeamsUI);
-  EventBus.on('awayTeam', checkWrapperState);
   EventBus.on('homeNameOverride', updateTeamsUI);
   EventBus.on('awayNameOverride', updateTeamsUI);
 
@@ -305,16 +264,18 @@ function setupSubscriptions() {
   EventBus.on('mode', updateThemeUI);
   EventBus.on('visibilityMode', updateThemeUI);
   EventBus.on('teamNamesVisible', updateTeamNamesVisibilityUI);
+  EventBus.on('teamNamesVisible', updatePenaltyUI);
 }
 
 // Boots the app from persisted data and performs the initial render.
 function init() {
   const rawData = Persistence.load();
   if (typeof rawData.teamNamesVisible !== 'boolean') rawData.teamNamesVisible = true;
+  if (!Array.isArray(rawData.penaltyHistory)) rawData.penaltyHistory = [];
   if (rawData.theme !== 'default' && !THEMES.includes(rawData.theme)) rawData.theme = 'default';
 
-  syncObsSourceModeClass();
-  bypassPreloaderForObs();
+  obsSourceManager.syncObsSourceModeClass();
+  obsSourceManager.bypassPreloaderForObs();
 
   // Initialize Subscriptions before the Proxy starts emitting
   setupSubscriptions();
@@ -323,7 +284,7 @@ function init() {
   state = createState(rawData);
 
   cacheElements();
-  setupObsBackgroundHoleSync();
+  obsSourceManager.setupObsBackgroundHoleSync();
   prepareTeamData();
   syncUI(); // Initial full render
 
@@ -333,10 +294,18 @@ function init() {
 
 // Resolves and caches DOM nodes used across the app.
 function cacheElements() {
+  ui.header = document.querySelector('header');
+  ui.wrapper = document.querySelector('.wrapper');
+  ui.scoreboardWrap = document.querySelector('.scoreboard-wrap');
+  ui.scoreboardFrame = document.querySelector('.scoreboard-frame');
+  ui.scoreCenter = document.querySelector('.score-center');
+  ui.scoreDisplay = document.querySelector('.score-display');
   ui.scoreHome = document.getElementById('score-home');
   ui.scoreAway = document.getElementById('score-away');
   ui.ctrlHomeScore = document.getElementById('ctrl-home-score');
   ui.ctrlAwayScore = document.getElementById('ctrl-away-score');
+  ui.normalScoreControls = document.querySelector('.score-controls');
+  ui.penaltyControls = document.querySelector('.penalty-controls');
 
   const ids = [
     'clock-display', 'clock-status-text', 'start-btn',
@@ -349,8 +318,12 @@ function cacheElements() {
     'new-game-btn', 'home-logo-upload', 'away-logo-upload', 
     'set-clock-btn',
     'reset-clock-btn', 'toggle-clock-btn', 'clock-wrap',
+    'toggle-penalty-mode-btn', 'penalty-home-score', 'penalty-away-score', 'penalty-home-score-wrap', 'penalty-away-score-wrap',
+    'undo-last-penalty-btn',
+    'ctrl-home-penalty-score', 'ctrl-away-penalty-score', 'penalty-tracker', 'penalty-home-marks', 'penalty-away-marks',
     'reset-scores-btn', 'reset-teams-btn', 'reset-all-btn',
     'toggle-team-names-btn', 'clear-title-override-btn', 'confirm-reset-all-btn', 'confirm-start-time-btn', 'clock-min', 'clock-sec',
+    'modal-overlay', 'start-time-modal', 'start-time-input',
     'crop-modal', 'crop-preview-canvas', 'crop-zoom', 'crop-top', 'crop-right', 'crop-bottom', 'crop-left',
     'crop-zoom-value', 'crop-top-value', 'crop-right-value', 'crop-bottom-value', 'crop-left-value', 'crop-reset-btn',
     'confirm-crop-btn', 'close-crop-modal-btn', 
@@ -378,7 +351,9 @@ function cacheElements() {
 // Wires the UI controls to their corresponding state and action handlers.
 function setupListeners() {
   // Theme, Mode, FX
-  document.querySelectorAll('.custom-select').forEach(sel => setupCustomSelect(sel));
+  document.querySelectorAll('.custom-select').forEach((sel) => {
+    setupCustomSelect(sel, { onSelect: handleCustomSelectSelection });
+  });
   
   // OBS and Utils
   ui.newGameBtn?.addEventListener('click', () => {
@@ -411,7 +386,29 @@ function setupListeners() {
   ui.cropResetBtn?.addEventListener('click', resetCropControls);
 
   document.querySelectorAll('.btn-plus, .btn-minus').forEach(btn => {
-    btn.addEventListener('click', () => changeScore(btn.dataset.side, parseInt(btn.dataset.delta)));
+    btn.addEventListener('click', () => {
+      const delta = Number.parseInt(btn.dataset.delta, 10);
+      if (!Number.isFinite(delta)) return;
+      changeScore(btn.dataset.side, delta);
+    });
+  });
+
+  ui.togglePenaltyModeBtn?.addEventListener('click', togglePenaltyMode);
+  document.querySelectorAll('.penalty-action-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.penaltyAction === 'undo-last') {
+        undoLastPenalty();
+        return;
+      }
+
+      const side = btn.dataset.side;
+      if (!side) return;
+
+      const result = btn.dataset.penaltyResult;
+      if (result === 'made' || result === 'missed') {
+        addPenaltyAttempt(side, result);
+      }
+    });
   });
 
   // Search & Inputs
@@ -492,161 +489,96 @@ function setupListeners() {
 
 // Renders the full UI from the current state snapshot.
 function syncUI() {
-  checkWrapperState();
-  updateScoreUI();
-  updateTeamsUI();
-  updateClockUI();
-  updateThemeUI();
-  updateTeamNamesVisibilityUI();
-  updateVisibilityHighlight();
-  scheduleObsBackgroundHoleSync();
+  scoreboardUiManager.syncUI();
 }
 
 // Toggles the wrapper class that reflects whether both teams are selected.
 function checkWrapperState() {
-  const wrapper = document.querySelector('.wrapper');
-  const bothTeamsPicked = !!(state.homeTeam && state.awayTeam);
-  const currentlySelectedClass = wrapper.classList.contains('teams-selected');
-
-  if (bothTeamsPicked === currentlySelectedClass) return;
-  if (document.startViewTransition) {
-    document.startViewTransition(() => wrapper.classList.toggle('teams-selected', bothTeamsPicked));
-  } else {
-    wrapper.classList.toggle('teams-selected', bothTeamsPicked);
-  }
+  scoreboardUiManager.checkWrapperState();
 }
 
 // Updates the scoreboard and control panel scores for one or both sides.
 function updateScoreUI(side, value) {
-  const sides = side ? [side] : ['home', 'away'];
-  sides.forEach(s => {
-    const sideKey = capitalize(s);
-    const score = (side === s && value !== undefined) ? value : state[`${s}Score`];
-    if (ui[`score${sideKey}`]) ui[`score${sideKey}`].textContent = score;
-    if (ui[`ctrl${sideKey}Score`]) ui[`ctrl${sideKey}Score`].textContent = score;
-  });
+  scoreboardUiManager.updateScoreUI(side, value);
 }
 
 // Syncs selected teams, overrides, badges, and tournament group text.
 function updateTeamsUI() {
-  ['home', 'away'].forEach(side => {
-    const team = state[`${side}Team`];
-    const override = (state[`${side}NameOverride`] || '').trim();
-    const name = override || team?.name || capitalize(side);
-    
-    if (ui[`${side}NameOverride`]) ui[`${side}NameOverride`].value = override;
-    syncTeamNameDisplay(side, name);
-
-    let badgeSrc = PLACEHOLDER;
-    if (team) {
-      const freshTeamData = getTeam(team.id);
-      badgeSrc = (team.badge?.startsWith('data:')) ? team.badge : (freshTeamData?.badge || PLACEHOLDER);
-    }
-    setBadge(side, badgeSrc);
-  });
-
-  if (ui.tournamentGroupDisplay) {
-    if (ui.tournamentTitleOverride) {
-      ui.tournamentTitleOverride.value = state.tournamentTitleOverride || '';
-    }
-
-    let groupInfo = '';
-    const titleOverride = (state.tournamentTitleOverride || '').trim();
-
-    if (titleOverride) {
-      groupInfo = titleOverride;
-    } else {
-      const formatLeagueTitle = (label = '') => {
-        const separatorIndex = label.indexOf('- ');
-        return separatorIndex >= 0 ? label.slice(separatorIndex + 2).trim() : label;
-      };
-
-      const hGroup = formatLeagueTitle(state.homeTeam?.league || '');
-      const aGroup = formatLeagueTitle(state.awayTeam?.league || '');
-      if (hGroup && aGroup) groupInfo = (hGroup === aGroup) ? hGroup : `${hGroup} / ${aGroup}`;
-      else groupInfo = hGroup || aGroup || '';
-    }
-
-    const displayElement = ui.tournamentGroupDisplay;
-    displayElement.textContent = groupInfo.toUpperCase();
-    displayElement.style.opacity = groupInfo ? '1' : '0';
-  }
+  scoreboardUiManager.updateTeamsUI();
 }
 
 // Updates the clock controls and status text to match current timer state.
 function updateClockUI() {
-  if (ui.startBtn) {
-    ui.startBtn.textContent = state.running ? '⏸ Pause' : '▶ Start';
-    ui.startBtn.className = state.running ? 'btn btn-secondary' : 'btn btn-green';
-  }
+  scoreboardUiManager.updateClockUI();
+}
 
-  if (ui.clockWrap) {
-    ui.clockWrap.classList.toggle('is-hidden', state.clockVisible === false);
-  }
-  if (ui.toggleClockBtn) {
-    ui.toggleClockBtn.textContent = state.clockVisible === false ? 'Show' : 'Hide';
-  }
+// Keeps the scoreboard wrapper on one explicit layout state instead of stacked overrides.
+function syncScoreboardLayoutState() {
+  scoreboardUiManager.syncScoreboardLayoutState();
+}
 
-  renderClock();
-  renderStatusUI(state.status);
+// Updates penalty-mode layout, penalty scores, and visual shot notation.
+function updatePenaltyUI() {
+  scoreboardUiManager.updatePenaltyUI();
+}
+
+// Anchors penalty marks inside the same lane the clock normally occupies.
+function syncPenaltyTrackerLane() {
+  scoreboardUiManager.syncPenaltyTrackerLane();
+}
+
+// Moves badges outward only when penalty marks would overlap the center lane.
+function syncPenaltyTightSpace() {
+  scoreboardUiManager.syncPenaltyTightSpace();
+}
+
+// Renders per-kick notation (scored/missed) for one side.
+function renderPenaltyMarks(side) {
+  scoreboardUiManager.renderPenaltyMarks(side);
+}
+
+// Toggles penalty mode without altering the regular scoreline.
+function togglePenaltyMode() {
+  state.penaltyMode = !state.penaltyMode;
+  updatePenaltyUI();
+  updateClockUI();
+  obsSourceManager.scheduleObsBackgroundHoleSync();
+}
+
+// Appends a scored or missed penalty attempt for one side.
+function addPenaltyAttempt(side, result) {
+  setStateValues(buildPenaltyAttemptUpdate(state, side, result));
+}
+
+// Removes the most recent penalty attempt for one side.
+function undoPenalty(side) {
+  const updates = buildUndoPenaltyUpdate(state, side);
+  if (!updates) return false;
+  setStateValues(updates);
+  return true;
+}
+
+// Removes the most recent penalty attempt across both teams.
+function undoLastPenalty() {
+  const updates = buildUndoLastPenaltyUpdate(state);
+  if (!updates) return;
+  setStateValues(updates);
 }
 
 // Renders the textual match status label.
 function renderStatusUI(s) {
-  let label = STATUS_LABELS[s] || s;
-  if (s === 'NOT STARTED' && state.startTime) {
-    label = `KICK OFF ${state.startTime}`;
-  }
-  if (ui.clockStatusText) ui.clockStatusText.textContent = label;
-  ui.statusBtns.forEach(b => {
-    const isActive = b.dataset.status === s;
-    b.classList.toggle('active', isActive);
-    b.setAttribute('aria-pressed', isActive);
-  });
+  scoreboardUiManager.renderStatusUI(s);
 }
 
 // Applies theme, mode, and visibility classes to the document root.
 function updateThemeUI() {
-  syncCustomSelect(ui.themeSelect, state.theme);
-  syncCustomSelect(ui.modeSelect, state.mode);
-
-  const visMode = state.visibilityMode || 'none';
-  syncCustomSelect(ui.visibilityModeSelect, visMode);
-  
-  document.documentElement.classList.remove('visibility-none', 'visibility-glow', 'visibility-contrast');
-  document.documentElement.classList.add(`visibility-${visMode}`);
-
-  document.documentElement.classList.remove(...THEMES.map(t => `theme-${t}`));
-  if (state.theme && state.theme !== 'default') {
-    document.documentElement.classList.add(`theme-${state.theme}`);
-  }
+  scoreboardUiManager.updateThemeUI();
 }
 
 // Score, team display, and visibility behavior.
 // Shows or hides the visibility enhancement indicator.
 function updateVisibilityHighlight() {
-  if (!ui.visibilityModeSelect) return;
-  
-  const isNone = state.visibilityMode === 'none';
-  const isLightTheme = state.theme === 'light';
-  
-  // Checks whether a badge needs the visibility enhancement icon.
-  const needsFx = (imgEl) => {
-    // Ignore if element is missing or it's just the placeholder SVG
-    if (!imgEl || (imgEl.src && imgEl.src.includes('PHN2Zy'))) return false;
-    // If dark theme, suggest if badge is dark. If light theme, suggest if badge is light.
-    return isLightTheme ? imgEl.classList.contains('is-light') : imgEl.classList.contains('is-dark');
-  };
-
-  // Check both main and mini badges to ensure the state is captured correctly
-  const highlight = isNone && (
-    needsFx(ui.homeBadge) || needsFx(ui.awayBadge) || 
-    needsFx(ui.miniHomeBadge) || needsFx(ui.miniAwayBadge)
-  );
-
-  if (ui.fxSuggestionIcon) {
-    ui.fxSuggestionIcon.style.display = highlight ? 'block' : 'none';
-  }
+  scoreboardUiManager.updateVisibilityHighlight();
 }
 
 // Manually updates the visibility enhancement mode.
@@ -669,24 +601,26 @@ function changeScore(side, delta) {
 
 // Resets both scores back to zero.
 function resetScores() {
-  state.homeScore = 0;
-  state.awayScore = 0;
+  setStateValues({
+    homeScore: 0,
+    awayScore: 0,
+    homePenalties: [],
+    awayPenalties: [],
+    penaltyHistory: []
+  });
+  notifications.show('Scores reset');
 }
 
 // Clears the selected teams and removes the selected-state styling.
 function resetTeams() {
   // Clears the selected-team wrapper state.
   const resetAction = () => {
-    const wrapper = document.querySelector('.wrapper');
-    if (wrapper) wrapper.classList.toggle('teams-selected', false);
+    if (ui.wrapper) ui.wrapper.classList.toggle('teams-selected', false);
     clearSelectedTeams({ clearOverrides: true });
+    notifications.show('Teams reset');
   };
 
-  if (document.startViewTransition) {
-    document.startViewTransition(resetAction);
-  } else {
-    resetAction();
-  }
+  runWithViewTransition(resetAction);
 
   syncUI();
 }
@@ -699,8 +633,7 @@ function changeMode(mode) {
     state.mode = mode;
     clearSelectedTeams({ clearOverrides: true });
   };
-  if (document.startViewTransition) document.startViewTransition(update);
-  else update();
+  runWithViewTransition(update);
   if (document.activeElement?.blur) document.activeElement.blur();
 }
 
@@ -740,63 +673,37 @@ function toggleContactForm() {
 
 // Opens a modal and focuses the requested initial control.
 function openModal(modal, { initialFocus = null, onClose = null } = {}) {
-  if (!modal) return;
-
-  modalTriggerElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-  activeModalCleanup = typeof onClose === 'function' ? onClose : null;
-  modal.classList.add('active');
-  modal.removeAttribute('aria-hidden');
-
-  const targetFocus = initialFocus || modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-  targetFocus?.focus();
+  modalStateManager.open(modal, { initialFocus, onClose });
 }
 
 // Returns whether the help panel is currently open.
 function isHelpPanelOpen() {
-  return Boolean(ui.helpPanel?.classList.contains('active'));
+  return shellUiManager.isHelpPanelOpen();
 }
 
 // Highlights the help button until the panel has been seen once.
 function initHelpAttentionHint() {
-  if (!ui.helpFab) return;
-
-  const seen = localStorage.getItem(HELP_FAB_SEEN_KEY) === '1';
-  if (!seen) ui.helpFab.classList.add('attention');
+  shellUiManager.initHelpAttentionHint();
 }
 
 // Opens or closes the help panel and updates its ARIA state.
 function setHelpPanel(open) {
-  if (!ui.helpPanel || !ui.helpFab) return;
-
-  ui.helpPanel.classList.toggle('active', open);
-  ui.helpPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
-  ui.helpFab.setAttribute('aria-expanded', open ? 'true' : 'false');
-
-  if (open) {
-    localStorage.setItem(HELP_FAB_SEEN_KEY, '1');
-    ui.helpFab.classList.remove('attention');
-  }
-
-  if (open) {
-    ui.helpCloseBtn?.focus();
-  } else {
-    ui.helpFab.focus();
-  }
+  shellUiManager.setHelpPanel(open);
 }
 
 // Toggles the help panel open state.
 function toggleHelpPanel() {
-  setHelpPanel(!isHelpPanelOpen());
+  shellUiManager.toggleHelpPanel();
 }
 
 // Checks whether the app is in its mobile layout breakpoint.
 function isMobileHeaderViewport() {
-  return window.matchMedia('(max-width: 820px)').matches;
+  return shellUiManager.isMobileHeaderViewport();
 }
 
 // Returns whether the desktop warning should be shown on this device.
 function shouldShowMobileWarning() {
-  if (isObsSourceContext()) return false;
+  if (obsSourceManager.isObsSourceContext()) return false;
   if (!isMobileHeaderViewport()) return false;
   return localStorage.getItem(MOBILE_WARNING_DISMISSED_KEY) !== '1';
 }
@@ -806,7 +713,7 @@ function syncMobileWarningModal() {
   const modal = ui.mobileWarningModal;
   if (!modal) return;
 
-  const activeModal = document.querySelector('.modal-overlay.active');
+  const activeModal = modalStateManager.getActiveModal();
   const warningIsActive = modal.classList.contains('active');
   const shouldOpen = shouldShowMobileWarning();
 
@@ -842,76 +749,42 @@ function openMobileWarningHelp() {
 
 // Opens or closes the compact header menu on mobile.
 function setHeaderMenu(open) {
-  const header = document.querySelector('header');
-  if (!header || !ui.headerMenuToggle || !ui.headerControls) return;
-
-  const shouldOpen = Boolean(open) && isMobileHeaderViewport();
-  header.classList.toggle('menu-open', shouldOpen);
-  ui.headerMenuToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-  ui.headerControls.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+  shellUiManager.setHeaderMenu(open);
 }
 
 // Toggles the mobile header menu when the viewport allows it.
 function toggleHeaderMenu() {
-  const header = document.querySelector('header');
-  if (!header || !isMobileHeaderViewport()) return;
-  setHeaderMenu(!header.classList.contains('menu-open'));
+  shellUiManager.toggleHeaderMenu();
 }
 
 // Keeps the header menu state aligned with viewport changes.
 function syncHeaderMenuViewportState() {
-  if (!ui.headerControls || !ui.headerMenuToggle) return;
-
-  if (isMobileHeaderViewport()) {
-    const header = document.querySelector('header');
-    const isOpen = header?.classList.contains('menu-open');
-    ui.headerControls.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
-    ui.headerMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    return;
-  }
-
-  const header = document.querySelector('header');
-  if (header) header.classList.remove('menu-open');
-  ui.headerControls.setAttribute('aria-hidden', 'false');
-  ui.headerMenuToggle.setAttribute('aria-expanded', 'false');
+  shellUiManager.syncHeaderMenuViewportState();
 }
 
 // Opens the reset confirmation modal.
 function resetAll() {
-  const modal = document.getElementById('modal-overlay');
+  const modal = ui.modalOverlay;
   const confirmBtn = modal?.querySelector('#confirm-reset-all-btn');
   openModal(modal, { initialFocus: confirmBtn });
 }
 
 // Opens the start-time modal with the current value prefilled.
 function showStartTimeModal() {
-  const modal = document.getElementById('start-time-modal');
-  const input = document.getElementById('start-time-input');
+  const modal = ui.startTimeModal;
+  const input = ui.startTimeInput;
   if (input) input.value = state.startTime || '';
   openModal(modal, { initialFocus: input });
 }
 
 // Closes the currently active modal and restores focus.
 function closeActiveModal() {
-  const active = document.querySelector('.modal-overlay.active');
-  if (active) {
-    active.classList.remove('active');
-    active.setAttribute('aria-hidden', 'true');
-    if (activeModalCleanup) {
-      const cleanup = activeModalCleanup;
-      activeModalCleanup = null;
-      cleanup();
-    }
-    if (modalTriggerElement) {
-      modalTriggerElement.focus();
-      modalTriggerElement = null;
-    }
-  }
+  modalStateManager.close();
 }
 
 // Saves the start time and marks the match as not started.
 function confirmStartTime() {
-  state.startTime = document.getElementById('start-time-input').value || null;
+  state.startTime = ui.startTimeInput?.value || null;
   setStatus('NOT STARTED');
   closeActiveModal();
 }
@@ -923,93 +796,22 @@ function confirmResetAll() {
   state = createState({ ...INITIAL_STATE, theme: state.theme, mode: state.mode, visibilityMode: state.visibilityMode });
   prepareTeamData();
   syncUI();
-  saveState();
+  notifications.show('Scoreboard reset');
 }
 
 // Custom select dropdown helpers.
 
-function setupCustomSelect(sel) {
-  sel.addEventListener('click', (e) => {
-    const option = e.target.closest('.custom-select-option');
-    if (option) { applyCustomSelectOption(sel, option.dataset.value); return; }
-    if (!e.target.closest('.custom-select-menu')) {
-      const isOpen = sel.getAttribute('aria-expanded') === 'true';
-      closeAllCustomSelects();
-      if (!isOpen) openCustomSelect(sel);
-    }
-  });
-
-  sel.addEventListener('keydown', (e) => {
-    const isOpen = sel.getAttribute('aria-expanded') === 'true';
-    const options = [...sel.querySelectorAll('.custom-select-option')];
-    if (!options.length) return;
-    const focusedIdx = options.findIndex(o => o.classList.contains('focused'));
-
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      if (!isOpen) { openCustomSelect(sel); return; }
-      if (focusedIdx >= 0) applyCustomSelectOption(sel, options[focusedIdx].dataset.value);
-    } else if (e.key === 'Escape') {
-      closeAllCustomSelects();
-    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (!isOpen) { openCustomSelect(sel); return; }
-      const next = e.key === 'ArrowDown'
-        ? (focusedIdx < options.length - 1 ? focusedIdx + 1 : 0)
-        : (focusedIdx > 0 ? focusedIdx - 1 : options.length - 1);
-      options.forEach(o => o.classList.remove('focused'));
-      options[next].classList.add('focused');
-    }
-  });
-}
-
-function openCustomSelect(sel) {
-  sel.setAttribute('aria-expanded', 'true');
-  sel.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('focused'));
-  const selected = sel.querySelector('[aria-selected="true"]');
-  if (selected) selected.classList.add('focused');
-}
-
-function closeAllCustomSelects() {
-  document.querySelectorAll('.custom-select[aria-expanded="true"]').forEach(s => {
-    s.setAttribute('aria-expanded', 'false');
-    s.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('focused'));
-  });
-}
-
-function applyCustomSelectOption(sel, value) {
-  const option = [...sel.querySelectorAll('.custom-select-option')].find(o => o.dataset.value === value);
-  if (!option) return;
-  sel.querySelectorAll('.custom-select-option').forEach(o => {
-    o.setAttribute('aria-selected', 'false');
-    o.classList.remove('focused');
-  });
-  option.setAttribute('aria-selected', 'true');
-  const label = sel.querySelector('.custom-select-label');
-  if (label) label.textContent = option.textContent.trim();
-  sel.dataset.value = value;
-  sel.setAttribute('aria-expanded', 'false');
+function handleCustomSelectSelection(value, sel) {
   if (sel.id === 'theme-select') setTheme(value);
   else if (sel.id === 'visibility-mode-select') setVisibilityMode(value);
   else if (sel.id === 'mode-select') changeMode(value);
-}
-
-function syncCustomSelect(sel, value) {
-  if (!sel) return;
-  const option = [...sel.querySelectorAll('.custom-select-option')].find(o => o.dataset.value === value);
-  if (!option) return;
-  sel.querySelectorAll('.custom-select-option').forEach(o => o.setAttribute('aria-selected', 'false'));
-  option.setAttribute('aria-selected', 'true');
-  const label = sel.querySelector('.custom-select-label');
-  if (label) label.textContent = option.textContent.trim();
-  sel.dataset.value = value;
 }
 
 // Global document and window handlers.
 
 document.addEventListener('click', (e) => {
   if (isMobileHeaderViewport()) {
-    const header = document.querySelector('header');
+    const header = ui.header;
     if (header?.classList.contains('menu-open') && !e.target.closest('header')) {
       setHeaderMenu(false);
     }
@@ -1029,7 +831,7 @@ document.addEventListener('click', (e) => {
 
 window.addEventListener('keydown', (e) => {
   if (isMobileHeaderViewport() && e.key === 'Escape') {
-    const header = document.querySelector('header');
+    const header = ui.header;
     if (header?.classList.contains('menu-open')) {
       setHeaderMenu(false);
       ui.headerMenuToggle?.focus();
@@ -1037,7 +839,7 @@ window.addEventListener('keydown', (e) => {
     }
   }
 
-  const activeModal = document.querySelector('.modal-overlay.active');
+  const activeModal = modalStateManager.getActiveModal();
 
   if (activeModal) {
     if (e.key === 'Escape') {
@@ -1081,10 +883,18 @@ window.addEventListener('keydown', (e) => {
       toggleClock();
       break;
     case 'h':
-      changeScore('home', e.shiftKey ? -1 : 1);
+      if (state.penaltyMode === true) {
+        addPenaltyAttempt('home', e.shiftKey ? 'missed' : 'made');
+      } else {
+        changeScore('home', e.shiftKey ? -1 : 1);
+      }
       break;
     case 'a':
-      changeScore('away', e.shiftKey ? -1 : 1);
+      if (state.penaltyMode === true) {
+        addPenaltyAttempt('away', e.shiftKey ? 'missed' : 'made');
+      } else {
+        changeScore('away', e.shiftKey ? -1 : 1);
+      }
       break;
     case 'x':
       if (e.shiftKey) resetAll();
@@ -1102,7 +912,9 @@ window.addEventListener('resize', debounce(() => {
   repositionActivePopups(() => ui);
   syncHeaderMenuViewportState();
   syncMobileWarningModal();
-  scheduleObsBackgroundHoleSync();
+  syncPenaltyTrackerLane();
+  syncPenaltyTightSpace();
+  obsSourceManager.scheduleObsBackgroundHoleSync();
 }, 150));
 
 // The display font loads asynchronously; re-measure once it's ready so the
@@ -1115,19 +927,19 @@ if (document.fonts && document.fonts.ready) {
 
 // Hides the preloader once all assets (images, fonts, scripts) are fully loaded.
 window.addEventListener('load', () => {
-  ensureTopScrollPositionWithFallback();
-  const isObsMode = isObsSourceContext();
+  obsSourceManager.ensureTopScrollPositionWithFallback();
+  const isObsMode = obsSourceManager.isObsSourceContext();
   const preloader = document.getElementById('preloader');
   if (preloader && !isObsMode) {
     preloader.classList.add('preloader-hidden');
-    finalizeLoadedState();
+    obsSourceManager.finalizeLoadedState();
     setTimeout(() => preloader.remove(), 700);
-    setTimeout(() => scheduleObsBackgroundHoleSync(), 750);
+    setTimeout(() => obsSourceManager.scheduleObsBackgroundHoleSync(), 750);
   } else {
     if (preloader) preloader.remove();
-    finalizeLoadedState({ instant: isObsMode });
+    obsSourceManager.finalizeLoadedState({ instant: isObsMode });
   }
-  scheduleObsBackgroundHoleSync();
+  obsSourceManager.scheduleObsBackgroundHoleSync();
 });
 
 init();

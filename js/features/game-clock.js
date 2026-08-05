@@ -15,8 +15,10 @@ export function createGameClockManager({ getState, getUi, pad, clockMaxMinutes, 
   function setClock() {
     const state = getState();
     const ui = getUi();
-    const m = Math.min(parseInt(ui.clockMin.value) || 0, clockMaxMinutes);
-    const s = Math.min(parseInt(ui.clockSec.value) || 0, 59);
+    const rawMinutes = Number.parseInt(ui.clockMin.value, 10);
+    const rawSeconds = Number.parseInt(ui.clockSec.value, 10);
+    const m = Number.isFinite(rawMinutes) ? Math.max(0, Math.min(rawMinutes, clockMaxMinutes)) : 0;
+    const s = Number.isFinite(rawSeconds) ? Math.max(0, Math.min(rawSeconds, 59)) : 0;
     state.clockSec = m * 60 + s;
     renderClock();
   }

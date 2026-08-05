@@ -19,6 +19,10 @@ export const HELP_FAB_SEEN_KEY = 'watchascore_help_fab_seen';
 export const INITIAL_STATE = {
   homeScore: 0,
   awayScore: 0,
+  penaltyMode: false,
+  homePenalties: [],
+  awayPenalties: [],
+  penaltyHistory: [],
   clockSec: 0,
   running: false,
   status: '',

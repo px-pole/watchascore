@@ -559,6 +559,13 @@ header.menu-open .header-menu-toggle {
     opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+.scoreboard-wrap.layout-normal-hidden-clock,
+.scoreboard-wrap.layout-normal-hidden-names-clock,
+.scoreboard-wrap.layout-penalty,
+.scoreboard-wrap.layout-penalty-hidden-names {
+  padding-bottom: 24px;
+}
 .scoreboard-wrap *:not(.clock-wrap, .clock-wrap *, .team-name) {
   cursor: default !important;
   transition: none !important;
@@ -618,7 +625,7 @@ html.obs-source .controls-grid .card {
   max-width: 100%;
   margin: 0 auto;
   border-radius: 16px;
-  padding: 14px 18px 8px;
+  padding: 14px 18px 0;
   background: transparent;
   border: 1px solid var(--scoreboard-frame-stroke);
   box-shadow:
@@ -657,7 +664,12 @@ html.obs-source .controls-grid .card {
   width: max(var(--badge-size, 100px), var(--name-max-width, 120px));
 }
 
-.scoreboard-wrap:not(.team-names-hidden) .team-stack {
+.scoreboard-wrap.layout-normal .team-stack,
+.scoreboard-wrap.layout-normal-hidden-names .team-stack,
+.scoreboard-wrap.layout-normal-hidden-clock .team-stack,
+.scoreboard-wrap.layout-normal-hidden-names-clock .team-stack,
+.scoreboard-wrap.layout-penalty .team-stack,
+.scoreboard-wrap.layout-penalty-hidden-names .team-stack {
   min-height: calc(
     var(--badge-size, 100px) +
       var(--name-slot-h, 42px) +
@@ -749,6 +761,13 @@ html.obs-source .controls-grid .card {
   letter-spacing: 2px;
   color: var(--text-muted);
   text-transform: uppercase;
+  position: absolute;
+  top: 16px;
+  left: 0;
+  right: 0;
+  width: auto;
+  text-align: center;
+  z-index: 1;
   height: 18px;
   line-height: 1.4;
   transition: opacity 0.3s ease;
@@ -772,6 +791,101 @@ html.obs-source .controls-grid .card {
   gap: 8px;
   margin-top: -16px;
 }
+.penalty-score {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 18px;
+}
+
+.penalty-score-num {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--text-on-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.scoreboard-wrap.penalty-mode .penalty-score {
+  display: flex;
+}
+
+.penalty-tracker {
+  display: none;
+  align-items: center;
+  grid-template-columns: minmax(56px, auto) auto minmax(56px, auto);
+  gap: 6px;
+  min-height: 22px;
+}
+
+.penalty-tracker.is-visible {
+  display: grid;
+}
+
+.penalty-marks {
+  display: flex;
+  gap: 3px;
+  min-height: 16px;
+}
+
+.penalty-marks-home {
+  justify-content: flex-end;
+}
+
+.penalty-marks-away {
+  justify-content: flex-start;
+}
+
+.penalty-tracker-divider {
+  font-family: var(--font-display);
+  color: color-mix(in srgb, var(--text-muted), transparent 12%);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.penalty-mark {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+.penalty-attempt {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+
+.penalty-mark.is-made {
+  background: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.95);
+  border-color: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.98);
+  color: #fff;
+}
+
+.penalty-mark.is-missed {
+  background: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.94);
+  border-color: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.98);
+  color: #fff;
+}
+
+.penalty-mark.is-empty {
+  background: hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0.16);
+  border-color: hsl(var(--primary-h) var(--primary-s) var(--primary-l) / 0.34);
+  color: color-mix(in srgb, var(--text-muted), #fff 18%);
+}
+
 .score-display .score-num {
   font-family: var(--font-display);
   font-weight: 900;
@@ -780,6 +894,7 @@ html.obs-source .controls-grid .card {
   color: var(--text-on-primary);
   text-shadow: 0 0 30px var(--score-num-shadow);
   min-width: 70px;
+  font-variant-numeric: tabular-nums;
   text-align: center;
   transition: transform 0.15s;
 }
@@ -811,7 +926,7 @@ html.obs-source .controls-grid .card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   visibility: visible;
   max-height: 56px;
   overflow: hidden;
@@ -846,6 +961,7 @@ html.obs-source .controls-grid .card {
   color: var(--text-muted);
   text-transform: uppercase;
   min-height: 14px;
+  margin-top: -1px;
 }
 
 /* ─── SKELETON LOADING ─── */
@@ -877,148 +993,219 @@ html.obs-source .controls-grid .card {
 }
 
 .scoreboard-wrap.team-names-hidden .team-name {
+  display: inline-block !important;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transform: translateY(-8px);
-  height: 0;
-  max-height: 0;
-  margin-top: -4px;
-  padding-top: 0;
-  padding-bottom: 0;
+  transform: none;
+  height: var(--name-slot-h, 42px) !important;
+  min-height: var(--name-slot-h, 42px) !important;
+  max-height: var(--name-slot-h, 42px) !important;
 }
 
-.scoreboard-wrap.team-names-hidden .team-stack {
-  gap: 0;
-  min-height: var(--badge-size, 100px);
+.scoreboard-wrap.layout-normal-hidden-names .team-name,
+.scoreboard-wrap.layout-normal-hidden-names-clock .team-name {
+  height: 10px !important;
+  min-height: 10px !important;
+  max-height: 10px !important;
 }
 
-.scoreboard-wrap.team-names-single-line:not(.team-names-hidden) .badge-wrap {
+.scoreboard-wrap.layout-penalty-hidden-names .team-name {
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+}
+
+.scoreboard-wrap.team-names-hidden .badge-wrap {
   margin-top: var(--single-line-badge-offset, 12px);
 }
 
-.scoreboard-wrap.team-names-hidden .score-center {
-  min-height: 94px;
+.scoreboard-wrap.team-names-single-line .badge-wrap {
+  margin-top: var(--single-line-badge-offset, 12px);
 }
 
-.scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .team-block {
-  position: relative;
-  top: -6px;
+/* Explicit scoreboard layouts */
+.scoreboard-wrap.layout-normal .score-center {
+  min-height: 120px;
+  gap: 6px;
 }
 
-.scoreboard-wrap:not(:has(.clock-wrap.is-hidden)) .group-name-display {
-  position: absolute;
-  top: 16px;
-  left: 0;
-  right: 0;
-  width: auto;
-  height: auto;
-  text-align: center;
+.scoreboard-wrap.layout-normal .score-display {
+  margin-top: 10px;
 }
 
-.scoreboard-wrap:not(:has(.clock-wrap.is-hidden)) .score-display {
-  margin-top: 14px;
-}
-
-.scoreboard-wrap:not(:has(.clock-wrap.is-hidden)) .scoreboard-frame {
+.scoreboard-wrap.layout-normal .scoreboard-frame {
   min-height: calc(var(--badge-size, 100px) + 6px + var(--name-slot-h, 42px) + 22px);
 }
 
-.scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .score-display {
-  margin-top: 21px;
+.scoreboard-wrap.layout-normal-hidden-names .score-center {
+  min-height: 120px;
+  gap: 6px;
 }
 
-.scoreboard-wrap:has(.clock-wrap.is-hidden) .score-center {
+.scoreboard-wrap.layout-normal-hidden-names .team-stack,
+.scoreboard-wrap.layout-normal-hidden-names-clock .team-stack,
+.scoreboard-wrap.layout-penalty-hidden-names .team-stack {
+  min-height: calc(
+    var(--badge-size, 100px) +
+      var(--team-stack-gap, 6px) +
+      var(--single-line-badge-offset, 12px)
+  );
+}
+
+.scoreboard-wrap.layout-normal-hidden-names .group-name-display {
+  transition: none;
+}
+
+.scoreboard-wrap.layout-normal-hidden-names .score-display {
+  margin-top: 20px;
+}
+
+.scoreboard-wrap.layout-normal-hidden-names .scoreboard-frame {
+  min-height: calc(var(--badge-size, 100px) + 6px + 22px);
+  padding-bottom: 10px;
+  transition: none;
+}
+
+.scoreboard-wrap.layout-normal-hidden-clock .score-center {
   min-height: 88px;
+  gap: 4px;
 }
 
-.scoreboard-wrap:has(.clock-wrap.is-hidden) .score-display {
+.scoreboard-wrap.layout-normal-hidden-clock .score-display {
   position: relative;
   margin-top: -16px;
-}
-
-.scoreboard-wrap:not(.team-names-hidden):has(.clock-wrap.is-hidden) .score-display {
   top: -12px;
 }
 
-.scoreboard-wrap:not(.team-names-hidden):has(.clock-wrap.is-hidden) .score-center {
+.scoreboard-wrap.layout-normal-hidden-clock .scoreboard-frame {
+  padding: 14px 18px 0;
+  min-height: calc(var(--badge-size, 100px) + 62px);
+}
+
+.scoreboard-wrap.layout-normal-hidden-names-clock .score-center {
+  min-height: 88px;
+  gap: 4px;
+}
+
+.scoreboard-wrap.layout-normal-hidden-names-clock .group-name-display {
+  transition: none;
+}
+
+.scoreboard-wrap.layout-normal-hidden-names-clock .score-display {
   position: relative;
+  margin-top: -16px;
+  top: 6px;
 }
 
-.scoreboard-wrap:not(.team-names-hidden):has(.clock-wrap.is-hidden) .group-name-display {
-  position: absolute;
-  top: -28px;
-  left: 0;
-  right: 0;
-  width: auto;
-  height: auto;
-  text-align: center;
-}
-
-.scoreboard-wrap:has(.clock-wrap.is-hidden) .scoreboard-frame {
-  padding-bottom: 6px;
-}
-
-.scoreboard-wrap:not(:has(.clock-wrap.is-hidden)) .scoreboard-frame {
-  padding-bottom: 6px;
-}
-
-.scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .scoreboard-frame {
-  padding-bottom: 6px;
-}
-
-.scoreboard-wrap.team-names-hidden:not(:has(.clock-wrap.is-hidden)) .clock-wrap .clock-status {
-  padding-bottom: 0;
-}
-
-.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .score-center {
-  min-height: 76px;
-  gap: 2px;
-}
-
-.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .score-display {
-  position: absolute;
-  top: 36px;
-  left: 0;
-  right: 0;
-  margin-top: 0;
-  justify-content: center;
+.scoreboard-wrap.layout-normal-hidden-names-clock .scoreboard-frame {
+  padding: 14px 18px 10px;
+  min-height: calc(var(--badge-size, 100px) + 48px);
   transition: none;
 }
 
-.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .group-name-display {
-  position: absolute;
-  top: 17px;
-  left: 0;
-  right: 0;
-  width: auto;
-  height: auto;
-  text-align: center;
-  transition: none;
-}
-
-.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .team-name {
-  margin-top: 0;
-  transition: none;
-}
-
-.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .team-block {
-  justify-content: center;
-}
-
-.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .scoreboard-frame {
-  padding: 17px 8px;
-  transition: none;
-}
-
-.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .score-center,
-.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .clock-wrap {
-  transition: none;
-}
-
-.scoreboard-wrap.team-names-hidden:has(.clock-wrap.is-hidden) .group-name-display:empty {
+.scoreboard-wrap.layout-normal-hidden-names-clock .group-name-display:empty {
   height: 0;
 }
 
+.scoreboard-wrap.layout-penalty .score-center,
+.scoreboard-wrap.layout-penalty-hidden-names .score-center {
+  min-height: 120px;
+  gap: 6px;
+}
+
+.scoreboard-wrap.layout-penalty .score-display,
+.scoreboard-wrap.layout-penalty-hidden-names .score-display {
+  margin-top: 10px;
+  transform: none;
+  gap: 6px;
+}
+
+.scoreboard-wrap.layout-penalty-hidden-names .score-display {
+  margin-top: 24px;
+}
+
+.scoreboard-wrap.penalty-mode .clock-wrap.is-hidden {
+  opacity: 0 !important;
+  visibility: hidden;
+  pointer-events: none;
+  max-height: 56px;
+  margin-top: 0;
+  gap: 4px;
+}
+
+.scoreboard-wrap.layout-penalty .score-display .score-num,
+.scoreboard-wrap.layout-penalty-hidden-names .score-display .score-num {
+  font-size: 36px;
+  min-width: 40px;
+}
+
+.scoreboard-wrap.layout-penalty .score-divider,
+.scoreboard-wrap.layout-penalty-hidden-names .score-divider {
+  font-size: 28px;
+  margin-top: -4px;
+}
+
+.scoreboard-wrap.layout-penalty .penalty-score-num,
+.scoreboard-wrap.layout-penalty-hidden-names .penalty-score-num {
+  font-size: 60px;
+  width: 1ch;
+}
+
+.scoreboard-wrap.penalty-double-digit-home.layout-penalty #penalty-home-score,
+.scoreboard-wrap.penalty-double-digit-home.layout-penalty-hidden-names #penalty-home-score {
+  letter-spacing: -0.06em;
+  position: relative;
+  left: -20px;
+}
+
+.scoreboard-wrap.penalty-double-digit-away.layout-penalty #penalty-away-score,
+.scoreboard-wrap.penalty-double-digit-away.layout-penalty-hidden-names #penalty-away-score {
+  letter-spacing: -0.06em;
+  position: relative;
+  left: -14px;
+}
+
+.scoreboard-wrap.layout-penalty .scoreboard-frame,
+.scoreboard-wrap.layout-penalty-hidden-names .scoreboard-frame {
+  padding-bottom: 0;
+}
+
+.scoreboard-wrap.layout-penalty-hidden-names .scoreboard-frame {
+  padding-bottom: 20px;
+  min-height: max(calc(var(--badge-size, 100px) + 42px), 142px);
+}
+
+.scoreboard-wrap.layout-penalty .penalty-tracker,
+.scoreboard-wrap.layout-penalty-hidden-names .penalty-tracker {
+  position: absolute;
+  top: 0;
+  bottom: auto;
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin-inline: auto;
+  margin-top: 0;
+}
+
+.scoreboard-wrap.penalty-tight-space.layout-penalty .team-block.home .team-stack,
+.scoreboard-wrap.penalty-tight-space.layout-penalty-hidden-names .team-block.home .team-stack {
+  position: static;
+  left: 0;
+}
+
+.scoreboard-wrap.penalty-tight-space.layout-penalty .team-block.away .team-stack,
+.scoreboard-wrap.penalty-tight-space.layout-penalty-hidden-names .team-block.away .team-stack {
+  position: static;
+  left: 0;
+}
+
+.scoreboard-wrap.layout-penalty .team-block.home,
+.scoreboard-wrap.layout-penalty .team-block.away,
+.scoreboard-wrap.layout-penalty-hidden-names .team-block.home,
+.scoreboard-wrap.layout-penalty-hidden-names .team-block.away {
+  transform: none;
+}
 /* ─── TEAM SELECTION PANEL ─── */
 .team-selection-panel {
   order: 2;
@@ -1026,7 +1213,6 @@ html.obs-source .controls-grid .card {
   background: color-mix(in srgb, var(--bg-panel), transparent 15%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid color-mix(in srgb, var(--border-color), transparent 30%);
   border-radius: 14px;
   padding: 20px;
   opacity: 0;
@@ -1920,6 +2106,63 @@ header .header-btn {
   min-width: 0;
 }
 
+.penalty-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(6px, 1vw, 12px);
+  margin: 8px 0 10px;
+}
+
+#toggle-penalty-mode-btn {
+  margin-top: 10px !important;
+}
+
+.score-btns.penalty-btns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2px, 0.45vw, 6px);
+}
+
+.score-btns.penalty-btns .penalty-scored-btn,
+.score-btns.penalty-btns .penalty-missed-btn {
+  width: 100%;
+  min-width: 0;
+  font-size: 14px;
+  padding: 6px 0;
+}
+
+.penalty-scored-btn {
+  background: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.15);
+  border: 1px solid hsl(var(--success-h) var(--success-s) var(--success-l) / 0.3);
+  color: var(--success-color);
+}
+
+.penalty-scored-btn:hover {
+  background: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.25);
+}
+
+.penalty-missed-btn {
+  background: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.12);
+  border: 1px solid hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.3);
+  color: var(--danger-color);
+}
+
+.penalty-missed-btn:hover {
+  background: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.22);
+}
+
+#undo-last-penalty-btn {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+  margin-bottom: -10px;
+}
+
+#toggle-penalty-mode-btn.active {
+  background: hsl(var(--warning-h) var(--warning-s) var(--warning-l) / 0.14);
+  border: 1px solid hsl(var(--warning-h) var(--warning-s) var(--warning-l) / 0.35);
+  color: var(--warning-color);
+}
+
 /* ─── BUTTONS ─── */
 .btn {
   display: inline-flex;
@@ -2253,6 +2496,50 @@ footer {
 
 .donation-buttons .btn {
   flex: 1 1 220px;
+}
+
+.toast-stack {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 2600;
+  pointer-events: none;
+}
+
+.toast {
+  min-width: 220px;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-panel) 92%, white 8%);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.25);
+  font-size: 14px;
+  line-height: 1.4;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast.is-leaving {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.toast-info {
+  border-color: color-mix(in srgb, var(--primary-color) 40%, var(--border-color));
+}
+
+.toast-success {
+  border-color: color-mix(in srgb, var(--accent-green) 40%, var(--border-color));
+}
+
+.toast-error {
+  border-color: color-mix(in srgb, var(--danger-color) 40%, var(--border-color));
 }
 
 .contact-form {
@@ -2632,6 +2919,15 @@ html.obs-source #preloader {
     min-width: 62px;
   }
 
+  .scoreboard-wrap.penalty-mode .score-display .score-num {
+    font-size: 34px;
+    min-width: 38px;
+  }
+
+  .scoreboard-wrap.penalty-mode .penalty-score-num {
+    font-size: 42px;
+  }
+
   .score-divider {
     font-size: 34px;
   }
@@ -2724,6 +3020,26 @@ html.obs-source #preloader {
     min-width: 45px;
   }
 
+  .scoreboard-wrap.penalty-mode .score-display .score-num {
+    font-size: 28px;
+    min-width: 30px;
+  }
+
+  .scoreboard-wrap.penalty-mode .penalty-score-num {
+    font-size: 34px;
+  }
+
+  .scoreboard-wrap.penalty-mode .penalty-mark {
+    width: 14px;
+    height: 14px;
+    font-size: 9px;
+  }
+
+  .penalty-controls {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
   .score-divider {
     font-size: 26px;
   }
@@ -2737,10 +3053,6 @@ html.obs-source #preloader {
   .clock-wrap .clock-status {
     font-size: 10px;
     letter-spacing: 1px;
-  }
-
-  .scoreboard-wrap:not(.team-names-hidden):has(.clock-wrap.is-hidden) .group-name-display {
-    top: -14px;
   }
 
   .btn-row {
@@ -2833,6 +3145,29 @@ html.obs-source #preloader {
   .score-display .score-num {
     font-size: clamp(34px, 9.1vw, 38px);
     min-width: clamp(36px, 9.5vw, 40px);
+  }
+
+  .scoreboard-wrap.penalty-mode .score-display {
+    gap: 6px;
+  }
+
+  .scoreboard-wrap.penalty-mode .score-display .score-num {
+    font-size: clamp(24px, 6.4vw, 28px);
+    min-width: clamp(25px, 6.8vw, 30px);
+  }
+
+  .scoreboard-wrap.penalty-mode .penalty-score-num {
+    font-size: clamp(28px, 7.4vw, 32px);
+  }
+
+  .scoreboard-wrap.penalty-mode .penalty-tracker {
+    gap: 4px;
+  }
+
+  .scoreboard-wrap.penalty-mode .penalty-mark {
+    width: 12px;
+    height: 12px;
+    font-size: 7px;
   }
 
   .score-divider {

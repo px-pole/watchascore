@@ -117,10 +117,21 @@
         <div class="score-center">
           <div id="tournament-group-display" class="group-name-display"></div>
           <div class="score-display" aria-live="polite" aria-atomic="true">
+            <div class="penalty-score penalty-score-home" id="penalty-home-score-wrap" aria-label="Home penalty score">
+              <span class="penalty-score-num" id="penalty-home-score">0</span>
+            </div>
             <div class="score-num" id="score-home" aria-label="Home score">0</div>
             <div class="score-divider">-</div>
             <div class="score-num" id="score-away" aria-label="Away score">0</div>
+            <div class="penalty-score penalty-score-away" id="penalty-away-score-wrap" aria-label="Away penalty score">
+              <span class="penalty-score-num" id="penalty-away-score">0</span>
+            </div>
           </div>
+            <div class="penalty-tracker" id="penalty-tracker" aria-live="polite" aria-hidden="true">
+              <div class="penalty-marks penalty-marks-home" id="penalty-home-marks"></div>
+              <div class="penalty-tracker-divider" aria-hidden="true">|</div>
+              <div class="penalty-marks penalty-marks-away" id="penalty-away-marks"></div>
+            </div>
             <div class="clock-wrap" id="clock-wrap" aria-live="off">
               <div class="clock">
                 <span id="clock-display">00:00</span>
@@ -227,7 +238,6 @@
         <button class="status-btn" data-status="HT" aria-label="Set status to Half Time">Half Time</button>
         <button class="status-btn" data-status="FULL-TIME" aria-label="Set status to Full Time">Full Time</button>
         <button class="status-btn" data-status="ET" aria-label="Set status to Extra Time">Extra Time</button>
-        <button class="status-btn" data-status="PEN" aria-label="Set status to Penalties">Penalties</button>
       </div>
     </div>
 
@@ -252,6 +262,26 @@
           </div>
         </div>
       </div>
+      <div class="penalty-controls" style="display: none;" aria-hidden="true">
+        <div class="score-ctrl-group">
+          <label>Home Penalties</label>
+          <div class="score-btns penalty-btns">
+            <button class="btn penalty-scored-btn penalty-action-btn" data-side="home" data-penalty-result="made" aria-label="Mark home penalty as scored">Scored</button>
+            <button class="btn penalty-missed-btn penalty-action-btn" data-side="home" data-penalty-result="missed" aria-label="Mark home penalty as missed">Missed</button>
+          </div>
+        </div>
+        <div class="score-ctrl-group">
+          <label>Away Penalties</label>
+          <div class="score-btns penalty-btns">
+            <button class="btn penalty-scored-btn penalty-action-btn" data-side="away" data-penalty-result="made" aria-label="Mark away penalty as scored">Scored</button>
+            <button class="btn penalty-missed-btn penalty-action-btn" data-side="away" data-penalty-result="missed" aria-label="Mark away penalty as missed">Missed</button>
+          </div>
+        </div>
+        <button id="undo-last-penalty-btn" class="btn btn-secondary btn-full penalty-action-btn" data-penalty-action="undo-last" aria-label="Undo last penalty">Undo Last Penalty</button>
+      </div>
+      <button id="toggle-penalty-mode-btn" class="btn btn-secondary btn-full" aria-pressed="false" aria-label="Toggle penalty mode">
+        <i class="fa-solid fa-futbol"></i> Enter Penalty Mode
+      </button>
       <hr class="divider" aria-hidden="true">
       <button id="reset-scores-btn" class="btn btn-danger btn-full">Reset Scores</button>
     </div>
@@ -321,10 +351,10 @@
       <div class="help-section-title"><i class="fa-solid fa-keyboard"></i> Keyboard Shortcuts</div>
       <div class="help-row"><span>[Space]</span> Start / Pause Clock</div>
       <div class="help-row"><span>[C]</span> Hide / Show Clock</div>
-      <div class="help-row"><span>[H]</span> Increment Home Goal</div>
-      <div class="help-row"><span>[Shift] + [H]</span> Decrement Home Goal</div>
-      <div class="help-row"><span>[A]</span> Increment Away Goal</div>
-      <div class="help-row"><span>[Shift] + [A]</span> Decrement Away Goal</div>
+      <div class="help-row"><span>[H]</span> Increment Home Goal / Home Penalty Scored</div>
+      <div class="help-row"><span>[Shift] + [H]</span> Decrement Home Goal / Home Penalty Missed</div>
+      <div class="help-row"><span>[A]</span> Increment Away Goal / Away Penalty Scored</div>
+      <div class="help-row"><span>[Shift] + [A]</span> Decrement Away Goal / Away Penalty Missed</div>
       <div class="help-row"><span>[Shift] + [X]</span> Reset All</div>
     </div>
 
@@ -340,6 +370,8 @@
     </div>
   </section>
 </div>
+
+<div id="toast-stack" class="toast-stack" aria-live="polite" aria-label="Notifications"></div>
 
 <!-- MODAL -->
 <div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Confirm Reset" aria-hidden="true">

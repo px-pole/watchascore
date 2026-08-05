@@ -106,6 +106,14 @@ export function createTeamNamesManager({ getState, getUi, capitalize }) {
     const scoreboard = document.querySelector('.scoreboard-wrap');
     if (scoreboard) scoreboard.classList.toggle('team-names-hidden', !visible);
 
+    ['home', 'away'].forEach(side => {
+      const nameEl = ui[`${side}Name`];
+      if (!nameEl) return;
+      nameEl.style.height = visible ? '' : 'var(--name-slot-h, 42px)';
+      nameEl.style.minHeight = visible ? '' : 'var(--name-slot-h, 42px)';
+      nameEl.style.maxHeight = visible ? '' : 'var(--name-slot-h, 42px)';
+    });
+
     if (visible) {
       // Name slots can be collapsed while hidden; re-fit once visible to avoid stale compact classes.
       requestAnimationFrame(refitTeamNames);

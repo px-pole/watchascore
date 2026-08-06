@@ -2583,21 +2583,32 @@ header .header-btn {
 }
 
 #toggle-penalty-mode-btn {
-	margin-top: 10px !important;
+	margin-top: 12px !important;
 }
 
 .score-btns.penalty-btns {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	display: flex;
+	align-items: center;
+	width: 100%;
 	gap: clamp(2px, 0.45vw, 6px);
 }
 
 .score-btns.penalty-btns .penalty-scored-btn,
 .score-btns.penalty-btns .penalty-missed-btn {
-	width: 100%;
-	min-width: 0;
-	font-size: 14px;
-	padding: 6px 0;
+	flex: 0 0 auto;
+	height: 36px;
+	font-size: 18px;
+	padding: 6px 12px;
+	border: 1px solid transparent;
+	line-height: 1;
+}
+
+.score-btns.penalty-btns .penalty-scored-btn {
+	border-color: hsl(var(--success-h) var(--success-s) var(--success-l) / 0.3);
+}
+
+.score-btns.penalty-btns .penalty-missed-btn {
+	border-color: hsl(var(--danger-h) var(--danger-s) var(--danger-l) / 0.3);
 }
 
 .penalty-scored-btn {

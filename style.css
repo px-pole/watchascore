@@ -316,6 +316,416 @@
       40px 40px / 120px 120px;
 }
 
+.theme-cyberpunk {
+  --primary-h: 51;
+  --primary-s: 100%;
+  --primary-l: 52%;
+  --secondary-l: 62%;
+  --bg-body: #08070c;
+  --bg-panel: #111019;
+  --bg-card: #14141f;
+  --bg-input: rgba(255, 240, 33, 0.07);
+  --bg-badge: rgba(255, 240, 33, 0.08);
+  --bg-secondary-btn: rgba(255, 229, 31, 0.16);
+  --bg-search-popup: #171724;
+  --bg-search-header: #0f0f18;
+  --bg-search-item-hover: #1b1f30;
+  --bg-modal-overlay: rgba(4, 6, 14, 0.92);
+  --text-primary: #f7f4d6;
+  --text-muted: #9ca7be;
+  --text-on-primary: #0a0a0d;
+  --border-color: #f4d63d;
+  --border-badge: rgba(45, 231, 243, 0.35);
+  --border-search-popup: #f4d63d;
+  --border-search-item: #24313f;
+  --success-h: 162;
+  --success-s: 97%;
+  --success-l: 46%;
+  --danger-h: 346;
+  --danger-s: 100%;
+  --danger-l: 67%;
+  --warning-h: 51;
+  --warning-s: 100%;
+  --warning-l: 56%;
+  --warning-rgb: 255, 229, 46;
+  --scoreboard-gradient-start: #17111f;
+  --scoreboard-gradient-end: #0b0c13;
+  --score-num-shadow: hsl(51 100% 52% / 0.45);
+  --clock-bg: hsl(203 96% 56% / 0.09);
+  --clock-border: hsl(203 96% 56% / 0.4);
+  --focus-shadow: hsl(51 100% 52% / 0.2);
+  --primary-hover-bg: #ffe21a;
+  --primary-hover-shadow: hsl(51 100% 56% / 0.45);
+  --status-btn-active-bg: hsl(51 100% 52% / 0.14);
+  --secondary-btn-hover-bg: rgba(45, 231, 243, 0.17);
+  --badge-glow: drop-shadow(0 0 3px hsl(51 100% 54% / 0.9))
+    drop-shadow(0 0 20px hsl(51 100% 54% / 0.45));
+  --badge-stroke: drop-shadow(0 0 1px #ffe95a) drop-shadow(0 0 1px #ffe95a)
+    drop-shadow(0 0 1px #ffe95a);
+  --badge-bg-opacity: 20%;
+  --scoreboard-frame-stroke: hsl(51 100% 52% / 0.4);
+  --scoreboard-frame-highlight: hsl(51 100% 90% / 0.25);
+  --scoreboard-frame-shadow: hsl(51 100% 52% / 0.24);
+  --bg-gradient-radial-1-alpha: 0.2;
+  --bg-gradient-radial-2-hsl: 49 100% 56%;
+  --bg-gradient-radial-2-alpha: 0.16;
+  --bg-gradient-linear-start: #08070c;
+  --bg-gradient-linear-mid: #101421;
+  --bg-gradient-linear-end: #07060a;
+  --bg-texture-intensity: 1.2;
+  --bg-texture:
+    repeating-linear-gradient(
+      -30deg,
+      rgba(255, 255, 255, calc(0.025 * var(--bg-texture-intensity))) 0,
+      rgba(255, 255, 255, calc(0.025 * var(--bg-texture-intensity))) 1px,
+      transparent 1px,
+      transparent 22px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 229, 31, calc(0.07 * var(--bg-texture-intensity))) 0,
+      rgba(255, 229, 31, calc(0.07 * var(--bg-texture-intensity))) 1px,
+      transparent 1px,
+      transparent 34px
+    );
+}
+
+html.theme-cyberpunk body {
+  letter-spacing: 0.2px;
+}
+
+html.theme-cyberpunk body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03) 0,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  mix-blend-mode: soft-light;
+  opacity: 0.25;
+}
+
+html.theme-cyberpunk header {
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color), transparent 45%);
+  position: relative;
+}
+
+html.theme-cyberpunk header::after {
+  content: "NETRUN RUNNING";
+  position: absolute;
+  right: 0;
+  bottom: -12px;
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  color: color-mix(in srgb, var(--primary-color), #fff 12%);
+  text-transform: uppercase;
+}
+
+html.theme-cyberpunk header h1 {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-style: italic;
+  text-shadow: 0 0 16px hsl(51 100% 52% / 0.35);
+}
+
+html.theme-cyberpunk header h1 span {
+  color: var(--primary-color);
+}
+
+html.theme-cyberpunk .scoreboard-wrap,
+html.theme-cyberpunk .card,
+html.theme-cyberpunk .modal-card,
+html.theme-cyberpunk .help-panel,
+html.theme-cyberpunk .toast {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  border-width: 1px;
+}
+
+html.theme-cyberpunk .scoreboard-wrap {
+  border-color: color-mix(in srgb, var(--primary-color), #fff 8%);
+  box-shadow:
+    0 16px 65px rgba(0, 0, 0, 0.68),
+    0 0 0 1px hsl(51 100% 52% / 0.16),
+    inset 0 0 45px hsl(51 100% 52% / 0.06);
+}
+
+html.theme-cyberpunk .scoreboard-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgba(255, 229, 31, 0.12), transparent 35%);
+}
+
+html.theme-cyberpunk .scoreboard-wrap::after {
+  height: 4px;
+  background: linear-gradient(90deg, transparent 0 8%, #ffe51f 8% 90%, transparent 90% 100%);
+}
+
+html.theme-cyberpunk .scoreboard-frame {
+  border-radius: 0;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  border-color: hsl(51 100% 58% / 0.58);
+  box-shadow:
+    inset 0 0 0 1px hsl(51 100% 58% / 0.16),
+    0 0 24px hsl(51 100% 58% / 0.26);
+}
+
+html.theme-cyberpunk .scoreboard-frame::before {
+  border-radius: 0;
+  border-color: hsl(51 100% 56% / 0.28);
+}
+
+html.theme-cyberpunk .badge-wrap,
+html.theme-cyberpunk .mini-badge {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  border-color: hsl(51 100% 58% / 0.54);
+  background: color-mix(in srgb, var(--bg-panel), #ffe51f 10%);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px hsl(51 100% 60% / 0.2);
+}
+
+html.theme-cyberpunk .team-name {
+  text-transform: uppercase;
+  color: #ffe95f;
+  letter-spacing: 0.8px;
+  text-shadow: 0 0 12px hsl(51 100% 56% / 0.25);
+}
+
+html.theme-cyberpunk .group-name-display,
+html.theme-cyberpunk .clock-wrap .clock-status {
+  color: #ffe98a;
+  letter-spacing: 2.4px;
+}
+
+html.theme-cyberpunk .score-display .score-num,
+html.theme-cyberpunk .penalty-score-num {
+  color: #fff7ab;
+  text-shadow:
+    0 0 10px hsl(51 100% 56% / 0.7),
+    0 0 26px hsl(51 100% 56% / 0.3);
+}
+
+html.theme-cyberpunk .score-divider {
+  color: #ffe66e;
+}
+
+html.theme-cyberpunk .clock {
+  border-radius: 0;
+  border-color: hsl(51 100% 56% / 0.55);
+  background: linear-gradient(90deg, rgba(255, 229, 31, 0.18), rgba(255, 229, 31, 0.06));
+}
+
+html.theme-cyberpunk .clock-wrap .clock {
+  color: #fff0a0;
+  text-shadow: 0 0 10px hsl(51 100% 56% / 0.42);
+}
+
+html.theme-cyberpunk .team-selection-panel,
+html.theme-cyberpunk .card,
+html.theme-cyberpunk .help-panel,
+html.theme-cyberpunk .modal-card {
+  background: linear-gradient(160deg, rgba(20, 20, 31, 0.9), rgba(11, 11, 18, 0.92));
+  border-color: color-mix(in srgb, var(--border-color), transparent 38%);
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.52),
+    inset 0 0 0 1px rgba(255, 229, 31, 0.12);
+}
+
+html.theme-cyberpunk .card-title,
+html.theme-cyberpunk .help-panel-title,
+html.theme-cyberpunk .help-section-title,
+html.theme-cyberpunk .how-to-title {
+  color: #ffe51f;
+  letter-spacing: 2.8px;
+}
+
+html.theme-cyberpunk .card-title::before {
+  background: linear-gradient(180deg, #fff081, #ffe51f);
+}
+
+html.theme-cyberpunk .score-ctrl-group label {
+  color: #ffe98a;
+}
+
+html.theme-cyberpunk .score-val {
+  color: #ffe95f;
+  text-shadow: 0 0 10px hsl(51 100% 56% / 0.28);
+}
+
+html.theme-cyberpunk .custom-select,
+html.theme-cyberpunk select,
+html.theme-cyberpunk input[type="text"],
+html.theme-cyberpunk input[type="number"],
+html.theme-cyberpunk textarea,
+html.theme-cyberpunk .btn,
+html.theme-cyberpunk .status-btn,
+html.theme-cyberpunk .help-close-btn {
+  border-radius: 0;
+}
+
+html.theme-cyberpunk select,
+html.theme-cyberpunk input[type="text"],
+html.theme-cyberpunk input[type="number"],
+html.theme-cyberpunk textarea,
+html.theme-cyberpunk .btn,
+html.theme-cyberpunk .status-btn,
+html.theme-cyberpunk .help-close-btn {
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}
+
+html.theme-cyberpunk .team-selection-panel,
+html.theme-cyberpunk .custom-select {
+  clip-path: none;
+  overflow: visible;
+}
+
+html.theme-cyberpunk .custom-select,
+html.theme-cyberpunk select,
+html.theme-cyberpunk input[type="text"],
+html.theme-cyberpunk input[type="number"],
+html.theme-cyberpunk textarea {
+  border-color: color-mix(in srgb, var(--border-color), transparent 32%);
+  background: linear-gradient(90deg, rgba(255, 229, 31, 0.16), rgba(255, 229, 31, 0.06));
+}
+
+html.theme-cyberpunk .custom-select-menu,
+html.theme-cyberpunk .search-results-popup {
+  border-radius: 0;
+  border-color: color-mix(in srgb, var(--border-color), var(--primary-color) 25%);
+  background: color-mix(in srgb, var(--bg-panel), #0c111c 24%);
+}
+
+html.theme-cyberpunk .custom-select-option:hover,
+html.theme-cyberpunk .custom-select-option.focused,
+html.theme-cyberpunk .search-results-item:hover,
+html.theme-cyberpunk .search-results-item.keyboard-focus,
+html.theme-cyberpunk .search-results-header.collapsible:hover,
+html.theme-cyberpunk .search-results-header.collapsible.keyboard-focus {
+  background: linear-gradient(90deg, rgba(255, 229, 31, 0.24), rgba(255, 229, 31, 0.1));
+}
+
+html.theme-cyberpunk .btn {
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  border: 1px solid transparent;
+}
+
+html.theme-cyberpunk .btn-primary {
+  color: #0b0b0f;
+  background: linear-gradient(90deg, #ffe51f, #f8ff70);
+  border-color: rgba(255, 242, 130, 0.66);
+  box-shadow: 0 0 22px hsl(51 100% 56% / 0.24);
+}
+
+html.theme-cyberpunk .btn-primary:hover {
+  background: linear-gradient(90deg, #fff059, #ffe51f);
+  box-shadow:
+    0 0 30px hsl(51 100% 56% / 0.34),
+    0 0 0 1px rgba(255, 239, 121, 0.4);
+}
+
+html.theme-cyberpunk .btn-secondary,
+html.theme-cyberpunk .status-btn,
+html.theme-cyberpunk .header-menu-toggle,
+html.theme-cyberpunk .help-close-btn {
+  color: #ffe98a;
+  border-color: rgba(255, 229, 31, 0.52);
+  background: rgba(255, 229, 31, 0.12);
+}
+
+html.theme-cyberpunk .status-btn.active,
+html.theme-cyberpunk .status-btn:hover,
+html.theme-cyberpunk .btn-secondary:hover,
+html.theme-cyberpunk .header-menu-toggle:hover,
+html.theme-cyberpunk .header-menu-toggle:focus-visible,
+html.theme-cyberpunk .help-close-btn:hover,
+html.theme-cyberpunk .help-close-btn:focus-visible {
+  color: #fff293;
+  border-color: rgba(255, 229, 31, 0.66);
+  background: rgba(255, 229, 31, 0.12);
+}
+
+html.theme-cyberpunk .btn-plus,
+html.theme-cyberpunk .btn-green,
+html.theme-cyberpunk .penalty-scored-btn {
+  color: #6ffbe3;
+  border-color: rgba(40, 246, 226, 0.46);
+  background: rgba(40, 246, 226, 0.14);
+}
+
+html.theme-cyberpunk .btn-minus,
+html.theme-cyberpunk .btn-danger,
+html.theme-cyberpunk .penalty-missed-btn {
+  color: #ff7ca4;
+  border-color: rgba(255, 124, 164, 0.5);
+  background: rgba(255, 83, 138, 0.14);
+}
+
+html.theme-cyberpunk .penalty-mark.is-empty {
+  color: #ffe98a;
+  border-color: rgba(255, 229, 31, 0.5);
+}
+
+html.theme-cyberpunk .help-fab {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  border-color: rgba(255, 229, 31, 0.52);
+  color: #fff0a2;
+  background: linear-gradient(90deg, rgba(255, 229, 31, 0.16), rgba(45, 231, 243, 0.14));
+}
+
+html.theme-cyberpunk .help-fab:hover,
+html.theme-cyberpunk .help-fab:focus-visible {
+  color: #fff9d0;
+  box-shadow:
+    0 16px 45px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 229, 31, 0.35),
+    0 0 24px rgba(255, 229, 31, 0.24);
+}
+
+html.theme-cyberpunk #preloader {
+  background: radial-gradient(circle at 30% 20%, #1a2131 0%, #05040a 68%);
+}
+
+html.theme-cyberpunk .loader-spinner {
+  border-color: rgba(45, 231, 243, 0.24);
+  border-top-color: #ffe51f;
+}
+
+@keyframes cyberpunkDataPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(1px);
+  }
+}
+
+html.theme-cyberpunk .group-name-display:empty::before {
+  content: "NIGHT CITY LEAGUE";
+  animation: cyberpunkDataPulse 1.8s ease-in-out infinite;
+}
+
+@media (max-width: 560px) {
+  html.theme-cyberpunk header::after {
+    content: "NETRUN";
+    letter-spacing: 1.3px;
+  }
+}
+
 /* ─── RESET & BODY ─── */
 * {
   margin: 0;
@@ -473,6 +883,9 @@ header {
   gap: 14px;
   padding-bottom: 15px;
   border-bottom: 1px solid var(--border-color);
+  position: relative;
+  z-index: 2500;
+  overflow: visible;
 }
 header h1 {
   font-family: var(--font-display);
@@ -497,6 +910,12 @@ header h1 span {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.header-side-right {
+  position: relative;
+  z-index: 2600;
+  overflow: visible;
 }
 
 .header-menu-toggle {
@@ -1225,11 +1644,15 @@ html.obs-source .controls-grid .card {
   will-change: transform, opacity;
   contain: layout;
   position: relative;
-  z-index: 500;
+  z-index: 900;
 }
 
 .team-selection-panel:has(.search-results-popup.active) {
-  z-index: 700;
+  z-index: 3200;
+}
+
+.team-selection-panel:focus-within {
+  z-index: 3200;
 }
 
 .wrapper.teams-selected .team-selection-panel {
@@ -1291,7 +1714,7 @@ html.obs-source .controls-grid .card {
 .search-container {
   position: relative;
   width: 100%;
-  z-index: 100;
+  z-index: 3100;
 }
 .search-container::before {
   content: "";
@@ -1356,7 +1779,7 @@ html.obs-source .controls-grid .card {
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scroll-behavior: smooth;
-  z-index: 3000;
+  z-index: 3300;
   display: none;
   margin-top: 5px;
   scrollbar-gutter: stable;
@@ -2030,7 +2453,7 @@ header .header-btn {
   border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 4px;
-  z-index: 200;
+  z-index: 3400;
   list-style: none;
   margin: 0;
   display: none;

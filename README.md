@@ -11,7 +11,7 @@
 - **Real-time Controls:** Manage scores, game clock, and status (HT, FT, etc.) instantaneously.
 - **Dynamic Team Search:** Quickly find and select teams from a built-in database with league grouping and matched-text highlighting.
 - **Team Visibility Toggle:** Quickly hide or show team names from the Team Selection panel.
-- **Customization:** 
+- **Customization:**
   - **Theme Engine:** Switch between professional color palettes (Sky Blue, Light, Midnight, Crimson, Forest) and custom Cyberpunk theme.
   - **Logo Upload:** Upload custom team badges directly from your local machine.
   - **Name Overrides:** Set custom display names for any team.
@@ -22,26 +22,27 @@
 
 For power users, WatchaScore supports global hotkeys to keep your hands on the action:
 
-| Shortcut | Action |
-| :--- | :--- |
-| `[Space]` | Start / Pause the game clock |
-| `[C]` | Hide / Show clock |
-| `[H]` | Increment Home Score / Home Penalty Scored (Penaly Mode)|
+| Shortcut        | Action                                                    |
+| :-------------- | :-------------------------------------------------------- |
+| `[Space]`       | Start / Pause the game clock                              |
+| `[C]`           | Hide / Show clock                                         |
+| `[H]`           | Increment Home Score / Home Penalty Scored (Penaly Mode)  |
 | `[Shift] + [H]` | Decrement Home Score / Home Penalty Missed (Penalty Mode) |
-| `[A]` | Increment Away Score / Away Penalty Scored (Penaly Mode) |
+| `[A]`           | Increment Away Score / Away Penalty Scored (Penaly Mode)  |
 | `[Shift] + [A]` | Decrement Away Score / Away Penalty Missed (Penalty Mode) |
-| `[Shift] + [X]` | Trigger "Reset All" confirmation |
+| `[Shift] + [X]` | Trigger "Reset All" confirmation                          |
 
-*Note: Shortcuts are disabled while typing in input fields.*
+_Note: Shortcuts are disabled while typing in input fields._
 
 ## 🛠️ Setup & Usage
 
-**OBS Integration:** 
-   - Copy the websites URL address.
-   - In OBS, add a new **Browser Source** and paste the copied URL.
-   - Paste the URL and set the width and height (**1920 x 1080** is recommended).
-   - Crop by holding **Alt** and dragging the edges.
-   - Use the **Interact** feature in OBS to manage the scoreboard during your stream.
+**OBS Integration:**
+
+- Copy the websites URL address.
+- In OBS, add a new **Browser Source** and paste the copied URL.
+- Paste the URL and set the width and height (**1920 x 1080** is recommended).
+- Crop by holding **Alt** and dragging the edges.
+- Use the **Interact** feature in OBS to manage the scoreboard during your stream.
 
 ## 📂 Project Structure
 
@@ -100,6 +101,7 @@ watchascore/
 - [js/utils/helpers.js](js/utils/helpers.js): Reusable helpers (debounce, text formatting, edit-distance, keyboard helpers).
 
 Runtime flow:
+
 1. [script.js](script.js) loads persisted state via [js/core/persistence.js](js/core/persistence.js).
 2. Core and feature managers are instantiated (including [js/core/obs-source.js](js/core/obs-source.js) and [js/features/scoreboard-ui.js](js/features/scoreboard-ui.js)).
 3. State changes are batched and broadcast through [js/core/event-bus.js](js/core/event-bus.js), then rendered by the UI layer.
@@ -115,7 +117,7 @@ This project is free and open-source.
 
 ---
 
-*Developed for the love of the game.* ⚽
+_Developed for the love of the game._ ⚽
 
 [!Support](https://www.paypal.me/vds91)
 [!Coffee](https://www.buymeacoffee.com/vds1)

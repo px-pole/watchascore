@@ -1644,7 +1644,7 @@ html.obs-source .controls-grid .card {
 	right: 0;
 	width: max-content;
 	margin-inline: auto;
-	margin-top: 0;
+	margin-top: -10px;
 }
 
 .scoreboard-wrap.penalty-tight-space.layout-penalty

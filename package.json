@@ -1,0 +1,27 @@
+{
+  "name": "watchascore",
+  "version": "1.0.0",
+  "description": "> **Live Demo:** [click here](https://watchascore.netlify.app/)",
+  "main": "script.js",
+  "scripts": {
+    "test": "vitest run",
+    "format": "prettier --write \"index.html\" \"style.css\" \"script.js\" \"teams.js\" \"js/**/*.js\" \"tests/**/*.js\" \"README.md\"",
+    "format:check": "prettier --check \"index.html\" \"style.css\" \"script.js\" \"teams.js\" \"js/**/*.js\" \"tests/**/*.js\" \"README.md\"",
+    "check": "npm run format:check && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/px-pole/watchascore.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/px-pole/watchascore/issues"
+  },
+  "homepage": "https://github.com/px-pole/watchascore#readme",
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "prettier": "^3.9.6",
+    "vitest": "^4.1.10"
+  }
+}

@@ -7,9 +7,5 @@
 # Node / test artifacts
 node_modules/
 coverage/
-tests/
 .vitest/
-package-lock.json
-package.json
 *.log
-vitest.config.cjs

@@ -26,12 +26,26 @@ export function createPersistence({
     return data;
   };
 
+  const clearRecord = (key) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      // Ignore storage write errors and continue with safe defaults.
+    }
+  };
+
   const readRecord = (key) => {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
     try {
-      return migrateRecord(JSON.parse(raw));
+      const migrated = migrateRecord(JSON.parse(raw));
+      if (!migrated) {
+        clearRecord(key);
+        return null;
+      }
+      return migrated;
     } catch (e) {
+      clearRecord(key);
       return null;
     }
   };

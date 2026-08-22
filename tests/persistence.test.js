@@ -171,4 +171,47 @@ describe("createPersistence", () => {
       theme: "forest",
     });
   });
+
+  it("clears malformed storage entries and falls back to safe defaults", () => {
+    localStorage.setItem(storageKey, "{not valid json");
+    localStorage.setItem(
+      prefsKey,
+      JSON.stringify({ version: 1, data: { theme: "light" } }),
+    );
+
+    const persistence = createPersistence({
+      storageKey,
+      prefsKey,
+      initialState,
+    });
+
+    expect(persistence.load()).toEqual({
+      ...initialState,
+      theme: "light",
+    });
+    expect(localStorage.getItem(storageKey)).toBeNull();
+  });
+
+  it("ignores future-version records and falls back to defaults", () => {
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify({ version: 999, data: { homeScore: 77 } }),
+    );
+    localStorage.setItem(
+      prefsKey,
+      JSON.stringify({ version: 1, data: { theme: "forest" } }),
+    );
+
+    const persistence = createPersistence({
+      storageKey,
+      prefsKey,
+      initialState,
+    });
+
+    expect(persistence.load()).toEqual({
+      ...initialState,
+      theme: "forest",
+    });
+    expect(localStorage.getItem(storageKey)).toBeNull();
+  });
 });

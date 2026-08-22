@@ -116,6 +116,9 @@ export function createTeamSearchManager({
     );
 
     resultsDiv.classList.toggle("open-up", openUp);
+    resultsDiv.style.height = searchInput.value.trim()
+      ? ""
+      : `${maxPopupHeight}px`;
     resultsDiv.style.maxHeight = `${maxPopupHeight}px`;
   }
 

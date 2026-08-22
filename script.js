@@ -26,9 +26,10 @@ import {
   capitalize,
   levenshteinDistance,
   debounce,
-  isEditableShortcutTarget,
+  shouldIgnoreGlobalShortcut,
   getShortcutKey,
   preventPopupScrollChaining,
+  normalizeStateValue,
 } from "./js/utils/helpers.js";
 import { createTeamSearchManager } from "./js/features/team-search.js";
 import { createGameClockManager } from "./js/features/game-clock.js";
@@ -192,14 +193,16 @@ function runWithViewTransition(update) {
 function setStateValues(updates) {
   stateBatchManager.applyBatch(() => {
     Object.entries(updates).forEach(([key, value]) => {
-      state[key] = value;
+      const normalized = normalizeStateValue(key, value);
+      state[key] = normalized;
     });
   }, state);
 }
 
 // Stores the selected team object for one side.
 function setSelectedTeam(side, team) {
-  state[`${side}Team`] = team ? { ...team } : null;
+  const normalized = normalizeStateValue(`${side}Team`, team);
+  state[`${side}Team`] = normalized;
 }
 
 // Clears both selected teams and optionally resets name overrides.
@@ -605,10 +608,10 @@ function setupListeners() {
   });
 
   ui.tournamentTitleOverride?.addEventListener("input", (e) => {
-    state.tournamentTitleOverride = e.target.value;
+    setStateValues({ tournamentTitleOverride: e.target.value });
   });
   ui.clearTitleOverrideBtn?.addEventListener("click", () => {
-    state.tournamentTitleOverride = "";
+    setStateValues({ tournamentTitleOverride: "" });
     ui.tournamentTitleOverride?.focus();
   });
 
@@ -688,7 +691,7 @@ function updatePenaltyUI() {
 
 // Toggles penalty mode without altering the regular scoreline.
 function togglePenaltyMode() {
-  state.penaltyMode = !state.penaltyMode;
+  setStateValues({ penaltyMode: !state.penaltyMode });
   updatePenaltyUI();
   updateClockUI();
   obsSourceManager.scheduleObsBackgroundHoleSync();
@@ -719,7 +722,7 @@ function updateVisibilityHighlight() {
 
 // Manually updates the visibility enhancement mode.
 function setVisibilityMode(mode) {
-  state.visibilityMode = mode;
+  setStateValues({ visibilityMode: mode });
   updateVisibilityHighlight();
   document.activeElement?.blur();
 }
@@ -727,7 +730,8 @@ function setVisibilityMode(mode) {
 // Adjusts one side's score and briefly animates the updated value.
 function changeScore(side, delta) {
   const key = side + "Score";
-  state[key] = Math.max(0, state[key] + delta);
+  const nextScore = Math.max(0, state[key] + delta);
+  setStateValues({ [key]: nextScore });
   const el = ui["score" + capitalize(side)];
   if (el) {
     el.classList.add("bump");
@@ -766,7 +770,7 @@ function resetTeams() {
 function changeMode(mode) {
   // Applies the mode update inside the optional view transition.
   const update = () => {
-    state.mode = mode;
+    setStateValues({ mode });
     clearSelectedTeams({ clearOverrides: true });
   };
   runWithViewTransition(update);
@@ -793,13 +797,13 @@ function setTheme(themeName) {
   if (themeName !== "default" && !THEMES.includes(themeName))
     themeName = "default";
   syncThemeChangeTransition();
-  state.theme = themeName;
+  setStateValues({ theme: themeName });
   if (document.activeElement?.blur) document.activeElement.blur();
 }
 
 // Updates the match status and refreshes the status UI.
 function setStatus(s) {
-  state.status = s;
+  setStateValues({ status: s });
   renderStatusUI(s);
 }
 
@@ -911,24 +915,30 @@ function closeActiveModal() {
 
 // Saves the start time and marks the match as not started.
 function confirmStartTime() {
-  state.startTime = ui.startTimeInput?.value || null;
+  setStateValues({ startTime: ui.startTimeInput?.value || null });
   setStatus("NOT STARTED");
   closeActiveModal();
 }
 
 // Restores the scoreboard to its initial state after confirmation.
-function confirmResetAll() {
-  closeActiveModal();
-  stopTimer();
-  state = createState({
+function resetAppStateToDefaults() {
+  const nextState = createState({
     ...INITIAL_STATE,
     theme: state.theme,
     mode: state.mode,
     visibilityMode: state.visibilityMode,
   });
+
+  state = nextState;
   Persistence.save(state);
   prepareTeamData();
   syncUI();
+}
+
+function confirmResetAll() {
+  closeActiveModal();
+  stopTimer();
+  resetAppStateToDefaults();
   notifications.show("Scoreboard reset");
 }
 
@@ -1022,8 +1032,8 @@ window.addEventListener(
     }
 
     if (
-      isEditableShortcutTarget(e.target) ||
-      isEditableShortcutTarget(document.activeElement)
+      shouldIgnoreGlobalShortcut(e.target) ||
+      shouldIgnoreGlobalShortcut(document.activeElement)
     )
       return;
 

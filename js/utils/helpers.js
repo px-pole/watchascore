@@ -40,9 +40,21 @@ export function isEditableShortcutTarget(target) {
   if (target.isContentEditable) return true;
   return Boolean(
     target.closest(
-      'input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]',
+      'input, textarea, select, button, [role="button"], [contenteditable="true"], [contenteditable="plaintext-only"]',
     ),
   );
+}
+
+export function shouldIgnoreGlobalShortcut(target) {
+  if (!target) return false;
+  if (isEditableShortcutTarget(target)) return true;
+  if (
+    target instanceof Element &&
+    target.closest("button, input, select, textarea")
+  ) {
+    return true;
+  }
+  return false;
 }
 
 // Prevents scroll events in a popup from chaining to the page.
@@ -117,4 +129,43 @@ export function getShortcutKey(e) {
     default:
       return "";
   }
+}
+
+export function normalizeStateValue(key, value) {
+  if (key === "homeScore" || key === "awayScore") {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue)
+      ? Math.max(0, Math.round(numericValue))
+      : 0;
+  }
+
+  if (key === "clockSec") {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue)
+      ? Math.max(0, Math.round(numericValue))
+      : 0;
+  }
+
+  if (key === "status") {
+    return typeof value === "string" ? value.slice(0, 30) : "";
+  }
+
+  if (key === "teamNamesVisible" || key === "clockVisible") {
+    return value === true || value === false ? value : true;
+  }
+
+  if (key === "penaltyMode") {
+    return value === true;
+  }
+
+  if (key === "homeTeam" || key === "awayTeam") {
+    if (!value || typeof value !== "object") return null;
+    return {
+      ...(value || {}),
+      id: typeof value.id === "string" ? value.id.slice(0, 120) : "",
+      name: typeof value.name === "string" ? value.name.slice(0, 120) : "",
+    };
+  }
+
+  return value;
 }

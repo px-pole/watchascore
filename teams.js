@@ -1486,8 +1486,13 @@ export const TOURNAMENTS = {
   uefa: {
     "UEFA Champions League": [
       {
+        id: "aek",
+        name: "AEK Athens",
+        badge: "assets/badges/UEFA-Champions-League/AEK.svg",
+      },
+      {
         id: "arsenal",
-        name: "Arsenal FC",
+        name: "Arsenal",
         badge: "assets/badges/UEFA-Champions-League/Arsenal.svg",
       },
       {
@@ -1497,8 +1502,23 @@ export const TOURNAMENTS = {
       },
       {
         id: "atleti",
-        name: "Atlético de Madrid",
+        name: "Atlético Madrid",
         badge: "assets/badges/UEFA-Champions-League/Atleti.svg",
+      },
+      {
+        id: "barcelona",
+        name: "Barcelona",
+        badge: "assets/badges/UEFA-Champions-League/Barcelona.svg",
+      },
+      {
+        id: "bayern",
+        name: "Bayern München",
+        badge: "assets/badges/UEFA-Champions-League/Bayern-Munchen.svg",
+      },
+      {
+        id: "bodo-glimt",
+        name: "Bodø/Glimt",
+        badge: "assets/badges/UEFA-Champions-League/Bodo-Glimt.svg",
       },
       {
         id: "dortmund",
@@ -1506,24 +1526,24 @@ export const TOURNAMENTS = {
         badge: "assets/badges/UEFA-Champions-League/B.-Dortmund.svg",
       },
       {
-        id: "barcelona",
-        name: "FC Barcelona",
-        badge: "assets/badges/UEFA-Champions-League/Barcelona.svg",
-      },
-      {
-        id: "bayern",
-        name: "FC Bayern München",
-        badge: "assets/badges/UEFA-Champions-League/Bayern-Munchen.svg",
-      },
-      {
         id: "club-brugge",
-        name: "Club Brugge KV",
+        name: "Club Brugge",
         badge: "assets/badges/UEFA-Champions-League/Club-Brugge.svg",
       },
       {
         id: "como",
-        name: "Como 1907",
+        name: "Como",
         badge: "assets/badges/UEFA-Champions-League/Como.svg",
+      },
+      {
+        id: "porto",
+        name: "FC Porto",
+        badge: "assets/badges/UEFA-Champions-League/Porto.svg",
+      },
+      {
+        id: "fenerbahce",
+        name: "Fenerbahçe",
+        badge: "assets/badges/UEFA-Champions-League/Fenerbahce.svg",
       },
       {
         id: "feyenoord",
@@ -1532,32 +1552,37 @@ export const TOURNAMENTS = {
       },
       {
         id: "galatasaray",
-        name: "Galatasaray A.Ş.",
+        name: "Galatasaray",
         badge: "assets/badges/UEFA-Champions-League/Galatasaray.svg",
       },
       {
         id: "inter",
-        name: "FC Internazionale Milano",
+        name: "Inter",
         badge: "assets/badges/UEFA-Champions-League/Inter.svg",
       },
       {
+        id: "lask",
+        name: "LASK",
+        badge: "assets/badges/UEFA-Champions-League/LASK.svg",
+      },
+      {
         id: "leipzig",
-        name: "RB Leipzig",
+        name: "Leipzig",
         badge: "assets/badges/UEFA-Champions-League/Leipzig.svg",
       },
       {
         id: "lens",
-        name: "RC Lens",
+        name: "Lens",
         badge: "assets/badges/UEFA-Champions-League/Lens.svg",
       },
       {
         id: "lille",
-        name: "LOSC Lille",
+        name: "Lille",
         badge: "assets/badges/UEFA-Champions-League/Lille.svg",
       },
       {
         id: "liverpool",
-        name: "Liverpool FC",
+        name: "Liverpool",
         badge: "assets/badges/UEFA-Champions-League/Liverpool.svg",
       },
       {
@@ -1572,18 +1597,13 @@ export const TOURNAMENTS = {
       },
       {
         id: "napoli",
-        name: "SSC Napoli",
+        name: "Napoli",
         badge: "assets/badges/UEFA-Champions-League/Napoli.svg",
       },
       {
         id: "paris",
-        name: "Paris Saint-Germain",
+        name: "PSG",
         badge: "assets/badges/UEFA-Champions-League/Paris.svg",
-      },
-      {
-        id: "porto",
-        name: "FC Porto",
-        badge: "assets/badges/UEFA-Champions-League/Porto.svg",
       },
       {
         id: "psv",
@@ -1592,28 +1612,38 @@ export const TOURNAMENTS = {
       },
       {
         id: "real-betis",
-        name: "Real Betis Balompié",
+        name: "Real Betis",
         badge: "assets/badges/UEFA-Champions-League/Real-Betis.svg",
       },
       {
         id: "real-madrid",
-        name: "Real Madrid C.F.",
+        name: "Real Madrid",
         badge: "assets/badges/UEFA-Champions-League/Real-Madrid.svg",
       },
       {
         id: "roma",
-        name: "AS Roma",
+        name: "Roma",
         badge: "assets/badges/UEFA-Champions-League/Roma.svg",
       },
       {
+        id: "sabah",
+        name: "Sabah FK",
+        badge: "assets/badges/UEFA-Champions-League/Sabah.svg",
+      },
+      {
         id: "shakhtar",
-        name: "FC Shakhtar Donetsk",
+        name: "Shakhtar Donetsk",
         badge: "assets/badges/UEFA-Champions-League/Shakhtar.svg",
       },
       {
         id: "slavia-praha",
-        name: "SK Slavia Praha",
+        name: "Slavia Prague",
         badge: "assets/badges/UEFA-Champions-League/Slavia-Praha.svg",
+      },
+      {
+        id: "slovan-bratislava",
+        name: "Slovan Bratislava",
+        badge: "assets/badges/UEFA-Champions-League/Slovan.svg",
       },
       {
         id: "sporting-cp",
@@ -1626,26 +1656,61 @@ export const TOURNAMENTS = {
         badge: "assets/badges/UEFA-Champions-League/Stuttgart.svg",
       },
       {
+        id: "viking",
+        name: "Viking",
+        badge: "assets/badges/UEFA-Champions-League/Viking.svg",
+      },
+      {
         id: "villarreal",
-        name: "Villarreal CF",
+        name: "Villarreal",
         badge: "assets/badges/UEFA-Champions-League/Villarreal.svg",
       },
     ],
     "UEFA Europa League": [
-      {
-        id: "az",
-        name: "AZ Alkmaar",
-        badge: "assets/badges/UEFA-Europa-League/AZ-Alkmaar.svg",
-      },
       {
         id: "bournemouth",
         name: "AFC Bournemouth",
         badge: "assets/badges/UEFA-Europa-League/Bournemouth.svg",
       },
       {
+        id: "anderlecht",
+        name: "Anderlecht",
+        badge: "assets/badges/UEFA-Europa-League/Anderlecht.svg",
+      },
+      {
+        id: "ararat-armenia",
+        name: "Ararat Armenia",
+        badge: "assets/badges/UEFA-Europa-League/Ararat.svg",
+      },
+      {
+        id: "az-alkmaar",
+        name: "AZ Alkmaar",
+        badge: "assets/badges/UEFA-Europa-League/AZ-Alkmaar.svg",
+      },
+      {
+        id: "leverkusen",
+        name: "Bayer Leverkusen",
+        badge: "assets/badges/UEFA-Europa-League/Leverkusen.svg",
+      },
+      {
+        id: "benfica",
+        name: "Benfica",
+        badge: "assets/badges/UEFA-Europa-League/Benfica.svg",
+      },
+      {
+        id: "besiktas",
+        name: "Beşiktaş",
+        badge: "assets/badges/UEFA-Europa-League/Besiktas.svg",
+      },
+      {
         id: "celta",
-        name: "Real Club Celta",
+        name: "Celta Vigo",
         badge: "assets/badges/UEFA-Europa-League/Celta.svg",
+      },
+      {
+        id: "celtic",
+        name: "Celtic",
+        badge: "assets/badges/UEFA-Europa-League/Celtic.svg",
       },
       {
         id: "crystal-palace",
@@ -1653,9 +1718,29 @@ export const TOURNAMENTS = {
         badge: "assets/badges/UEFA-Europa-League/Crystal-Palace.svg",
       },
       {
+        id: "gnk-dinamo",
+        name: "Dinamo Zagreb",
+        badge: "assets/badges/UEFA-Europa-League/GNK-Dinamo.svg",
+      },
+      {
+        id: "ferencvaros",
+        name: "Ferencváros",
+        badge: "assets/badges/UEFA-Europa-League/Ferencvaros.svg",
+      },
+      {
+        id: "hapoel-beer-sheva",
+        name: "Hapoel Beer Sheva",
+        badge: "assets/badges/UEFA-Europa-League/Hapoel.svg",
+      },
+      {
         id: "hoffenheim",
-        name: "TSG 1899 Hoffenheim",
+        name: "Hoffenheim",
         badge: "assets/badges/UEFA-Europa-League/Hoffenheim.svg",
+      },
+      {
+        id: "jagiellonia",
+        name: "Jagiellonia Białystok",
+        badge: "assets/badges/UEFA-Europa-League/Jagiellonia.svg",
       },
       {
         id: "juventus",
@@ -1663,66 +1748,286 @@ export const TOURNAMENTS = {
         badge: "assets/badges/UEFA-Europa-League/Juventus.svg",
       },
       {
-        id: "leverkusen",
-        name: "Bayer 04 Leverkusen",
-        badge: "assets/badges/UEFA-Europa-League/Leverkusen.svg",
+        id: "lech-poznan",
+        name: "Lech Poznań",
+        badge: "assets/badges/UEFA-Europa-League/Lech-Poznan.svg",
+      },
+      {
+        id: "levski-sofia",
+        name: "Levski Sofia",
+        badge: "assets/badges/UEFA-Europa-League/Levski-Sofia.svg",
+      },
+      {
+        id: "lillestrom",
+        name: "Lillestrøm",
+        badge: "assets/badges/UEFA-Europa-League/Lillestrom.svg",
+      },
+      {
+        id: "lyon",
+        name: "Lyon",
+        badge: "assets/badges/UEFA-Europa-League/Lyon.svg",
       },
       {
         id: "marseille",
-        name: "Olympique de Marseille",
+        name: "Marseille",
         badge: "assets/badges/UEFA-Europa-League/Marseille.svg",
       },
       {
         id: "milan",
-        name: "AC Milan",
+        name: "Milan",
         badge: "assets/badges/UEFA-Europa-League/Milan.svg",
       },
       {
-        id: "sociedad",
+        id: "NEC",
+        name: "NEC Nijmegen",
+        badge: "assets/badges/UEFA-Europa-League/NEC.svg",
+      },
+      {
+        id: "celje",
+        name: "NK Celje",
+        badge: "assets/badges/UEFA-Europa-League/Celje.svg",
+      },
+      {
+        id: "ofi-crete",
+        name: "OFI Crete",
+        badge: "assets/badges/UEFA-Europa-League/OFI.svg",
+      },
+      {
+        id: "olympiakos",
+        name: "Olympiacos",
+        badge: "assets/badges/UEFA-Europa-League/Olympiakos.svg",
+      },
+      {
+        id: "omonia",
+        name: "Omonia Nicosia",
+        badge: "assets/badges/UEFA-Europa-League/Omonia.svg",
+      },
+      {
+        id: "real-sociedad",
         name: "Real Sociedad",
         badge: "assets/badges/UEFA-Europa-League/Real-Sociedad.svg",
       },
       {
         id: "rennes",
-        name: "Stade Rennais",
+        name: "Rennes",
         badge: "assets/badges/UEFA-Europa-League/Rennes.svg",
       },
       {
+        id: "salzburg",
+        name: "Salzburg",
+        badge: "assets/badges/UEFA-Europa-League/Salzburg.svg",
+      },
+      {
+        id: "sparta-praha",
+        name: "Sparta Prague",
+        badge: "assets/badges/UEFA-Europa-League/Sparta-Praha.svg",
+      },
+      {
+        id: "sturm-graz",
+        name: "Sturm Graz",
+        badge: "assets/badges/UEFA-Europa-League/Sturm-Graz.svg",
+      },
+      {
         id: "sunderland",
-        name: "Sunderland AFC",
+        name: "Sunderland",
         badge: "assets/badges/UEFA-Europa-League/Sunderland.svg",
       },
       {
         id: "torreense",
-        name: "SCU Torreense",
+        name: "Torreense",
         badge: "assets/badges/UEFA-Europa-League/Torreense.svg",
+      },
+      {
+        id: "union-sg",
+        name: "Union St.Gilloise",
+        badge: "assets/badges/UEFA-Europa-League/USG.svg",
+      },
+      {
+        id: "viktoria-plzen",
+        name: "Viktoria Plzeň",
+        badge: "assets/badges/UEFA-Europa-League/Plzen.svg",
       },
     ],
     "UEFA Europa Conference League": [
       {
+        id: "aarhus",
+        name: "AGF",
+        badge: "assets/badges/UEFA-Conference-League/Aarhus.svg",
+      },
+      {
+        id: "ajax",
+        name: "Ajax",
+        badge: "assets/badges/UEFA-Conference-League/Ajax.svg",
+      },
+      {
         id: "atalanta",
-        name: "Atalanta BC",
-        badge: "assets/badges/UEFA-Europa-Conference-League/Atalanta.svg",
+        name: "Atalanta",
+        badge: "assets/badges/UEFA-Conference-League/Atalanta.svg",
+      },
+      {
+        id: "borac",
+        name: "Borac Banja Luka",
+        badge: "assets/badges/UEFA-Conference-League/Borac.svg",
+      },
+      {
+        id: "braga",
+        name: "Braga",
+        badge: "assets/badges/UEFA-Conference-League/Braga.svg",
+      },
+      {
+        id: "brann",
+        name: "Brann",
+        badge: "assets/badges/UEFA-Conference-League/Brann.svg",
       },
       {
         id: "brighton",
         name: "Brighton & Hove Albion",
-        badge: "assets/badges/UEFA-Europa-Conference-League/Brighton.svg",
+        badge: "assets/badges/UEFA-Conference-League/Brighton.svg",
+      },
+      {
+        id: "cska-sofia",
+        name: "CSKA Sofia",
+        badge: "assets/badges/UEFA-Conference-League/CSKA-Sofia.svg",
+      },
+      {
+        id: "egnatia",
+        name: "Egnatia",
+        badge: "assets/badges/UEFA-Conference-League/Egnatia.svg",
+      },
+      {
+        id: "copenhagen",
+        name: "FC København",
+        badge: "assets/badges/UEFA-Conference-League/Copenhagen.svg",
+      },
+      {
+        id: "midtjylland",
+        name: "FC Midtjylland",
+        badge: "assets/badges/UEFA-Conference-League/Midtjylland.svg",
+      },
+      {
+        id: "twente",
+        name: "FC Twente",
+        badge: "assets/badges/UEFA-Conference-League/Twente.svg",
+      },
+      {
+        id: "crvena-zvezda",
+        name: "FK Crvena Zvezda",
+        badge: "assets/badges/UEFA-Conference-League/Crvena-Zvezda.svg",
+      },
+      {
+        id: "kauno-zalgiris",
+        name: "FK Kauno Žalgiris",
+        badge: "assets/badges/UEFA-Conference-League/Kauno-Zalgiris.svg",
       },
       {
         id: "freiburg",
-        name: "SC Freiburg",
-        badge: "assets/badges/UEFA-Europa-Conference-League/Freiburg.svg",
+        name: "Freiburg",
+        badge: "assets/badges/UEFA-Conference-League/Freiburg.svg",
+      },
+      {
+        id: "gent",
+        name: "Gent",
+        badge: "assets/badges/UEFA-Conference-League/Gent.svg",
       },
       {
         id: "getafe",
-        name: "Getafe CF",
-        badge: "assets/badges/UEFA-Europa-Conference-League/Getafe.svg",
+        name: "Getafe",
+        badge: "assets/badges/UEFA-Conference-League/Getafe.svg",
+      },
+      {
+        id: "hajduk-split",
+        name: "Hajduk Split",
+        badge: "assets/badges/UEFA-Conference-League/Hajduk-Split.svg",
+      },
+      {
+        id: "hearts",
+        name: "Heart of Midlothian",
+        badge: "assets/badges/UEFA-Conference-League/Hearts.svg",
+      },
+      {
+        id: "iberia-tbilisi",
+        name: "Iberia 1999",
+        badge: "assets/badges/UEFA-Conference-League/Iberia-Tbilisi.svg",
+      },
+      {
+        id: "inter-escaldes",
+        name: "Inter Club d'Escaldes",
+        badge: "assets/badges/UEFA-Conference-League/Inter-Escaldes.svg",
+      },
+      {
+        id: "jablonec",
+        name: "Jablonec",
+        badge: "assets/badges/UEFA-Conference-League/Jablonec.svg",
+      },
+      {
+        id: "kairat-almaty",
+        name: "Kairat Almaty",
+        badge: "assets/badges/UEFA-Conference-League/Kairat-Almaty.svg",
+      },
+      {
+        id: "kups-kuopio",
+        name: "KuPS",
+        badge: "assets/badges/UEFA-Conference-League/KuPS-Kuopio.svg",
+      },
+      {
+        id: "lincoln-red-imps",
+        name: "Lincoln Red Imps FC",
+        badge: "assets/badges/UEFA-Conference-League/L-Red-Imps.svg",
+      },
+      {
+        id: "lugano",
+        name: "Lugano",
+        badge: "assets/badges/UEFA-Conference-League/Lugano.svg",
+      },
+      {
+        id: "mjallby",
+        name: "Mjällby",
+        badge: "assets/badges/UEFA-Conference-League/Mjallby.svg",
       },
       {
         id: "monaco",
-        name: "AS Monaco",
-        badge: "assets/badges/UEFA-Europa-Conference-League/Monaco.svg",
+        name: "Monaco",
+        badge: "assets/badges/UEFA-Conference-League/Monaco.svg",
+      },
+      {
+        id: "nordsjaelland",
+        name: "Nordsjælland",
+        badge: "assets/badges/UEFA-Conference-League/Nordsjaelland.svg",
+      },
+      {
+        id: "pafos",
+        name: "Pafos FC",
+        badge: "assets/badges/UEFA-Conference-League/Pafos.svg",
+      },
+      {
+        id: "panathinaikos",
+        name: "Panathinaikos",
+        badge: "assets/badges/UEFA-Conference-League/Panathinaikos.svg",
+      },
+      {
+        id: "riga",
+        name: "RFS",
+        badge: "assets/badges/UEFA-Conference-League/Riga.svg",
+      },
+      {
+        id: "sint-truidense",
+        name: "St.Truiden",
+        badge: "assets/badges/UEFA-Conference-League/Sint-Truidense.svg",
+      },
+      {
+        id: "thun",
+        name: "Thun",
+        badge: "assets/badges/UEFA-Conference-League/Thun.svg",
+      },
+      {
+        id: "trabzonspor",
+        name: "Trabzonspor",
+        badge: "assets/badges/UEFA-Conference-League/Trabzonspor.svg",
+      },
+      {
+        id: "universitatea-craiova",
+        name: "Universitatea Craiova",
+        badge: "assets/badges/UEFA-Conference-League/U-Craiova.svg",
       },
     ],
   },

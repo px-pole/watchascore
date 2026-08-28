@@ -120,7 +120,9 @@ const normalizeState = (candidate) => {
       typeof source.awayNameOverride === "string"
         ? source.awayNameOverride.trim().slice(0, 120)
         : "",
-    mode: source.mode === INITIAL_STATE.mode ? source.mode : INITIAL_STATE.mode,
+    mode: ["leagues", "uefa"].includes(source.mode)
+      ? source.mode
+      : INITIAL_STATE.mode,
     visibilityMode: ["none", "glow", "contrast"].includes(source.visibilityMode)
       ? source.visibilityMode
       : "none",
